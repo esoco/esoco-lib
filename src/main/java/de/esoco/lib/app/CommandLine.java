@@ -38,16 +38,19 @@ public class CommandLine
 
 	/**
 	 * Default argument pattern; allows arbitrary case-insensitive command line
-	 * switches (if they fulfill the regex pattern "\\w|\?") of the form
-	 * -&lt;switch&gt;[=&lt;value&gt;] (the prefix '/' can be used instead of of
-	 * '-').
+	 * switches (if they fulfill the regular expression pattern "\\w|\?") of the
+	 * form -&lt;switch&gt;[=&lt;value&gt;] (the prefix '/' can be used instead
+	 * of of '-').
 	 */
 	public static final String DEFAULT_ARGUMENT_PATTERN =
 		"(?i)[-/]((?:\\w|\\?)+)(?:=(.+))?";
 
+	/** A standard key for any trailing argument without a switch. */
+	public static final String TRAILING_ARG = "##TRAILING##";
+
 	//~ Instance fields --------------------------------------------------------
 
-	Map<String, Object> aCommandLineSwitches;
+	Map<String, String> aCommandLineSwitches;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -81,7 +84,7 @@ public class CommandLine
 	}
 
 	/***************************************
-	 * Creates a new command line instance. Parses the command line withe the
+	 * Creates a new command line instance. Parses the command line with the
 	 * static {@link #parse(String[], Pattern) parse()} method.
 	 *
 	 * @param  rArgs       The list of command line arguments
@@ -106,7 +109,7 @@ public class CommandLine
 	 * That means especially that they must not contain capturing groups as
 	 * these are used to find switches and switch values.
 	 *
-	 * <p>To make the assigment of a value to a switch mandatory the assignment
+	 * <p>To make the assignment of a value to a switch mandatory the assignment
 	 * token must be appended to it. For example, to enforce that switch
 	 * '-value' gets a value assigned, use the string 'value=' (if the
 	 * assignment token is'=').</p>
@@ -208,7 +211,7 @@ public class CommandLine
 	 *
 	 * @throws IllegalArgumentException If one of the arguments is invalid
 	 */
-	public static Map<String, Object> parse(String[] rArgs)
+	public static Map<String, String> parse(String[] rArgs)
 	{
 		return parse(rArgs, Pattern.compile(DEFAULT_ARGUMENT_PATTERN));
 	}
@@ -219,11 +222,9 @@ public class CommandLine
 	 * the value of the rArgPattern parameter is NULL). If the pattern matches
 	 * the first group in the pattern will be considered to be a command line
 	 * switch and stored in the result map as a key. If the matched pattern
-	 * contains another group it's string value will be converted into an object
-	 * by invoking {@link TextUtil#parseObject(String)}. The result will be
-	 * stored in the map as the value associated with the command line switch.
-	 * If the pattern contains only a single group the value associated with a
-	 * switch will be NULL.
+	 * contains another group it's string value will be stored in the map as the
+	 * value associated with the command line switch. If the pattern contains
+	 * only a single group the value associated with a switch will be NULL.
 	 *
 	 * <p>To allow correct parsing of the arguments the argument pattern must
 	 * contain at least one capturing group that identifies the name of the
@@ -241,8 +242,8 @@ public class CommandLine
 	 *
 	 * <p>The returned map will contain the switches in the same order they
 	 * appear in the argument list. If the same switch appears multiple times in
-	 * the command line the value of the last occurence will be contained in the
-	 * result map.</p>
+	 * the command line the value of the last occurrence will be contained in
+	 * the result map.</p>
 	 *
 	 * @param  rArgs       The list of command line arguments
 	 * @param  rArgPattern The pattern to parse a single command line switch or
@@ -253,13 +254,16 @@ public class CommandLine
 	 *
 	 * @throws IllegalArgumentException If an argument cannot be parsed
 	 */
-	public static Map<String, Object> parse(String[] rArgs, Pattern rArgPattern)
+	public static Map<String, String> parse(String[] rArgs, Pattern rArgPattern)
 	{
-		Map<String, Object> aSwitches =
-			new LinkedHashMap<String, Object>(rArgs.length);
+		Map<String, String> aSwitches =
+			new LinkedHashMap<String, String>(rArgs.length);
 
-		for (String sArg : rArgs)
+		int nLastArg = rArgs.length - 1;
+
+		for (int i = 0; i <= nLastArg; i++)
 		{
+			String  sArg	    = rArgs[i];
 			Matcher aArgMatcher = rArgPattern.matcher(sArg);
 			boolean bMatch	    = aArgMatcher.matches();
 
@@ -276,13 +280,13 @@ public class CommandLine
 				}
 
 				String sSwitch = aArgMatcher.group(nGroup);
-				Object rValue  = null;
+				String sValue  = null;
 
 				nGroup = TextUtil.nextGroup(aArgMatcher, nGroup + 1);
 
 				if (nGroup != -1)
 				{
-					rValue = TextUtil.parseObject(aArgMatcher.group(nGroup));
+					sValue = aArgMatcher.group(nGroup);
 				}
 
 				if ((rArgPattern.flags() & Pattern.CASE_INSENSITIVE) != 0)
@@ -290,7 +294,11 @@ public class CommandLine
 					sSwitch = sSwitch.toLowerCase();
 				}
 
-				aSwitches.put(sSwitch, rValue);
+				aSwitches.put(sSwitch, sValue);
+			}
+			else if (i == nLastArg)
+			{
+				aSwitches.put(TRAILING_ARG, sArg);
 			}
 			else
 			{
@@ -337,6 +345,26 @@ public class CommandLine
 	}
 
 	/***************************************
+	 * Returns any trailing argument string that is not assigned to a switch.
+	 *
+	 * @return The trailing argument or NULL for none
+	 */
+	public String getTrailingArgument()
+	{
+		return aCommandLineSwitches.get(TRAILING_ARG);
+	}
+
+	/***************************************
+	 * Checks whether this instance has at least one argument.
+	 *
+	 * @return TRUE if at least one command line argument is present
+	 */
+	public boolean hasArguments()
+	{
+		return !aCommandLineSwitches.isEmpty();
+	}
+
+	/***************************************
 	 * Checks if a certain switch exists in this command line. This method is
 	 * case-sensitive. If an application has created the command line to be
 	 * case-insensitive (e.g. by using the default pattern) it must always
@@ -355,11 +383,11 @@ public class CommandLine
 	/***************************************
 	 * Returns a string representation of this command line.
 	 *
-	 * @return A string description
+	 * @return A string describing this instance
 	 */
 	@Override
 	public String toString()
 	{
-		return "CommandLine[" + aCommandLineSwitches + "]";
+		return "CommandLine" + aCommandLineSwitches;
 	}
 }
