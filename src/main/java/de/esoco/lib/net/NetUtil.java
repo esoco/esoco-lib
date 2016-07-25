@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+
+import java.util.regex.Pattern;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -108,6 +110,20 @@ public class NetUtil
 			nProxyPort =
 				Integer.parseInt(System.getProperty(bSSL ? "https.proxyPort"
 														 : "http.proxyPort"));
+
+			String sNonProxyHosts = System.getProperty("http.nonProxyHosts");
+
+			if (sNonProxyHosts != null)
+			{
+				sNonProxyHosts = sNonProxyHosts.replaceAll("\\.", "\\.");
+				sNonProxyHosts = sNonProxyHosts.replaceAll("\\*", ".*");
+
+				if (Pattern.matches(sNonProxyHosts, sHost))
+				{
+					sProxyHost = null;
+					nProxyPort = 0;
+				}
+			}
 		}
 
 		if (bSSL)

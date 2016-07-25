@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -130,10 +130,20 @@ public class SocketEndpoint extends Endpoint
 	@SuppressWarnings("boxing")
 	public static String url(String sHost, int nPort, boolean bEncrypted)
 	{
-		return String.format("%s://%s:%d",
-							 bEncrypted ? "sockets" : "socket",
-							 sHost,
-							 nPort);
+		String sUrl;
+
+		String sScheme = bEncrypted ? "sockets" : "socket";
+
+		if (nPort > 0)
+		{
+			sUrl = String.format("%s://%s:%d", sScheme, sHost, nPort);
+		}
+		else
+		{
+			sUrl = String.format("%s://%s", sScheme, sHost);
+		}
+
+		return sUrl;
 	}
 
 	//~ Methods ----------------------------------------------------------------
