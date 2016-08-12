@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,6 +47,24 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAXIMUM_RESPONSE_SIZE
 public class HttpEndpoint extends Endpoint
 {
 	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Sets the http basic auth.
+	 *
+	 * @param rUrlConnection The new http basic auth
+	 * @param sUserName      The new http basic auth
+	 * @param sPassword      The new http basic auth
+	 */
+	public static void enableHttpBasicAuth(URLConnection rUrlConnection,
+										   String		 sUserName,
+										   String		 sPassword)
+	{
+		String sAuth = sUserName + ":" + sPassword;
+
+		sAuth = Base64.getEncoder().encodeToString(sAuth.getBytes());
+
+		rUrlConnection.setRequestProperty("Authorization", "Basic " + sAuth);
+	}
 
 	/***************************************
 	 * Returns a new HTTP GET method without a preset target URL.
@@ -164,6 +183,14 @@ public class HttpEndpoint extends Endpoint
 					createUrlConnection(rConnection, sTargetUrl);
 
 				String sEncoding = rConnection.get(ENDPOINT_ENCODING);
+				String sUserName = rConnection.getUserName();
+
+				if (sUserName != null)
+				{
+					enableHttpBasicAuth(aUrlConnection,
+										sUserName,
+										rConnection.getPassword());
+				}
 
 				if (bIsPostRequest)
 				{
