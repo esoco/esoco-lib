@@ -355,7 +355,7 @@ public class NetUtil
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
-		 * @see X509TrustManager#checkClientTrusted(X509Certificate[], String);
+		 * @see X509TrustManager#checkClientTrusted(X509Certificate[], String)
 		 */
 		@Override
 		public void checkClientTrusted(X509Certificate[] rArg0, String rArg1)
