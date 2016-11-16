@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.expression.Function;
+import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.StreamUtil;
 
 import java.io.IOException;
@@ -34,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.BUFFER_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ENCODING;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAXIMUM_RESPONSE_SIZE;
@@ -67,7 +70,9 @@ public class HttpEndpoint extends Endpoint
 	}
 
 	/***************************************
-	 * Returns a new HTTP GET method without a preset target URL.
+	 * Returns a new HTTP GET method without a default target URL. The returned
+	 * method must always be invoked with an explicit URL argument or else a
+	 * NullPointerException will occur.
 	 *
 	 * @return The new communication method
 	 */
@@ -85,7 +90,10 @@ public class HttpEndpoint extends Endpoint
 	 */
 	public static CommunicationMethod<String, String> httpGet(String sTargetUrl)
 	{
-		return new GenericHttpRequest(sTargetUrl, null, false);
+		return new HttpGetRequest<String, String>("HttpGet(%s)",
+												  sTargetUrl,
+												  null,
+												  Functions.<String>identity());
 	}
 
 	/***************************************
@@ -100,7 +108,11 @@ public class HttpEndpoint extends Endpoint
 		String				sTargetUrl,
 		Map<String, String> rParams)
 	{
-		return new GenericHttpRequest(sTargetUrl, rParams, true);
+		return new HttpPostRequest<String, String>("HttpPost(%s)",
+												   sTargetUrl,
+												   rParams,
+												   Functions
+												   .<String>identity());
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -125,16 +137,15 @@ public class HttpEndpoint extends Endpoint
 
 	/********************************************************************
 	 * An abstract base implementation for communication methods that implement
-	 * HTTP requests.
+	 * HTTP GET requests.
 	 *
 	 * @author eso
 	 */
-	public static abstract class AbstractHttpRequest<I, O>
-		extends CommunicationMethod<I, O>
+	public static class HttpGetRequest<I, O> extends CommunicationMethod<I, O>
 	{
 		//~ Instance fields ----------------------------------------------------
 
-		private boolean bIsPostRequest;
+		private Function<String, O> fProcessResponse;
 
 		private final Map<String, String> aHttpParams =
 			new LinkedHashMap<String, String>();
@@ -144,19 +155,22 @@ public class HttpEndpoint extends Endpoint
 		/***************************************
 		 * Creates a new instance.
 		 *
-		 * @param sMethodName    The name of this method
-		 * @param rDefaultInput  The default input value
-		 * @param rHttpParams    Optional HTTP parameters or NULL for none
-		 * @param bIsPostRequest TRUE for a POST request, FALSE for GET
+		 * @param sMethodName      The name of this method
+		 * @param rDefaultInput    The default input value
+		 * @param rHttpParams      Optional HTTP parameters (NULL or empty for
+		 *                         none)
+		 * @param fProcessResponse A function to be invoked to process the raw
+		 *                         (text) response into the output format of
+		 *                         this communication method.
 		 */
-		public AbstractHttpRequest(String			   sMethodName,
-								   I				   rDefaultInput,
-								   Map<String, String> rHttpParams,
-								   boolean			   bIsPostRequest)
+		public HttpGetRequest(String			  sMethodName,
+							  I					  rDefaultInput,
+							  Map<String, String> rHttpParams,
+							  Function<String, O> fProcessResponse)
 		{
 			super(sMethodName, rDefaultInput);
 
-			this.bIsPostRequest = bIsPostRequest;
+			this.fProcessResponse = fProcessResponse;
 
 			if (rHttpParams != null)
 			{
@@ -170,45 +184,15 @@ public class HttpEndpoint extends Endpoint
 		 * {@inheritDoc}
 		 */
 		@Override
+		@SuppressWarnings("boxing")
 		public O doOn(Connection rConnection, I rInput)
 		{
 			String sRawResponse = null;
 
 			try
 			{
-				String sTargetUrl =
-					getTargetUrl(rConnection, rInput, !bIsPostRequest);
-
 				URLConnection aUrlConnection =
-					createUrlConnection(rConnection, sTargetUrl);
-
-				String sEncoding = rConnection.get(ENDPOINT_ENCODING);
-				String sUserName = rConnection.getUserName();
-
-				if (sUserName != null)
-				{
-					enableHttpBasicAuth(aUrlConnection,
-										sUserName,
-										rConnection.getPassword());
-				}
-
-				if (bIsPostRequest)
-				{
-					aUrlConnection.setDoOutput(true);
-					aUrlConnection.setRequestProperty("Content-Type",
-													  "application/x-www-form-urlencoded;charset=" +
-													  sEncoding.toLowerCase());
-
-					try (OutputStream rOutput = aUrlConnection.getOutputStream())
-					{
-						String sParams = encodeParameters(rConnection);
-
-						if (sParams.length() > 0)
-						{
-							rOutput.write(sParams.getBytes(sEncoding));
-						}
-					}
-				}
+					setupUrlConnection(rConnection, rInput);
 
 				try (InputStream rInputStream = aUrlConnection.getInputStream())
 				{
@@ -216,7 +200,10 @@ public class HttpEndpoint extends Endpoint
 					int    nMax   =
 						rConnection.get(MAXIMUM_RESPONSE_SIZE).intValue();
 
-					sRawResponse = StreamUtil.readAll(aInput, 1024 * 8, nMax);
+					sRawResponse =
+						StreamUtil.readAll(aInput,
+										   rConnection.get(BUFFER_SIZE),
+										   nMax);
 				}
 			}
 			catch (Exception e)
@@ -224,7 +211,7 @@ public class HttpEndpoint extends Endpoint
 				throw new CommunicationException(e);
 			}
 
-			return processResponse(rConnection, sRawResponse);
+			return processResponse(sRawResponse);
 		}
 
 		/***************************************
@@ -242,36 +229,54 @@ public class HttpEndpoint extends Endpoint
 		}
 
 		/***************************************
-		 * Must be implemented by subclasses to process the response received
-		 * from the endpoint into an implementation-specific output value.
+		 * Creates and initializes the URL connection used to communicate with
+		 * the HTTP endpoint.
 		 *
-		 * @param  rConnection  The connection to process the response for
-		 * @param  sRawResponse The raw response string to process
+		 * @param  rConnection The endpoint connection
+		 * @param  rInput      The input value for this communication method
 		 *
-		 * @return The processed output value
+		 * @return The URL connection
+		 *
+		 * @throws IOException If the setup fails
 		 */
-		protected abstract O processResponse(
+		public URLConnection setupUrlConnection(
 			Connection rConnection,
-			String	   sRawResponse);
+			I		   rInput) throws IOException
+		{
+			String sTargetUrl = getTargetUrl(rConnection, rInput);
+
+			URLConnection aUrlConnection =
+				createUrlConnection(rConnection, sTargetUrl);
+
+			String sUserName = rConnection.getUserName();
+
+			if (sUserName != null)
+			{
+				enableHttpBasicAuth(aUrlConnection,
+									sUserName,
+									rConnection.getPassword());
+			}
+
+			return aUrlConnection;
+		}
 
 		/***************************************
 		 * Helper method that builds the full URL for a certain endpoint
 		 * request.
 		 *
-		 * @param  rConnection   The connection to create the URL for
-		 * @param  sBaseUrl      The endpoint-relative base URL to build upon
-		 * @param  bAppendParams TRUE to append the connection parameters to the
-		 *                       URL, FALSE to leave the target URL unchanged
+		 * @param  rConnection The connection to create the URL for
+		 * @param  sBaseUrl    The endpoint-relative base URL to build upon
 		 *
 		 * @return The URL connection
 		 *
 		 * @throws IOException If initializing or opening the connection fails
 		 */
-		protected String createEndpointUrl(Connection rConnection,
-										   String	  sBaseUrl,
-										   boolean    bAppendParams)
-			throws IOException
+		protected String createEndpointUrl(
+			Connection rConnection,
+			String	   sBaseUrl) throws IOException
 		{
+			String sParams = getUrlParameters(rConnection);
+
 			StringBuilder aUrlBuilder =
 				new StringBuilder(rConnection.getEndpoint()
 								  .get(ENDPOINT_ADDRESS)
@@ -285,15 +290,10 @@ public class HttpEndpoint extends Endpoint
 
 			aUrlBuilder.append(sBaseUrl);
 
-			if (bAppendParams)
+			if (sParams.length() > 0)
 			{
-				String sParams = encodeParameters(rConnection);
-
-				if (sParams.length() > 0)
-				{
-					aUrlBuilder.append('?');
-					aUrlBuilder.append(sParams);
-				}
+				aUrlBuilder.append('?');
+				aUrlBuilder.append(sParams);
 			}
 
 			return aUrlBuilder.toString();
@@ -368,22 +368,47 @@ public class HttpEndpoint extends Endpoint
 		 * #createEndpointUrl(Connection, String, boolean)}. Subclasses can
 		 * override this method to process the input value in different ways.
 		 *
-		 * @param  rConnection   The connection to return the target URL for
-		 * @param  rInput        The input value to derive the URL from
-		 * @param  bAppendParams
+		 * @param  rConnection The connection to return the target URL for
+		 * @param  rInput      The input value to derive the URL from
 		 *
 		 * @return The target URL for this instance
 		 *
 		 * @throws IOException
 		 */
-		protected String getTargetUrl(Connection rConnection,
-									  I			 rInput,
-									  boolean    bAppendParams)
+		protected String getTargetUrl(Connection rConnection, I rInput)
 			throws IOException
 		{
-			return createEndpointUrl(rConnection,
-									 rInput.toString(),
-									 bAppendParams);
+			return createEndpointUrl(rConnection, rInput.toString());
+		}
+
+		/***************************************
+		 * Returns the encoded parameter string that needs to be appended to the
+		 * request URL. Can be overridden by sublcasses to modify the default
+		 * behavior.
+		 *
+		 * @param  rConnection The connection for which to encode the parameters
+		 *
+		 * @return The encoded string (must be empty for no parameter)
+		 *
+		 * @throws UnsupportedEncodingException If encoding the parameters fails
+		 */
+		protected String getUrlParameters(Connection rConnection)
+			throws UnsupportedEncodingException
+		{
+			return encodeParameters(rConnection);
+		}
+
+		/***************************************
+		 * Invokes the response processing function. Can be overridden by
+		 * subclasses to extend or modify the processing.
+		 *
+		 * @param  sRawResponse The original response received from the endpoint
+		 *
+		 * @return The processed response
+		 */
+		protected O processResponse(String sRawResponse)
+		{
+			return fProcessResponse.evaluate(sRawResponse);
 		}
 
 		/***************************************
@@ -399,46 +424,72 @@ public class HttpEndpoint extends Endpoint
 	}
 
 	/********************************************************************
-	 * A generic implementation of HTTP requests that uses strings as input and
-	 * output values.
+	 * An abstract base implementation for communication methods that implement
+	 * HTTP POST requests.
 	 *
 	 * @author eso
 	 */
-	public static class GenericHttpRequest
-		extends AbstractHttpRequest<String, String>
+	public static class HttpPostRequest<I, O> extends HttpGetRequest<I, O>
 	{
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
-		 * Subclass constructor that accepts a method name.
-		 *
-		 * @param sTargetUrl     The connection-relative target URL to retrieve
-		 * @param rParams        The request parameters
-		 * @param bIsPostRequest sMethodName The name of the method
+		 * {@inheritDoc}
 		 */
-		protected GenericHttpRequest(String				 sTargetUrl,
-									 Map<String, String> rParams,
-									 boolean			 bIsPostRequest)
+		public HttpPostRequest(String			   sMethodName,
+							   I				   rDefaultInput,
+							   Map<String, String> rHttpParams,
+							   Function<String, O> fProcessResponse)
 		{
-			super(bIsPostRequest ? "HttpPost(%s)" : "HttpGet(%s)",
-				  sTargetUrl,
-				  rParams,
-				  bIsPostRequest);
+			super(sMethodName, rDefaultInput, rHttpParams, fProcessResponse);
 		}
 
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
-		 * Simply return the original response string.
+		 * Overridden to initialize the connection for a POST request.
 		 *
-		 * @see AbstractHttpRequest#processResponse(Connection, String)
+		 * @see HttpGetRequest#setupUrlConnection(Connection, Object)
 		 */
 		@Override
-		protected String processResponse(
+		public URLConnection setupUrlConnection(
 			Connection rConnection,
-			String	   sResponse)
+			I		   rInput) throws IOException
 		{
-			return sResponse;
+			URLConnection rUrlConnection =
+				super.setupUrlConnection(rConnection, rInput);
+
+			String sEncoding = rConnection.get(ENDPOINT_ENCODING);
+
+			rUrlConnection.setDoOutput(true);
+			rUrlConnection.setRequestProperty("Content-Type",
+											  "application/x-www-form-urlencoded;charset=" +
+											  sEncoding.toLowerCase());
+
+			try (OutputStream rOutput = rUrlConnection.getOutputStream())
+			{
+				String sParams = encodeParameters(rConnection);
+
+				if (sParams.length() > 0)
+				{
+					rOutput.write(sParams.getBytes(sEncoding));
+				}
+			}
+
+			return rUrlConnection;
+		}
+
+		/***************************************
+		 * Overridden to return an empty string because parameters are sent in
+		 * the POST request.
+		 *
+		 * @see HttpGetRequest#getUrlParameters(Connection)
+		 */
+		@Override
+		protected String getUrlParameters(Connection rConnection)
+			throws UnsupportedEncodingException
+		{
+			return "";
 		}
 	}
 }
