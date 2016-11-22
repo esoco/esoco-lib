@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-2.0
+//		 http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,6 +45,11 @@ import static org.obrel.core.RelationTypes.newType;
  * implementations must provide a no-arguments constructor which it is used by
  * the factory method {@link #at(String)} to create new endpoint instances.
  *
+ * <p>Some endpoint implementations may need access to global configuration
+ * values. These can be injected by invoking the static method {@link
+ * #setGlobalConfiguration(Relatable)}. The provided {@link Relatable} instance
+ * must then contain relations with the respective configuration values.</p>
+ *
  * @author eso
  */
 public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
@@ -78,7 +83,8 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 
 	/**
 	 * A relatable object that provides global configuration data for all
-	 * endpoints. Must be set through the {@link #init(Relatable)} method.
+	 * endpoints. Must be initialized by invoking {@link
+	 * #setGlobalConfiguration(Relatable)}.
 	 */
 	private static Relatable rGlobalConfig = null;
 
