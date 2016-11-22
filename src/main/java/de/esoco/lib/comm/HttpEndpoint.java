@@ -197,6 +197,16 @@ public class HttpEndpoint extends Endpoint
 		}
 
 		/***************************************
+		 * Returns the function that processes server responses.
+		 *
+		 * @return The response processor function
+		 */
+		public final Function<String, O> getResponseProcessor()
+		{
+			return fProcessResponse;
+		}
+
+		/***************************************
 		 * Creates and initializes the URL connection used to communicate with
 		 * the HTTP endpoint.
 		 *
@@ -333,7 +343,8 @@ public class HttpEndpoint extends Endpoint
 		 * Returns the map of the HTTP parameters used by this instance when
 		 * accessing the given connection.
 		 *
-		 * @param  rConnection The connection to return the parameters for
+		 * @param  rConnection The connection to return the parameters for or
+		 *                     NULL to return the default HTTP parameters
 		 *
 		 * @return A mapping from parameter names to values (may be empty but
 		 *         will never be NULL)
