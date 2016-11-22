@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-2.0
+//		 http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package de.esoco.lib.comm;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.StreamUtil;
+import de.esoco.lib.net.NetUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,24 +50,6 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAXIMUM_RESPONSE_SIZE
 public class HttpEndpoint extends Endpoint
 {
 	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Sets the http basic auth.
-	 *
-	 * @param rUrlConnection The new http basic auth
-	 * @param sUserName      The new http basic auth
-	 * @param sPassword      The new http basic auth
-	 */
-	public static void enableHttpBasicAuth(URLConnection rUrlConnection,
-										   String		 sUserName,
-										   String		 sPassword)
-	{
-		String sAuth = sUserName + ":" + sPassword;
-
-		sAuth = Base64.getEncoder().encodeToString(sAuth.getBytes());
-
-		rUrlConnection.setRequestProperty("Authorization", "Basic " + sAuth);
-	}
 
 	/***************************************
 	 * Returns a new HTTP GET method without a default target URL. The returned
@@ -136,8 +118,8 @@ public class HttpEndpoint extends Endpoint
 	//~ Inner Classes ----------------------------------------------------------
 
 	/********************************************************************
-	 * An abstract base implementation for communication methods that implement
-	 * HTTP GET requests.
+	 * Implementation of a communication method that performs a HTTP GET
+	 * request. Can be sub-classed for more specific request implementations.
 	 *
 	 * @author eso
 	 */
@@ -215,20 +197,6 @@ public class HttpEndpoint extends Endpoint
 		}
 
 		/***************************************
-		 * Returns the map of the HTTP parameters used by this instance when
-		 * accessing the given connection.
-		 *
-		 * @param  rConnection The connection to return the parameters for
-		 *
-		 * @return A mapping from parameter names to values (may be empty but
-		 *         will never be NULL)
-		 */
-		public final Map<String, String> getParameters(Connection rConnection)
-		{
-			return aHttpParams;
-		}
-
-		/***************************************
 		 * Creates and initializes the URL connection used to communicate with
 		 * the HTTP endpoint.
 		 *
@@ -252,9 +220,9 @@ public class HttpEndpoint extends Endpoint
 
 			if (sUserName != null)
 			{
-				enableHttpBasicAuth(aUrlConnection,
-									sUserName,
-									rConnection.getPassword());
+				NetUtil.enableHttpBasicAuth(aUrlConnection,
+											sUserName,
+											rConnection.getPassword());
 			}
 
 			return aUrlConnection;
@@ -341,7 +309,7 @@ public class HttpEndpoint extends Endpoint
 			StringBuilder aParams = new StringBuilder();
 
 			for (Entry<String, String> rParam :
-				 getParameters(rConnection).entrySet())
+				 getHttpParameters(rConnection).entrySet())
 			{
 				String sEncoding = rConnection.get(ENDPOINT_ENCODING);
 
@@ -359,6 +327,20 @@ public class HttpEndpoint extends Endpoint
 			}
 
 			return aParams.toString();
+		}
+
+		/***************************************
+		 * Returns the map of the HTTP parameters used by this instance when
+		 * accessing the given connection.
+		 *
+		 * @param  rConnection The connection to return the parameters for
+		 *
+		 * @return A mapping from parameter names to values (may be empty but
+		 *         will never be NULL)
+		 */
+		protected Map<String, String> getHttpParameters(Connection rConnection)
+		{
+			return aHttpParams;
 		}
 
 		/***************************************
@@ -410,22 +392,11 @@ public class HttpEndpoint extends Endpoint
 		{
 			return fProcessResponse.evaluate(sRawResponse);
 		}
-
-		/***************************************
-		 * A method for subclasses to set an HTTP parameter for this method.
-		 *
-		 * @param sKey   The parameter key
-		 * @param sValue The parameter value
-		 */
-		protected void setParameter(String sKey, String sValue)
-		{
-			aHttpParams.put(sKey, sValue);
-		}
 	}
 
 	/********************************************************************
-	 * An abstract base implementation for communication methods that implement
-	 * HTTP POST requests.
+	 * Implementation of a communication method that performs a HTTP POST
+	 * request. Can be sub-classed for more specific request implementations.
 	 *
 	 * @author eso
 	 */

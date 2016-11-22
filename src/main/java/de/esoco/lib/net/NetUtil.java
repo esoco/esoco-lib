@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-2.0
+//		 http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,11 +27,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
+import java.net.URLConnection;
 
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
+import java.util.Base64;
 import java.util.regex.Pattern;
 
 import javax.net.SocketFactory;
@@ -209,6 +211,24 @@ public class NetUtil
 		aSocket.startHandshake();
 
 		return aSocket;
+	}
+
+	/***************************************
+	 * Enables HTTP basic authentication for a certain {@link URLConnection}.
+	 *
+	 * @param rUrlConnection The URL connection
+	 * @param sUserName      The user name to perform the authentication with
+	 * @param sPassword      The password to perform the authentication with
+	 */
+	public static void enableHttpBasicAuth(URLConnection rUrlConnection,
+										   String		 sUserName,
+										   String		 sPassword)
+	{
+		String sAuth = sUserName + ":" + sPassword;
+
+		sAuth = Base64.getEncoder().encodeToString(sAuth.getBytes());
+
+		rUrlConnection.setRequestProperty("Authorization", "Basic " + sAuth);
 	}
 
 	/***************************************
