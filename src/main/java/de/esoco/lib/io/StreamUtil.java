@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -246,8 +246,8 @@ public final class StreamUtil
 	/***************************************
 	 * Reads all bytes from a stream until the next occurrence of a certain
 	 * token and returns the bytes read as a byte array (without the search
-	 * token). Invokes {@link #find(InputStream, Object, int, boolean,
-	 * ReadHandler) searchToken()} to perform the actual search.
+	 * token). Invokes {@link #find(InputStream, byte[], int, ReadHandler)} to
+	 * perform the actual search.
 	 *
 	 * @param  rIn    The input stream to read from
 	 * @param  rToken The token to read up to
@@ -294,8 +294,8 @@ public final class StreamUtil
 	/***************************************
 	 * Reads a string from a character stream until the next occurrence of a
 	 * certain token and returns the bytes read as a byte array (without the
-	 * search token). Invokes {@link #find(InputStream, Object, int, boolean,
-	 * ReadHandler) searchToken()} to perform the actual search.
+	 * search token). Invokes {@link #find(Reader, String, int, boolean,
+	 * ReadHandler)} to perform the actual search.
 	 *
 	 * @param  rInput      The input stream to read from
 	 * @param  sToken      The token to read up to

@@ -1,8 +1,8 @@
 rootProject.name = "esoco-lib"
 
-include ':esoco-common'
-project(':esoco-common').projectDir = new File('../esoco-common')
+def baseProjects = [':esoco-common',':objectrelations']
 
-include ':objectrelations'
-project(':objectrelations').projectDir = new File('../objectrelations')
-
+baseProjects.each { projectName ->
+	include projectName
+	project(projectName).projectDir = new File("../${projectName.substring(1)}")
+}

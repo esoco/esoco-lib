@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -298,8 +298,8 @@ public class XmlWriter
 	/***************************************
 	 * Writes a block of unparsed character data as the current element's
 	 * content. This will insert an XML CDATA block into the output. If the data
-	 * string contains occurrences of the CDATA termination string ']]>' it will
-	 * be split into multiple CDATA sections.
+	 * string contains occurrences of the CDATA termination string ']]&gt;' it
+	 * will be split into multiple CDATA sections.
 	 *
 	 * @param  sData The string containing the unparsed character data
 	 *

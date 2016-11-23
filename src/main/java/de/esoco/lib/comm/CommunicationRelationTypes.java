@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,6 +65,14 @@ public class CommunicationRelationTypes
 	@SuppressWarnings("boxing")
 	public static final RelationType<Integer> MAXIMUM_RESPONSE_SIZE =
 		newInitialValueType(1024 * 1024);
+
+	/**
+	 * The buffer size to be used when communicating over an endpoint
+	 * connection. Default value is 8 KiB.
+	 */
+	@SuppressWarnings("boxing")
+	public static final RelationType<Integer> BUFFER_SIZE =
+		newInitialValueType(1024 * 8);
 
 	/**
 	 * A flag that indicates that a connection performs encrypted communication
