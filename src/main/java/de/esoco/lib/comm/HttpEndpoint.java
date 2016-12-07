@@ -39,7 +39,7 @@ import java.util.Map.Entry;
 import static de.esoco.lib.comm.CommunicationRelationTypes.BUFFER_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ENCODING;
-import static de.esoco.lib.comm.CommunicationRelationTypes.MAXIMUM_RESPONSE_SIZE;
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 
 
 /********************************************************************
@@ -180,7 +180,7 @@ public class HttpEndpoint extends Endpoint
 				{
 					Reader aInput = new InputStreamReader(rInputStream);
 					int    nMax   =
-						rConnection.get(MAXIMUM_RESPONSE_SIZE).intValue();
+						rConnection.get(MAX_RESPONSE_SIZE).intValue();
 
 					sRawResponse =
 						StreamUtil.readAll(aInput,

@@ -36,6 +36,7 @@ import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.TRUST_SELF_SIGNED_CERTIFICATES;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
@@ -325,19 +326,20 @@ public class SocketEndpoint extends Endpoint
 		 * {@inheritDoc}
 		 */
 		@Override
+		@SuppressWarnings("boxing")
 		protected byte[] readResponse(
 			Connection  rConnection,
 			InputStream rInputStream) throws Exception
 		{
-			byte[] rResult = null;
+			int    nResponseSize = rConnection.get(MAX_RESPONSE_SIZE);
+			byte[] rResult		 = null;
 
 			if (fGetResponseSize != null)
 			{
-				@SuppressWarnings("boxing")
-				int nResponseSize = fGetResponseSize.evaluate(rInputStream);
-
-				rResult = StreamUtil.readAll(rInputStream, 1024, nResponseSize);
+				nResponseSize = fGetResponseSize.evaluate(rInputStream);
 			}
+
+			rResult = StreamUtil.readAll(rInputStream, 1024, nResponseSize);
 
 			return rResult;
 		}
@@ -398,22 +400,22 @@ public class SocketEndpoint extends Endpoint
 			Connection  rConnection,
 			InputStream rInputStream) throws Exception
 		{
-			String sResult = null;
+			Reader aReader		 = rConnection.get(ENDPOINT_SOCKET_READER);
+			int    nResponseSize = rConnection.get(MAX_RESPONSE_SIZE);
+			String sResult		 = null;
+
+			if (aReader == null)
+			{
+				aReader = new InputStreamReader(rInputStream);
+				rConnection.set(ENDPOINT_SOCKET_READER, aReader);
+			}
 
 			if (fGetResponseSize != null)
 			{
-				Reader aReader = rConnection.get(ENDPOINT_SOCKET_READER);
-
-				if (aReader == null)
-				{
-					aReader = new InputStreamReader(rInputStream);
-					rConnection.set(ENDPOINT_SOCKET_READER, aReader);
-				}
-
-				int nResponseSize = fGetResponseSize.evaluate(aReader);
-
-				sResult = StreamUtil.readAll(aReader, 1024, nResponseSize);
+				nResponseSize = fGetResponseSize.evaluate(aReader);
 			}
+
+			sResult = StreamUtil.readAll(aReader, 1024, nResponseSize);
 
 			return sResult;
 		}

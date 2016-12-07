@@ -59,11 +59,27 @@ public class CommunicationRelationTypes
 	public static final RelationType<String> PASSWORD = newType();
 
 	/**
+	 * The maximum number of (concurrent) connections to or from a communication
+	 * component. Defaults to 1.
+	 */
+	@SuppressWarnings("boxing")
+	public static final RelationType<Integer> MAX_CONNECTIONS =
+		newInitialValueType(1);
+
+	/**
+	 * The maximum size that a request to a server allowed to have. Has a
+	 * default value of 1 KiB.
+	 */
+	@SuppressWarnings("boxing")
+	public static final RelationType<Integer> MAX_REQUEST_SIZE =
+		newInitialValueType(1024);
+
+	/**
 	 * The maximum size that the response of an endpoint communication is
 	 * allowed to have. Has a default value of 1 MiB.
 	 */
 	@SuppressWarnings("boxing")
-	public static final RelationType<Integer> MAXIMUM_RESPONSE_SIZE =
+	public static final RelationType<Integer> MAX_RESPONSE_SIZE =
 		newInitialValueType(1024 * 1024);
 
 	/**

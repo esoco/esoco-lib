@@ -17,28 +17,33 @@
 package de.esoco.lib.comm;
 
 import de.esoco.lib.logging.Log;
-import de.esoco.lib.manage.Startable;
 import de.esoco.lib.manage.Stoppable;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocketFactory;
 
 import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypes;
 import org.obrel.type.StandardTypes;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
+
 import static org.obrel.core.RelationTypes.newType;
+import static org.obrel.type.StandardTypes.NAME;
+import static org.obrel.type.StandardTypes.PORT;
 
 
 /********************************************************************
@@ -46,41 +51,36 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * @author eso
  */
-public class Server extends RelatedObject implements Startable, Stoppable
+public class Server extends RelatedObject implements Runnable, Stoppable
 {
 	//~ Static fields/initializers ---------------------------------------------
 
-	/**
-	 * A flag that indicates if this server is running and which can be set to
-	 * FALSE to stop a running server.
-	 */
-	public static final RelationType<Boolean> RUNNING = newType();
+	/** Must be set to define the request handler of this server. */
+	public static final RelationType<RequestHandler> REQUEST_HANDLER =
+		newType();
+
+	static
+	{
+		RelationTypes.init(Server.class);
+	}
 
 	//~ Instance fields --------------------------------------------------------
 
-	private ExecutorService aThreadPool;
-
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
-	 * Creates a new instance.
-	 */
-	public Server()
-	{
-	}
-
-	/***************************************
-	 * Creates a new instance that listens on a certain port.
-	 *
-	 * @param nPort The server port
-	 */
-	@SuppressWarnings("boxing")
-	public Server(int nPort)
-	{
-		set(StandardTypes.PORT, nPort);
-	}
+	private ThreadPoolExecutor aThreadPool;
+	private boolean			   bRunning;
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Checks whether this server is currently running.
+	 *
+	 * @return TRUE if the server is running, FALSE if it has been stopped (or
+	 *         not started yet)
+	 */
+	public final boolean isRunning()
+	{
+		return bRunning;
+	}
 
 	/***************************************
 	 * Starts this server instance on the port that is stored in the relation
@@ -93,33 +93,23 @@ public class Server extends RelatedObject implements Startable, Stoppable
 	 * @throws IOException If a communication error occurs
 	 */
 	@Override
-	public void start() throws IOException
+	public void run()
 	{
 		if (aThreadPool != null)
 		{
-			throw new IllegalStateException("Sever already started");
+			throw new IllegalStateException(getServerName() +
+											" already started");
 		}
 
-		@SuppressWarnings("boxing")
-		int nPort = get(StandardTypes.PORT);
+		Log.infof("%s started", getServerName());
 
-		aThreadPool = Executors.newCachedThreadPool();
-
-		try (ServerSocket aServerSocket = createServerSocket(nPort))
+		try
 		{
-			while (hasFlag(RUNNING))
-			{
-				final Socket rClientSocket = aServerSocket.accept();
-
-				aThreadPool.execute(new Runnable()
-					{
-						@Override
-						public void run()
-						{
-							handleClientRequest(rClientSocket);
-						}
-					});
-			}
+			runServerLoop();
+		}
+		catch (Exception e)
+		{
+			throw new CommunicationException(e);
 		}
 	}
 
@@ -129,17 +119,49 @@ public class Server extends RelatedObject implements Startable, Stoppable
 	 * are still processed.
 	 */
 	@Override
-	@SuppressWarnings("boxing")
 	public void stop()
 	{
 		if (aThreadPool == null)
 		{
-			throw new IllegalStateException("Server not started");
+			throw new IllegalStateException(getServerName() + " not started");
 		}
 
-		set(RUNNING, false);
 		aThreadPool.shutdown();
 		aThreadPool = null;
+		bRunning    = false;
+
+		Log.infof("%s stopped", getServerName());
+	}
+
+	/***************************************
+	 * A builder-style method to set a certain relation and then return this
+	 * instance for concatenation.
+	 *
+	 * @param  rType  The type of the relation to set
+	 * @param  rValue The relation value
+	 *
+	 * @return This instance for method concatenation
+	 */
+	public <T> Server with(RelationType<T> rType, T rValue)
+	{
+		set(rType, rValue);
+
+		return this;
+	}
+
+	/***************************************
+	 * A variant of {@link #with(RelationType, Object)} that performs the boxing
+	 * of integer values.
+	 *
+	 * @param  rType  The integer relation type to set
+	 * @param  nValue The integer value
+	 *
+	 * @return This instance for method concatenation
+	 */
+	@SuppressWarnings("boxing")
+	public Server with(RelationType<Integer> rType, int nValue)
+	{
+		return with(rType, (Integer) nValue);
 	}
 
 	/***************************************
@@ -155,7 +177,7 @@ public class Server extends RelatedObject implements Startable, Stoppable
 	{
 		ServerSocketFactory aServerSocketFactory;
 
-		if (hasFlag(CommunicationRelationTypes.ENCRYPTED_CONNECTION))
+		if (hasFlag(ENCRYPTED_CONNECTION))
 		{
 			aServerSocketFactory = SSLServerSocketFactory.getDefault();
 		}
@@ -178,28 +200,17 @@ public class Server extends RelatedObject implements Startable, Stoppable
 	 */
 	protected void handleClientRequest(Socket rClientSocket)
 	{
+		Log.infof("%s: handling request from %s",
+				  getServerName(),
+				  rClientSocket.getInetAddress());
+
 		try
 		{
-			BufferedReader rInput =
-				new BufferedReader(new InputStreamReader(rClientSocket
-														 .getInputStream()));
-			PrintWriter    rOut   =
-				new PrintWriter(rClientSocket.getOutputStream());
+			RequestHandler rRequestHandler = get(REQUEST_HANDLER);
 
-			String sInputLine;
-
-			while ((sInputLine = rInput.readLine()) != null)
-			{
-				System.out.println(sInputLine);
-
-				if (sInputLine.isEmpty())
-				{
-					break;
-				}
-			}
-
-			rOut.write("HTTP/1.0 200 OK\r\n");
-			rOut.write("\r\n");
+			rRequestHandler.handleRequest(this,
+										  rClientSocket.getInputStream(),
+										  rClientSocket.getOutputStream());
 		}
 		catch (Exception e)
 		{
@@ -216,5 +227,89 @@ public class Server extends RelatedObject implements Startable, Stoppable
 				Log.error("Socket close failed", e);
 			}
 		}
+	}
+
+	/***************************************
+	 * Runs the main server loop that listens for client requests and handles
+	 * them with the current request handler.
+	 *
+	 * @throws IOException If accessing the input or output streams fails
+	 */
+	@SuppressWarnings("boxing")
+	protected void runServerLoop() throws IOException
+	{
+		try (ServerSocket aServerSocket = createServerSocket(get(PORT)))
+		{
+			aThreadPool =
+				new ThreadPoolExecutor(0,
+									   get(MAX_CONNECTIONS),
+									   60L,
+									   TimeUnit.SECONDS,
+									   new SynchronousQueue<Runnable>());
+
+			bRunning = true;
+
+			while (bRunning)
+			{
+				Socket rClientSocket = aServerSocket.accept();
+
+				aThreadPool.execute(() -> handleClientRequest(rClientSocket));
+			}
+		}
+	}
+
+	/***************************************
+	 * Returns the name of this server instance.
+	 *
+	 * @return The server name
+	 */
+	private String getServerName()
+	{
+		String sName = get(NAME);
+
+		if (sName == null)
+		{
+			sName = getClass().getSimpleName();
+		}
+
+		return sName;
+	}
+
+	//~ Inner Interfaces -------------------------------------------------------
+
+	/********************************************************************
+	 * The functional interface that needs to be implemented for server request
+	 * handlers.
+	 *
+	 * @author eso
+	 */
+	@FunctionalInterface
+	public static interface RequestHandler
+	{
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * Implements the handling of a single server request by reading the
+		 * request from an input stream, processing it, and writing an adequate
+		 * response to the given output stream. The implementation must be
+		 * thread-safe because it may be invoked concurrently. But it should not
+		 * be generally synchronized. If resource synchronization is needed it
+		 * should only be performed where and when it absolutely necessary.
+		 *
+		 * <p>The implementation doesn't need to perform any kind of resource
+		 * management with the given stream parameters. That will be done by the
+		 * server implementation.</p>
+		 *
+		 * @param  rServer   The server instance to provide access to the server
+		 *                   configuration
+		 * @param  rRequest  The request input stream
+		 * @param  rResponse The response output stream
+		 *
+		 * @throws CommunicationException If handling the request fails
+		 */
+		public void handleRequest(Server	   rServer,
+								  InputStream  rRequest,
+								  OutputStream rResponse)
+			throws CommunicationException;
 	}
 }

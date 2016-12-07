@@ -47,7 +47,7 @@ import static org.obrel.type.MetaTypes.CLOSED;
  *
  * @author eso
  */
-public class CommunicationTest
+public class EndpointTest
 {
 	//~ Static fields/initializers ---------------------------------------------
 
