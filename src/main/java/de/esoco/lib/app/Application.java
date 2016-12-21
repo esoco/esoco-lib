@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ public abstract class Application extends RelatedObject
 	//~ Instance fields --------------------------------------------------------
 
 	private List<Object> aCleanupResources = null;
+	private CommandLine  aCommandLine;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -77,11 +78,103 @@ public abstract class Application extends RelatedObject
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Allows to register a resource for cleanup. Such resources must implement
-	 * at least one of the management interfaces {@link Stoppable}, {@link
-	 * RunCheck}, {@link Closeable}, or {@link Disposable}. This is checked by
-	 * an assertion. <b>Attention:</b> Subclasses must invoke the
-	 * super.cleanup() method to make this mechanism work.
+	 * Returns the command line of this application.
+	 *
+	 * @return The command line
+	 */
+	public final CommandLine getCommandLine()
+	{
+		return aCommandLine;
+	}
+
+	/***************************************
+	 * Registers a resource that implements the {@link Stoppable} interface to
+	 * be managed by this application.
+	 *
+	 * @param rResource The {@link Stoppable} resource
+	 */
+	public void manageResource(Stoppable rResource)
+	{
+		addManagedResource(rResource);
+	}
+
+	/***************************************
+	 * Registers a resource that implements the {@link Closeable} interface to
+	 * be managed by this application.
+	 *
+	 * @param rResource The {@link Closeable} resource
+	 */
+	public void manageResource(Closeable rResource)
+	{
+		addManagedResource(rResource);
+	}
+
+	/***************************************
+	 * Registers a resource that implements the {@link Disposable} interface to
+	 * be managed by this application.
+	 *
+	 * @param rResource The {@link Disposable} resource
+	 */
+	public void manageResource(Disposable rResource)
+	{
+		addManagedResource(rResource);
+	}
+
+	/***************************************
+	 * This method must be invoked on new instances. It will perform the default
+	 * steps necessary to initialize and run the application.
+	 *
+	 * @param rArgs The command line arguments of the application
+	 */
+	public final void run(String[] rArgs)
+	{
+		try
+		{
+			aCommandLine = processArguments(rArgs);
+
+			String sAppName = getClass().getSimpleName();
+
+			Log.debugf("%s initializing...", sAppName);
+			initialize(aCommandLine);
+			Log.debugf("%s configuring...", sAppName);
+			configure(aCommandLine);
+			Log.debugf("%s starting...", sAppName);
+			startApp();
+			runApp();
+			stopApp();
+		}
+		catch (CommandLineException e)
+		{
+			displayUsage(e);
+		}
+		catch (Exception e)
+		{
+			handleApplicationError(e);
+		}
+	}
+
+	/***************************************
+	 * This is the main method that must be implemented by all subclasses. It
+	 * contains the code the will perform the applications actual work task(s).
+	 * The implementation may throw exceptions to signal errors but it must be
+	 * aware that this will skip any final application method invocations. If
+	 * final cleanup tasks need to be run anyway the implementation should do so
+	 * in the method {@link #handleApplicationError(Exception)}, e.g. by
+	 * invoking the {@link #cleanup()} method.
+	 *
+	 * @throws Exception Subclasses may throw exceptions to signal errors
+	 */
+	protected abstract void runApp() throws Exception;
+
+	/***************************************
+	 * Allows to add a resource to be managed by this application. Such
+	 * resources must implement at least one of the management interfaces {@link
+	 * Stoppable}, {@link Closeable}, or {@link Disposable}. They may also
+	 * implement the {@link RunCheck} interface in which case the cleanup code
+	 * will wait for the shutdown of the resource after stopping it. This is
+	 * checked by an assertion. <b>Attention:</b> Subclasses must invoke the
+	 * super implementation of {@link #cleanup()} method to make this mechanism
+	 * work.
 	 *
 	 * <p>The management interface will be processed in the order in which they
 	 * are mentioned above. First all Stoppable objects will be stopped. Then it
@@ -97,12 +190,15 @@ public abstract class Application extends RelatedObject
 	 *
 	 * @param rResource The resource, implementing some management interfaces
 	 */
-	public void registerCleanupResource(Object rResource)
+	protected void addManagedResource(Object rResource)
 	{
-		assert rResource instanceof Stoppable ||
-			   rResource instanceof RunCheck ||
-			   rResource instanceof Closeable ||
-			   rResource instanceof Disposable : "No management interface implemented";
+		if (!(rResource instanceof Stoppable ||
+			  rResource instanceof Closeable ||
+			  rResource instanceof Disposable))
+		{
+			throw new IllegalArgumentException("No supported management interface implemented on " +
+											   rResource);
+		}
 
 		if (aCleanupResources == null)
 		{
@@ -113,87 +209,13 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
-	 * Allows to replace (or remove) a resource in the cleanup registry. If the
-	 * reference to the new resource is NULL, the old object will simply be
-	 * removed. Else the new object will replace the old one at exactly the same
-	 * position in the cleanup registry. That means that during cleanup it will
-	 * be released at the same time at which the old resource would have been
-	 * released.
-	 *
-	 * @param rOld The resource object to be replaced
-	 * @param rNew The new resource or NULL to remove the old one
-	 */
-	public void replaceCleanupResource(Object rOld, Object rNew)
-	{
-		if (aCleanupResources != null)
-		{
-			if (rNew == null)
-			{
-				aCleanupResources.remove(rOld);
-			}
-			else
-			{
-				int nPos = aCleanupResources.indexOf(rOld);
-
-				if (nPos >= 0)
-				{
-					aCleanupResources.set(nPos, rNew);
-				}
-				else
-				{
-					aCleanupResources.add(rNew);
-				}
-			}
-		}
-	}
-
-	/***************************************
-	 * This method must be invoked on new instances. It will perform the default
-	 * steps necessary to initialize and run the application.
-	 *
-	 * @param rArgs The command line arguments of the application
-	 */
-	public final void run(String[] rArgs)
-	{
-		try
-		{
-			CommandLine aCommandLine = processArguments(rArgs);
-
-			Log.debug("Initializing...");
-			initialize(aCommandLine);
-			Log.debug("Configuring...");
-			configure(aCommandLine);
-			Log.debug("Starting...");
-			startApp();
-			runApp();
-			stopApp();
-		}
-		catch (Exception e)
-		{
-			handleApplicationError(e);
-		}
-	}
-
-	/***************************************
-	 * This is the main method that must be implemented by all subclasses. It
-	 * contains the code the will perform the applications actual work task(s).
-	 * The implementation may throw exceptions to signal errors but it must be
-	 * aware that this will skip any final application method invocations. If
-	 * final cleanup tasks need to be run anyway the implementation should do so
-	 * in the method {@link #handleApplicationError(Exception)}.
-	 *
-	 * @throws Exception Subclasses may throw exceptions to signal errors
-	 */
-	protected abstract void runApp() throws Exception;
-
-	/***************************************
 	 * Performs the cleanup of all resources that have been registered with
-	 * {@link #registerCleanupResource(Object)}. This method will be invoked by
+	 * {@link #addManagedResource(Object)}. This method will be invoked by
 	 * {@link #stopApp()}.
 	 *
 	 * <p>Subclasses may override this method to perform additional cleanup of
 	 * resources that have been allocated by the application if necessary. But
-	 * they should always invoke super.cleanup in their implementation. The
+	 * they should always invoke super.cleanup() in their implementation. The
 	 * order of this invocation depends on the subclass. It is recommended to
 	 * first release all access to registered resources, then invoke
 	 * super.cleanup() and finally free all subclass resources on which
@@ -218,18 +240,6 @@ public abstract class Application extends RelatedObject
 					((Stoppable) rResource).stop();
 				}
 
-				if (rResource instanceof RunCheck)
-				{
-					int nWaitTime =
-						nRemainingWaitTime > CLEANUP_RESOURCE_WAIT_TIME
-						? CLEANUP_RESOURCE_WAIT_TIME : nRemainingWaitTime;
-
-					nRemainingWaitTime -=
-						waitForResource((RunCheck) rResource,
-										nWaitTime,
-										CLEANUP_SLEEP_TIME);
-				}
-
 				if (rResource instanceof Closeable)
 				{
 					Log.debug("Closing " + rResource);
@@ -240,6 +250,18 @@ public abstract class Application extends RelatedObject
 				{
 					Log.debug("Disposing " + rResource);
 					((Disposable) rResource).dispose();
+				}
+
+				if (rResource instanceof RunCheck)
+				{
+					int nWaitTime =
+						nRemainingWaitTime > CLEANUP_RESOURCE_WAIT_TIME
+						? CLEANUP_RESOURCE_WAIT_TIME : nRemainingWaitTime;
+
+					nRemainingWaitTime -=
+						waitForResource((RunCheck) rResource,
+										nWaitTime,
+										CLEANUP_SLEEP_TIME);
 				}
 			}
 		}
@@ -262,16 +284,33 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
-	 * Can be overridden by subclasses to provide the list of allowed command
-	 * line switches. The default implementation returns an empty array which
-	 * means that no switches are allowed (an exception will be thrown). To
-	 * allow any kind of switches a subclass can return NULL. See the
-	 * documentation of class {@link CommandLine} for more information.
+	 * Displays usage information for this application. The default
+	 * implementation just display a simplified usage string. Subclasses can
+	 * override this method to display detailed usage information.
 	 *
-	 * @return A string array containing the allowed switches or NULL to allow
-	 *         any kind of switch
+	 * @param e An optional command line exception that indicates a usage error
+	 *          or NULL for none
 	 */
-	protected String[] getCommandLineSwitches()
+	protected void displayUsage(CommandLineException e)
+	{
+		if (e != null)
+		{
+			System.out.printf("Error: %s\n", e.getMessage());
+		}
+
+		System.out.printf("Usage: %s <arguments>\n",
+						  getClass().getSimpleName());
+	}
+
+	/***************************************
+	 * Can be overridden by subclasses to provide the list of allowed command
+	 * line options. The default implementation returns an empty array to
+	 * indicate that arbitrary options are allowed. See the documentation of
+	 * class {@link CommandLine} for more information.
+	 *
+	 * @return A string array containing the allowed command line options
+	 */
+	protected String[] getCommandLineOptions()
 	{
 		return new String[0];
 	}
@@ -315,15 +354,30 @@ public abstract class Application extends RelatedObject
 	 */
 	protected CommandLine processArguments(String[] rArgs) throws Exception
 	{
-		String[] rSwitches = getCommandLineSwitches();
+		String[] rOptions = getCommandLineOptions();
 
-		if (rSwitches == null)
+		if (rOptions == null)
 		{
 			return new CommandLine(rArgs);
 		}
 		else
 		{
-			return new CommandLine(rArgs, rSwitches);
+			return new CommandLine(rArgs, rOptions);
+		}
+	}
+
+	/***************************************
+	 * Removes a managed resource that has previously been added by invoking
+	 * {@link #addManagedResource(Object)} without performing the regular
+	 * resource cleanup that is done by the {@link #cleanup()} method.
+	 *
+	 * @param rResource rOld The resource object to be remove
+	 */
+	protected void removeManagedResource(Object rResource)
+	{
+		if (aCleanupResources != null)
+		{
+			aCleanupResources.remove(rResource);
 		}
 	}
 
@@ -356,11 +410,13 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void stopApp() throws Exception
 	{
-		Log.debug("Cleanup...");
+		String sAppName = getClass().getSimpleName();
+
+		Log.debugf("%s cleanup...", sAppName);
 		cleanup();
-		Log.debug("Terminating...");
+		Log.debugf("%s terminating...", sAppName);
 		terminate();
-		Log.debug("Application stopped");
+		Log.debugf("%s stopped", sAppName);
 	}
 
 	/***************************************

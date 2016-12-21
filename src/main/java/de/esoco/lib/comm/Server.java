@@ -17,6 +17,7 @@
 package de.esoco.lib.comm;
 
 import de.esoco.lib.logging.Log;
+import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
 
 import java.io.IOException;
@@ -51,7 +52,8 @@ import static org.obrel.type.StandardTypes.PORT;
  *
  * @author eso
  */
-public class Server extends RelatedObject implements Runnable, Stoppable
+public class Server extends RelatedObject implements Runnable, RunCheck,
+													 Stoppable
 {
 	//~ Static fields/initializers ---------------------------------------------
 
@@ -77,6 +79,7 @@ public class Server extends RelatedObject implements Runnable, Stoppable
 	 * @return TRUE if the server is running, FALSE if it has been stopped (or
 	 *         not started yet)
 	 */
+	@Override
 	public final boolean isRunning()
 	{
 		return bRunning;

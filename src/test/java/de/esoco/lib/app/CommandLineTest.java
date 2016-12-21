@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,37 +16,42 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
-import junit.framework.TestCase;
-
 import java.util.regex.Pattern;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 /********************************************************************
- * Test of CommandLine class.
+ * Test of the {@link CommandLine} class.
  *
  * @author eso
  */
-public class CommandLineTest extends TestCase
+public class CommandLineTest
 {
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
 	 * Test assignment only CommandLine(String[], String...)
 	 */
+	@Test
 	public void testAssignmentCommandLine()
 	{
-		String[]    args     = new String[] { "-val=test" };
-		String[]    switches = new String[] { "val=" };
-		CommandLine cl		 = new CommandLine(args, switches);
+		String[]    args    = new String[] { "-val=test" };
+		String[]    options = new String[] { "val=" };
+		CommandLine cl	    = new CommandLine(args, options);
 
-		assertEquals("test", cl.getSwitchValue("val"));
+		assertEquals("test", cl.getOption("val"));
 
 		try
 		{
 			args = new String[] { "-val" };
-			cl   = new CommandLine(args, switches);
+			cl   = new CommandLine(args, options);
 
-			assertTrue("Mandatory switch value missing", false);
+			assertTrue("Mandatory option value missing", false);
 		}
 		catch (IllegalArgumentException e)
 		{
@@ -57,17 +62,70 @@ public class CommandLineTest extends TestCase
 	/***************************************
 	 * Test CommandLine(String[])
 	 */
+	@Test
 	public void testCommandLine()
 	{
 		String[]    args = "-a_/b_-t1=123_-t2='ok ok'".split("_");
 		CommandLine cl   = new CommandLine(args);
 
-		assertSwitches(cl);
+		assertOptions(cl);
+	}
+
+	/***************************************
+	 * Test CommandLine(String[], String...)
+	 */
+	@Test
+	public void testCommandLineWithOptions()
+	{
+		String[]    args    =
+			"-a_/b_/t1=replaced_-t1=123_-t2='ok ok'_-T2=xy".split("_");
+		String[]    options = new String[] { "a", "b", "t1=", "t2=", "T2=" };
+		CommandLine cl	    = new CommandLine(args, options);
+
+		assertOptions(cl);
+		assertEquals("xy", cl.getOption("T2"));
+
+		try
+		{
+			args = "-a_-b_-c".split("_");
+			cl   = new CommandLine(args, options);
+
+			assertTrue("Command line contains illegal argument c", false);
+		}
+		catch (IllegalArgumentException e)
+		{
+			// expected
+		}
+
+		try
+		{
+			args = "-t1=".split("_");
+			cl   = new CommandLine(args, options);
+
+			assertTrue("missing option value", false);
+		}
+		catch (IllegalArgumentException e)
+		{
+			// expected
+		}
+
+		try
+		{
+			args = "-t2".split("_");
+			cl   = new CommandLine(args, options);
+
+			assertTrue("missing option value", false);
+		}
+		catch (IllegalArgumentException e)
+		{
+			// expected
+		}
 	}
 
 	/***************************************
 	 * Test CommandLine(String[], Pattern)
 	 */
+	@Test
 	public void testCommandLineWithPattern()
 	{
 		String[]    args = "--a_-b_-t1:=123_--t2:='ok ok'".split("_");
@@ -75,7 +133,7 @@ public class CommandLineTest extends TestCase
 			CommandLine.createPattern("-{1,2}", ":=", "a", "b", "t1:=", "t2:=");
 		CommandLine cl   = new CommandLine(args, p);
 
-		assertSwitches(cl);
+		assertOptions(cl);
 
 		try
 		{
@@ -91,72 +149,23 @@ public class CommandLineTest extends TestCase
 	}
 
 	/***************************************
-	 * Test CommandLine(String[], String...)
-	 */
-	public void testCommandLineWithSwitches()
-	{
-		String[]    args     =
-			"-a_/b_/t1=replaced_-t1=123_-t2='ok ok'_-T2=xy".split("_");
-		String[]    switches = new String[] { "a", "b", "t1=", "t2=", "T2=" };
-		CommandLine cl		 = new CommandLine(args, switches);
-
-		assertSwitches(cl);
-		assertEquals("xy", cl.getSwitchValue("T2"));
-
-		try
-		{
-			args = "-a_-b_-c".split("_");
-			cl   = new CommandLine(args, switches);
-
-			assertTrue("Command line contains illegal argument c", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-
-		try
-		{
-			args = "-t1=".split("_");
-			cl   = new CommandLine(args, switches);
-
-			assertTrue("missing switch value", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-
-		try
-		{
-			args = "-t2".split("_");
-			cl   = new CommandLine(args, switches);
-
-			assertTrue("missing switch value", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-	}
-
-	/***************************************
 	 * Test empty CommandLine(String[], String...)
 	 */
+	@Test
 	public void testEmtpyCommandLine()
 	{
-		String[] args     = new String[0];
-		String[] switches = new String[0];
+		String[] args    = new String[0];
+		String[] options = new String[0];
 
-		new CommandLine(args, switches);
+		new CommandLine(args, options);
 
 		try
 		{
 			args = new String[] { "-t1" };
 
-			new CommandLine(args, switches);
+			new CommandLine(args, options);
 
-			assertTrue("Command line contains illegal switch", false);
+			assertTrue("Command line contains illegal option", false);
 		}
 		catch (IllegalArgumentException e)
 		{
@@ -170,13 +179,13 @@ public class CommandLineTest extends TestCase
 	 * @param cl The command line
 	 */
 	@SuppressWarnings("boxing")
-	private void assertSwitches(CommandLine cl)
+	private void assertOptions(CommandLine cl)
 	{
-		assertTrue(cl.hasSwitch("a"));
-		assertTrue(cl.hasSwitch("b"));
-		assertFalse(cl.hasSwitch("c"));
-		assertEquals(null, cl.getSwitchValue("a"));
-		assertEquals(123, cl.getSwitchValue("t1"));
-		assertEquals("ok ok", cl.getSwitchValue("t2"));
+		assertTrue(cl.hasOption("a"));
+		assertTrue(cl.hasOption("b"));
+		assertFalse(cl.hasOption("c"));
+		assertEquals(true, cl.getOption("a"));
+		assertEquals(123, cl.getOption("t1"));
+		assertEquals("ok ok", cl.getOption("t2"));
 	}
 }

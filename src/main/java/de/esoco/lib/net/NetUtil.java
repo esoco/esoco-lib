@@ -6,7 +6,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//		 http://www.apache.org/licenses/LICENSE-2.0
+//	  http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -72,6 +72,12 @@ public class NetUtil
 
 	/** Constant for the default wake-on-LAN port */
 	public static final int WAKEONLAN_DEFAULT_PORT = 9;
+
+	/**
+	 * A constant for the \r\n string that is used as a separator in HTTP
+	 * requests.
+	 */
+	public static final String CRLF = "\r\n";
 
 	//~ Constructors -----------------------------------------------------------
 
