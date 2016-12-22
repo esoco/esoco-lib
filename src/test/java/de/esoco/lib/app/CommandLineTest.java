@@ -149,31 +149,6 @@ public class CommandLineTest
 	}
 
 	/***************************************
-	 * Test empty CommandLine(String[], String...)
-	 */
-	@Test
-	public void testEmtpyCommandLine()
-	{
-		String[] args    = new String[0];
-		String[] options = new String[0];
-
-		new CommandLine(args, options);
-
-		try
-		{
-			args = new String[] { "-t1" };
-
-			new CommandLine(args, options);
-
-			assertTrue("Command line contains illegal option", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-	}
-
-	/***************************************
 	 * Asserts the contents of a command line.
 	 *
 	 * @param cl The command line
