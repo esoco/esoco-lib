@@ -52,6 +52,12 @@ public class SocketEndpoint extends Endpoint
 {
 	//~ Static fields/initializers ---------------------------------------------
 
+	/** The URL scheme name for socket connections. */
+	public static final String SOCKET_URL_SCHEME = "socket";
+
+	/** The URL scheme name for (SSL) encrypted socket connections. */
+	public static final String ENCRYPTED_SOCKET_URL_SCHEME = "sockets";
+
 	/** An internal relation type to store a connection socket. */
 	private static final RelationType<Socket> ENDPOINT_SOCKET =
 		newType(PRIVATE);
@@ -133,7 +139,8 @@ public class SocketEndpoint extends Endpoint
 	{
 		String sUrl;
 
-		String sScheme = bEncrypted ? "sockets" : "socket";
+		String sScheme =
+			bEncrypted ? ENCRYPTED_SOCKET_URL_SCHEME : SOCKET_URL_SCHEME;
 
 		if (nPort > 0)
 		{

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,13 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import java.net.HttpURLConnection;
+
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+
+import java.util.List;
+import java.util.Map;
 
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
@@ -24,6 +30,7 @@ import org.obrel.core.RelationTypes;
 import static org.obrel.core.RelationTypeModifier.FINAL;
 import static org.obrel.core.RelationTypes.newFlagType;
 import static org.obrel.core.RelationTypes.newInitialValueType;
+import static org.obrel.core.RelationTypes.newMapType;
 import static org.obrel.core.RelationTypes.newType;
 
 
@@ -47,10 +54,10 @@ public class CommunicationRelationTypes
 
 	/**
 	 * Defines the character encoding to be used for the communication with an
-	 * endpoint. Defaults to the name of {@link StandardCharsets#UTF_8}.
+	 * endpoint. Defaults to {@link StandardCharsets#UTF_8}.
 	 */
-	public static final RelationType<String> ENDPOINT_ENCODING =
-		newInitialValueType(StandardCharsets.UTF_8.name());
+	public static final RelationType<Charset> ENDPOINT_ENCODING =
+		newInitialValueType(StandardCharsets.UTF_8);
 
 	/** A user name for the authentication on a communication endpoint. */
 	public static final RelationType<String> USER_NAME = newType();
@@ -101,10 +108,26 @@ public class CommunicationRelationTypes
 	/**
 	 * A flag to enabled SSL/TLS connections to endpoints that use self-signed
 	 * certificates. ATTENTION: this should only be used for test environments,
-	 * never for production!
+	 * not for production systems.
 	 */
 	public static final RelationType<Boolean> TRUST_SELF_SIGNED_CERTIFICATES =
 		newFlagType();
+
+	/**
+	 * The status code of an HTTP request. Will be available in a connection
+	 * after an HTTP request has been executed.
+	 */
+	public static final RelationType<HttpStatusCode> HTTP_STATUS_CODE =
+		newType();
+
+	/**
+	 * The response headers of an HTTP request. Will be available in a
+	 * connection after an HTTP request has been executed. The contents is a
+	 * mapping from header names to a list of header values in the order in
+	 * which they are returned by {@link HttpURLConnection#getHeaderFields()}.
+	 */
+	public static final RelationType<Map<String, List<String>>> HTTP_RESPONSE_HEADERS =
+		newMapType(true);
 
 	static
 	{
