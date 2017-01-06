@@ -64,6 +64,19 @@ public class LimitedOutputStream extends FilterOutputStream
 	}
 
 	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	@SuppressWarnings("boxing")
+	public String toString()
+	{
+		return String.format("%s(%d -> %s)",
+							 getClass().getSimpleName(),
+							 nRemainingBytes,
+							 out);
+	}
+
+	/***************************************
 	 * Overwritten to throw an {@link EOFException} if the write limit is
 	 * exceeded.
 	 *

@@ -75,11 +75,11 @@ public class CommunicationRelationTypes
 
 	/**
 	 * The maximum size that a request to a server allowed to have. Has a
-	 * default value of 1 KiB.
+	 * default value of 64 KiB.
 	 */
 	@SuppressWarnings("boxing")
 	public static final RelationType<Integer> MAX_REQUEST_SIZE =
-		newInitialValueType(1024);
+		newInitialValueType(1024 * 64);
 
 	/**
 	 * The maximum size that the response of an endpoint communication is
@@ -121,7 +121,14 @@ public class CommunicationRelationTypes
 		newType();
 
 	/**
-	 * The response headers of an HTTP request. Will be available in a
+	 * The headers for an HTTP request. These must be set on a connection or
+	 * endpoint instance before a request is executed.
+	 */
+	public static final RelationType<Map<String, String>> HTTP_REQUEST_HEADERS =
+		newMapType(true);
+
+	/**
+	 * The headers of the response to an HTTP request. Will be available in a
 	 * connection after an HTTP request has been executed. The contents is a
 	 * mapping from header names to a list of header values in the order in
 	 * which they are returned by {@link HttpURLConnection#getHeaderFields()}.

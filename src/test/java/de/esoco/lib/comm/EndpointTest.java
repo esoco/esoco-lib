@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//		 http://www.apache.org/licenses/LICENSE-2.0
+//	  http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,14 +18,15 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.BinaryPredicate;
 import de.esoco.lib.expression.Function;
+import de.esoco.lib.net.NetUtil;
 
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 
 import java.util.regex.Pattern;
 
 import org.obrel.type.MetaTypes;
 
-import static de.esoco.lib.collection.CollectionUtil.mapOf;
 import static de.esoco.lib.comm.HttpEndpoint.httpGet;
 import static de.esoco.lib.comm.HttpEndpoint.httpPost;
 import static de.esoco.lib.comm.SocketEndpoint.textRequest;
@@ -103,10 +104,12 @@ public class EndpointTest
 
 	/***************************************
 	 * Test of {@link HttpEndpoint}.
+	 *
+	 * @throws UnsupportedEncodingException
 	 */
 // disabled, currently no reliable test server for POST requests
 //	@Test
-	public void testHttpPostStatic()
+	public void testHttpPostStatic() throws UnsupportedEncodingException
 	{
 		testHttpPostStatic("http://" + HTTP_POST_TEST_SERVER);
 	}
@@ -181,14 +184,19 @@ public class EndpointTest
 	 * Implementation of a static HTTP POST request to a certain endpoint
 	 * address.
 	 *
-	 * @param sEndpointAddress The endpoint address
+	 * @param  sEndpointAddress The endpoint address
+	 *
+	 * @throws UnsupportedEncodingException
 	 */
 	void testHttpPostStatic(String sEndpointAddress)
+		throws UnsupportedEncodingException
 	{
 		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
 
 		EndpointChain<String, String> fPostParam =
-			httpPost("post.php", mapOf("test_param", "test_value")).from(aEndpoint);
+			httpPost("post.php",
+					 NetUtil.encodeUrlParameter("test_param", "test_value"))
+			.from(aEndpoint);
 
 		System.out.printf("POST: %s\n", fPostParam.result());
 //		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fPostParam.result()));

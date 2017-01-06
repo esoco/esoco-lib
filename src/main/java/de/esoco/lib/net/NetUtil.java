@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import de.esoco.lib.io.StreamUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -28,12 +29,17 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+
+import java.nio.charset.StandardCharsets;
 
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import java.util.Base64;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.net.SocketFactory;
@@ -72,6 +78,9 @@ public class NetUtil
 
 	/** Constant for the default wake-on-LAN port */
 	public static final int WAKEONLAN_DEFAULT_PORT = 9;
+
+	/** The standard encoding for URL elements (UTF-8). */
+	public static String URL_ENCODING = StandardCharsets.UTF_8.name();
 
 	/**
 	 * A constant for the \r\n string that is used as a separator in HTTP
@@ -235,6 +244,73 @@ public class NetUtil
 		sAuth = Base64.getEncoder().encodeToString(sAuth.getBytes());
 
 		rUrlConnection.setRequestProperty("Authorization", "Basic " + sAuth);
+	}
+
+	/***************************************
+	 * Encodes a string so that it can be used as an element in an HTTP URL by
+	 * applying the method {@link URLEncoder#encode(String, String)} with the
+	 * recommended default encoding UTF-8.
+	 *
+	 * @param  sElement sName The name of the URL parameter
+	 *
+	 * @return A string containing the encoded parameter assignment
+	 */
+	public static String encodeUrlElement(String sElement)
+	{
+		try
+		{
+			return URLEncoder.encode(sElement, URL_ENCODING);
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			// UTF-8 needs to be available for URL encoding
+			throw new IllegalStateException(e);
+		}
+	}
+
+	/***************************************
+	 * Encodes the name and value of an HTTP URL parameter by applying the
+	 * method {@link #encodeUrlElement(String)} to each and concatenating them
+	 * with '='.
+	 *
+	 * @param  sName  The name of the URL parameter
+	 * @param  sValue The value of the URL parameter
+	 *
+	 * @return A string containing the encoded parameter assignment
+	 */
+	public static String encodeUrlParameter(String sName, String sValue)
+	{
+		return encodeUrlElement(sName) + "=" + encodeUrlElement(sValue);
+	}
+
+	/***************************************
+	 * Creates a concatenated string of multiple HTTP URL parameters that have
+	 * been encoded with {@link #encodeUrlParameter(String, String, String)}.
+	 * The concatenation character is '&', the encoding UTF-8.
+	 *
+	 * @param  rParams A mapping from HTTP URL parameter names to values
+	 *
+	 * @return The encoded parameters (may be empty but will never be NULL)
+	 */
+	public static String encodeUrlParameters(Map<String, String> rParams)
+	{
+		StringBuilder aParams = new StringBuilder();
+
+		for (Entry<String, String> rParam : rParams.entrySet())
+		{
+			aParams.append(encodeUrlParameter(rParam.getKey(),
+											  rParam.getValue()));
+			aParams.append('&');
+		}
+
+		int nLength = aParams.length();
+
+		if (nLength > 0)
+		{
+			aParams.setLength(nLength - 1);
+		}
+
+		return aParams.toString();
 	}
 
 	/***************************************

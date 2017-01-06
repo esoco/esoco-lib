@@ -81,4 +81,17 @@ public class LimitedInputStream extends FilterInputStream
 			throw new EOFException("Stream input limit reached");
 		}
 	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	@SuppressWarnings("boxing")
+	public String toString()
+	{
+		return String.format("%s(%d -> %s)",
+							 getClass().getSimpleName(),
+							 nRemainingBytes,
+							 in);
+	}
 }
