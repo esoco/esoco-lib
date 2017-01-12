@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// This file is a part of the 'esoco-gwt' project.
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 3.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-2.0
+//	  http://www.apache.org/licenses/LICENSE-3.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.BUFFER_SIZE;
+import static de.esoco.lib.comm.CommunicationRelationTypes.CONNECTION_TIMEOUT;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ENCODING;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_REQUEST_HEADERS;
@@ -432,6 +433,7 @@ public class HttpEndpoint extends Endpoint
 			HttpURLConnection aUrlConnection =
 				(HttpURLConnection) new URL(sTargetUrl).openConnection();
 
+			aUrlConnection.setConnectTimeout(rConnection.get(CONNECTION_TIMEOUT));
 			eRequestMethod.applyTo(aUrlConnection);
 			applyRequestHeaders(rConnection, aUrlConnection);
 
