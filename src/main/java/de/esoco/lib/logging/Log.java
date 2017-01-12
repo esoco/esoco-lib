@@ -507,8 +507,8 @@ public final class Log
 	 *
 	 * @param rLogAspectType The class of the log aspect to remove
 	 */
-	public static <T> void removeLogAspect(
-		Class<? extends LogAspect<T>> rLogAspectType)
+	public static void removeLogAspect(
+		Class<? extends LogAspect<?>> rLogAspectType)
 	{
 		if (aLogAspects != null)
 		{
