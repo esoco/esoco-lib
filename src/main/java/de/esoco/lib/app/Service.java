@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
 package de.esoco.lib.app;
 
 import de.esoco.lib.comm.Server;
-import de.esoco.lib.comm.Server.RequestHandler;
-
-import static de.esoco.lib.comm.Server.REQUEST_HANDLER;
+import de.esoco.lib.comm.Server.RequestHandlerFactory;
 
 import static org.obrel.type.StandardTypes.PORT;
 
@@ -50,12 +48,12 @@ public abstract class Service extends Application
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Will be invoked to query the {@link RequestHandler} to be used for the
-	 * control server of this service.
+	 * Will be invoked to query the {@link RequestHandlerFactory} to be used for
+	 * the control server of this service.
 	 *
 	 * @return The control request handler
 	 */
-	protected abstract RequestHandler getControlRequestHandler();
+	protected abstract RequestHandlerFactory getControlRequestHandlerFactory();
 
 	/***************************************
 	 * Will be invoked to run the actual service after the application has been
@@ -126,8 +124,8 @@ public abstract class Service extends Application
 	protected Server startControlServer() throws Exception
 	{
 		Server aServer =
-			new Server().with(PORT, getControlServerPort())
-						.with(REQUEST_HANDLER, getControlRequestHandler());
+			new Server(getControlRequestHandlerFactory()).with(PORT,
+															   getControlServerPort());
 
 		aControlServerThread = new Thread(aServer);
 

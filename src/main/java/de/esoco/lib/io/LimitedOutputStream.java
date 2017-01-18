@@ -91,7 +91,8 @@ public class LimitedOutputStream extends FilterOutputStream
 		}
 		else
 		{
-			throw new EOFException("Stream output limit reached");
+			throw new StreamLimitException("Stream output limit reached",
+										   false);
 		}
 	}
 }

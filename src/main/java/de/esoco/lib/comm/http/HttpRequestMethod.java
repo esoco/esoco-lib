@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.comm;
+package de.esoco.lib.comm.http;
 
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
@@ -25,8 +25,8 @@ import java.net.ProtocolException;
  */
 public enum HttpRequestMethod
 {
-	GET(false), POST(true), HEAD(false), OPTIONS(false), PUT(true),
-	DELETE(false), TRACE(false);
+	GET(false), HEAD(false), OPTIONS(true), TRACE(false), POST(true), PUT(true),
+	DELETE(false), CONNECT(true);
 
 	//~ Instance fields --------------------------------------------------------
 

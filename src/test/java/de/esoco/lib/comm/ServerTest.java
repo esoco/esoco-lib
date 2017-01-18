@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,16 +16,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
-import de.esoco.lib.comm.Server.RequestHandler;
+import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.StringReader;
 
 import org.junit.Test;
 
@@ -53,8 +49,9 @@ public class ServerTest
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
 		Server aServer =
-			new Server().with(NAME, "TestServer").with(PORT, 8008)
-						.with(Server.REQUEST_HANDLER, new HttpRequestHander());
+			new Server(rServer ->
+					   new HttpRequestHandler(sPath -> new StringReader(sPath)))
+			.with(NAME, "TestServer").with(PORT, 8008);
 
 		new Thread(aServer).start();
 
@@ -65,56 +62,5 @@ public class ServerTest
 
 		System.out.printf("SERVER RESPONSE: %s\n", fGet.result());
 		aServer.stop();
-	}
-
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
-	 * A {@link Server} request handler implementation for HTTP requests.
-	 *
-	 * @author eso
-	 */
-	static class HttpRequestHander implements RequestHandler
-	{
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		public void handleRequest(Server	   rServer,
-								  InputStream  rRequest,
-								  OutputStream rResponse)
-		{
-			try
-			{
-				BufferedReader rIn  =
-					new BufferedReader(new InputStreamReader(rRequest));
-				PrintWriter    rOut = new PrintWriter(rResponse);
-
-				String sInputLine;
-
-				System.out.printf("---- REQUEST ----\n");
-
-				while ((sInputLine = rIn.readLine()) != null &&
-					   !sInputLine.equals("\r\n"))
-				{
-					System.out.println(sInputLine);
-
-					if (sInputLine.isEmpty())
-					{
-						break;
-					}
-				}
-
-				rOut.write("HTTP/1.0 200 OK\r\n");
-				rOut.write("\r\n");
-				rOut.flush();
-			}
-			catch (Exception e)
-			{
-				throw new CommunicationException(e);
-			}
-		}
 	}
 }

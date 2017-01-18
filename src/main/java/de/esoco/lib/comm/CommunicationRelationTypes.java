@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.comm.http.HttpStatusCode;
+
 import java.net.HttpURLConnection;
 
 import java.nio.charset.Charset;
@@ -53,10 +55,17 @@ public class CommunicationRelationTypes
 	public static final RelationType<String> ENDPOINT_ADDRESS = newType(FINAL);
 
 	/**
-	 * Defines the character encoding to be used for the communication with an
-	 * endpoint. Defaults to {@link StandardCharsets#UTF_8}.
+	 * Defines the character encoding of a request. Has a default value of
+	 * {@link StandardCharsets#UTF_8}.
 	 */
-	public static final RelationType<Charset> ENDPOINT_ENCODING =
+	public static final RelationType<Charset> REQUEST_ENCODING =
+		newInitialValueType(StandardCharsets.UTF_8);
+
+	/**
+	 * Defines the character encoding of a response. Has a default value of
+	 * {@link StandardCharsets#UTF_8}.
+	 */
+	public static final RelationType<Charset> RESPONSE_ENCODING =
 		newInitialValueType(StandardCharsets.UTF_8);
 
 	/** A user name for the authentication on a communication endpoint. */
@@ -124,7 +133,7 @@ public class CommunicationRelationTypes
 	 * The headers for an HTTP request. These must be set on a connection or
 	 * endpoint instance before a request is executed.
 	 */
-	public static final RelationType<Map<String, String>> HTTP_REQUEST_HEADERS =
+	public static final RelationType<Map<String, List<String>>> HTTP_REQUEST_HEADERS =
 		newMapType(true);
 
 	/**

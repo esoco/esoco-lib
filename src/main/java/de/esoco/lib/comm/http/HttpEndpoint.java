@@ -14,8 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.comm;
+package de.esoco.lib.comm.http;
 
+import de.esoco.lib.comm.CommunicationException;
+import de.esoco.lib.comm.CommunicationMethod;
+import de.esoco.lib.comm.CommunicationRelationTypes;
+import de.esoco.lib.comm.Connection;
+import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.LimitedInputStream;
@@ -35,17 +40,19 @@ import java.net.URL;
 import java.nio.charset.Charset;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.BUFFER_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ENCODING;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_REQUEST_HEADERS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_RESPONSE_HEADERS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_STATUS_CODE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
+import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_ENCODING;
+import static de.esoco.lib.comm.CommunicationRelationTypes.RESPONSE_ENCODING;
 
 
 /********************************************************************
@@ -200,7 +207,7 @@ public class HttpEndpoint extends Endpoint
 				HttpURLConnection aUrlConnection =
 					setupUrlConnection(rConnection, rInput);
 
-				Charset rEncoding = rConnection.get(ENDPOINT_ENCODING);
+				Charset rEncoding = rConnection.get(RESPONSE_ENCODING);
 				int     nMax	  = rConnection.get(MAX_RESPONSE_SIZE);
 
 				try (InputStream rInputStream =
@@ -280,7 +287,7 @@ public class HttpEndpoint extends Endpoint
 			HttpURLConnection rUrlConnection)
 		{
 			rUrlConnection.setRequestProperty("Accept-Charset",
-											  rConnection.get(ENDPOINT_ENCODING)
+											  rConnection.get(REQUEST_ENCODING)
 											  .name());
 
 			for (Entry<String, String> rHeader : aRequestHeaders.entrySet())
@@ -291,11 +298,16 @@ public class HttpEndpoint extends Endpoint
 
 			if (rConnection.hasRelation(HTTP_REQUEST_HEADERS))
 			{
-				for (Entry<String, String> rHeader :
+				for (Entry<String, List<String>> rHeader :
 					 rConnection.get(HTTP_REQUEST_HEADERS).entrySet())
 				{
-					rUrlConnection.setRequestProperty(rHeader.getKey(),
-													  rHeader.getValue());
+					String		 sHeaderName   = rHeader.getKey();
+					List<String> rHeaderValues = rHeader.getValue();
+
+					for (String sValue : rHeaderValues)
+					{
+						rUrlConnection.setRequestProperty(sHeaderName, sValue);
+					}
 				}
 			}
 		}
@@ -476,7 +488,7 @@ public class HttpEndpoint extends Endpoint
 
 			if (sRequestData.length() > 0)
 			{
-				Charset rEncoding = rConnection.get(ENDPOINT_ENCODING);
+				Charset rEncoding = rConnection.get(REQUEST_ENCODING);
 
 				rOutputStream.write(sRequestData.getBytes(rEncoding));
 			}

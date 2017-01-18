@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.comm;
+package de.esoco.lib.comm.http;
 
 import de.esoco.lib.net.NetUtil;
 
@@ -92,6 +92,19 @@ public enum HttpStatusCode
 	}
 
 	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Throws an {@link HttpStatusException} with the code {@link #BAD_REQUEST}
+	 * and an error message.
+	 *
+	 * @param  sMessage The error message
+	 *
+	 * @throws HttpStatusException Always throws this exception
+	 */
+	public static void badRequest(String sMessage) throws HttpStatusException
+	{
+		throw new HttpStatusException(HttpStatusCode.BAD_REQUEST, sMessage);
+	}
 
 	/***************************************
 	 * Returns the status code instance for a certain integer code value.
@@ -217,5 +230,28 @@ public enum HttpStatusCode
 	public final boolean isSuccess()
 	{
 		return nStatusCode >= 200 && nStatusCode <= 299;
+	}
+
+	/***************************************
+	 * Returns a string representation of this status code as it is used in HTTP
+	 * responses.
+	 *
+	 * @return The HTTP response string, containing HTTP version, status code,
+	 *         reason phrase, and trailing CRLF
+	 */
+	public String toResponseString()
+	{
+		return String.format("HTTP/1.1 %s\r\n", this);
+	}
+
+	/***************************************
+	 * Returns a string representation of this status code.
+	 *
+	 * @return The status code reason phrase, separate by a single space
+	 */
+	@Override
+	public String toString()
+	{
+		return nStatusCode + " " + sReasonPhrase;
 	}
 }

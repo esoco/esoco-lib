@@ -16,6 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.comm.http.HttpEndpoint;
 import de.esoco.lib.expression.BinaryPredicate;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.net.NetUtil;
@@ -27,9 +28,9 @@ import java.util.regex.Pattern;
 
 import org.obrel.type.MetaTypes;
 
-import static de.esoco.lib.comm.HttpEndpoint.httpGet;
-import static de.esoco.lib.comm.HttpEndpoint.httpPost;
 import static de.esoco.lib.comm.SocketEndpoint.textRequest;
+import static de.esoco.lib.comm.http.HttpEndpoint.httpGet;
+import static de.esoco.lib.comm.http.HttpEndpoint.httpPost;
 import static de.esoco.lib.expression.Functions.doIfElse;
 import static de.esoco.lib.expression.Functions.value;
 import static de.esoco.lib.expression.MathFunctions.parseInteger;
@@ -60,7 +61,8 @@ public class EndpointTest
 //	private static final String HTML_POST_URL = "post";
 
 	private static final String HTTP_GET_INDEX =
-		"GET /html HTTP/1.1\r\nHost: " + HTTP_GET_TEST_SERVER + "\r\n\r\n";
+		"GET /index.html HTTP/1.1\r\nHost: " + HTTP_GET_TEST_SERVER +
+		"\r\n\r\n";
 
 	private static final String HTML_BODY_PATTERN = "(?s)<body>(.*)</body>";
 

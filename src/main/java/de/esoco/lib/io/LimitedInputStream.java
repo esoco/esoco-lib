@@ -78,7 +78,7 @@ public class LimitedInputStream extends FilterInputStream
 		}
 		else
 		{
-			throw new EOFException("Stream input limit reached");
+			throw new StreamLimitException("Stream input limit reached", true);
 		}
 	}
 

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.io.LimitedInputStream;
+import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
@@ -34,13 +36,18 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocketFactory;
 
+import org.obrel.core.ObjectRelations;
+import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
+import org.obrel.type.MetaTypes;
 import org.obrel.type.StandardTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.StandardTypes.NAME;
@@ -57,8 +64,8 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 {
 	//~ Static fields/initializers ---------------------------------------------
 
-	/** Must be set to define the request handler of this server. */
-	public static final RelationType<RequestHandler> REQUEST_HANDLER =
+	/** The request handler factory of this server. */
+	public static final RelationType<RequestHandlerFactory> REQUEST_HANDLER_FACTORY =
 		newType();
 
 	static
@@ -70,6 +77,21 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 	private ThreadPoolExecutor aThreadPool;
 	private boolean			   bRunning;
+
+	//~ Constructors -----------------------------------------------------------
+
+	/***************************************
+	 * Creates a new instance with a certain type of request handler. The
+	 * request handler class must a have a no-argument constructor to allow the
+	 * creation of new instances for each request.
+	 *
+	 * @param rRequestHandlerFactory The class of the request handler to use for
+	 *                               client requests
+	 */
+	public Server(RequestHandlerFactory rRequestHandlerFactory)
+	{
+		set(REQUEST_HANDLER_FACTORY, rRequestHandlerFactory);
+	}
 
 	//~ Methods ----------------------------------------------------------------
 
@@ -198,10 +220,14 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	 * client.
 	 *
 	 * @param  rClientSocket The socket for the communication with the client
+	 * @param  rServerConfig A relatable containing the server configuration
 	 *
 	 * @throws IOException If a communication error occurs
 	 */
-	protected void handleClientRequest(Socket rClientSocket)
+	@SuppressWarnings("boxing")
+	protected void handleClientRequest(
+		Socket    rClientSocket,
+		Relatable rServerConfig)
 	{
 		Log.infof("%s: handling request from %s",
 				  getServerName(),
@@ -209,11 +235,17 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 		try
 		{
-			RequestHandler rRequestHandler = get(REQUEST_HANDLER);
+			RequestHandler aRequestHandler =
+				get(REQUEST_HANDLER_FACTORY).getRequestHandler(this);
 
-			rRequestHandler.handleRequest(this,
-										  rClientSocket.getInputStream(),
-										  rClientSocket.getOutputStream());
+			InputStream  rInput  =
+				new LimitedInputStream(rClientSocket.getInputStream(),
+									   get(MAX_REQUEST_SIZE));
+			OutputStream rOutput =
+				new LimitedOutputStream(rClientSocket.getOutputStream(),
+										get(MAX_RESPONSE_SIZE));
+
+			aRequestHandler.handleRequest(rServerConfig, rInput, rOutput);
 		}
 		catch (Exception e)
 		{
@@ -252,11 +284,18 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 			bRunning = true;
 
+			Relatable aRequestConfig = new RelatedObject();
+
+			ObjectRelations.copyRelations(this, aRequestConfig, true);
+			aRequestConfig.set(MetaTypes.IMMUTABLE);
+
 			while (bRunning)
 			{
 				Socket rClientSocket = aServerSocket.accept();
 
-				aThreadPool.execute(() -> handleClientRequest(rClientSocket));
+				aThreadPool.execute(() ->
+									handleClientRequest(rClientSocket,
+														aRequestConfig));
 			}
 		}
 	}
@@ -281,7 +320,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	//~ Inner Interfaces -------------------------------------------------------
 
 	/********************************************************************
-	 * The functional interface that needs to be implemented for server request
+	 * A functional interface that needs to be implemented for server request
 	 * handlers.
 	 *
 	 * @author eso
@@ -303,16 +342,39 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 		 * management with the given stream parameters. That will be done by the
 		 * server implementation.</p>
 		 *
-		 * @param  rServer   The server instance to provide access to the server
-		 *                   configuration
-		 * @param  rRequest  The request input stream
-		 * @param  rResponse The response output stream
+		 * @param  rConfiguration A relatable object that provides access to the
+		 *                        server configuration; it is typically
+		 *                        immutable and should therefore not be written
+		 *                        to
+		 * @param  rRequest       The request input stream
+		 * @param  rResponse      The response output stream
 		 *
-		 * @throws CommunicationException If handling the request fails
+		 * @throws Exception Can throw any exception if handling the request
+		 *                   fails
 		 */
-		public void handleRequest(Server	   rServer,
+		public void handleRequest(Relatable    rConfiguration,
 								  InputStream  rRequest,
-								  OutputStream rResponse)
-			throws CommunicationException;
+								  OutputStream rResponse) throws Exception;
+	}
+
+	/********************************************************************
+	 * A functional interface for the implementation of factories that create
+	 * instances of {@link RequestHandler}.
+	 *
+	 * @author eso
+	 */
+	@FunctionalInterface
+	public static interface RequestHandlerFactory
+	{
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * Returns a request handler instance for the given server.
+		 *
+		 * @param  rServer The server to return the request handler for
+		 *
+		 * @return The request handler
+		 */
+		public RequestHandler getRequestHandler(Server rServer);
 	}
 }

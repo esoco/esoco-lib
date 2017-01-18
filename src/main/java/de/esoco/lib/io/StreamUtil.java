@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import java.io.EOFException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.Writer;
 
 import java.util.Arrays;
 
@@ -302,11 +304,9 @@ public final class StreamUtil
 	 * @param  nMax        The maximum number of bytes to read
 	 * @param  bIgnoreCase TRUE if the case of the token should be ignored
 	 *
-	 * @return The string read from the stream up to the search token or NULL if
-	 *         the token couldn't be found.
+	 * @return The string read from the stream up to and including the search
+	 *         token or NULL if the token couldn't be found
 	 *
-	 * @throws EOFException             If the stream ends before the string
-	 *                                  token could be found
 	 * @throws IOException              If reading from the stream fails
 	 * @throws IllegalArgumentException If the search string is empty
 	 * @throws NullPointerException     If either argument is NULL
@@ -368,6 +368,61 @@ public final class StreamUtil
 		}
 
 		fo.close();
+	}
+
+	/***************************************
+	 * Sends the data from an input stream to an output stream. This method uses
+	 * a buffer of 4K for the transfer so it is not necessary to wrap the
+	 * streams in buffered streams.
+	 *
+	 * @param  rInput  The input stream to read the data to send from
+	 * @param  rOutput The target output stream
+	 *
+	 * @return The number of bytes sent
+	 *
+	 * @throws IOException If a stream access fails
+	 */
+	public static long send(InputStream rInput, OutputStream rOutput)
+		throws IOException
+	{
+		byte[] aBuffer = new byte[1024 * 4];
+		long   nCount  = 0;
+		int    nRead   = 0;
+
+		while ((nRead = rInput.read(aBuffer)) != -1)
+		{
+			rOutput.write(aBuffer, 0, nRead);
+			nCount += nRead;
+		}
+
+		return nCount;
+	}
+
+	/***************************************
+	 * Sends the data from a reader to a writer. This method uses a buffer of 4K
+	 * for the transfer so it is not necessary to wrap the streams in buffered
+	 * streams.
+	 *
+	 * @param  rInput  The reader to read the data to send from
+	 * @param  rOutput The target writer
+	 *
+	 * @return The number of characters sent
+	 *
+	 * @throws IOException If a stream access fails
+	 */
+	public static long send(Reader rInput, Writer rOutput) throws IOException
+	{
+		char[] aBuffer = new char[1024 * 4];
+		long   nCount  = 0;
+		int    nRead   = 0;
+
+		while ((nRead = rInput.read(aBuffer)) != -1)
+		{
+			rOutput.write(aBuffer, 0, nRead);
+			nCount += nRead;
+		}
+
+		return nCount;
 	}
 
 	//~ Inner Classes ----------------------------------------------------------
