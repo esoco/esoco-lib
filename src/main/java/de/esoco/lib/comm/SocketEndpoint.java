@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-lib' project.
+// This file is a part of the 'esoco-gwt' project.
 // Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 3.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-2.0
+//	  http://www.apache.org/licenses/LICENSE-3.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,8 +35,8 @@ import java.net.URI;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.CONNECTION_TIMEOUT;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
-import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.TRUST_SELF_SIGNED_CERTIFICATES;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
@@ -186,6 +186,7 @@ public class SocketEndpoint extends Endpoint
 	 * {@inheritDoc}
 	 */
 	@Override
+	@SuppressWarnings("boxing")
 	protected void initConnection(Connection rConnection) throws IOException
 	{
 		URI		   rUri		   = rConnection.getUri();
@@ -201,6 +202,7 @@ public class SocketEndpoint extends Endpoint
 		Socket aSocket =
 			NetUtil.createSocket(rUri.getHost(), rUri.getPort(), eSocketType);
 
+		aSocket.setSoTimeout(rConnection.get(CONNECTION_TIMEOUT));
 		rConnection.set(ENDPOINT_SOCKET, aSocket);
 
 		if (eSocketType != SocketType.PLAIN &&
@@ -333,20 +335,19 @@ public class SocketEndpoint extends Endpoint
 		 * {@inheritDoc}
 		 */
 		@Override
-		@SuppressWarnings("boxing")
 		protected byte[] readResponse(
 			Connection  rConnection,
 			InputStream rInputStream) throws Exception
 		{
-			int    nResponseSize = rConnection.get(MAX_RESPONSE_SIZE);
-			byte[] rResult		 = null;
+			byte[] rResult = null;
 
 			if (fGetResponseSize != null)
 			{
-				nResponseSize = fGetResponseSize.evaluate(rInputStream);
-			}
+				@SuppressWarnings("boxing")
+				int nResponseSize = fGetResponseSize.evaluate(rInputStream);
 
-			rResult = StreamUtil.readAll(rInputStream, 1024, nResponseSize);
+				rResult = StreamUtil.readAll(rInputStream, 1024, nResponseSize);
+			}
 
 			return rResult;
 		}
@@ -407,22 +408,22 @@ public class SocketEndpoint extends Endpoint
 			Connection  rConnection,
 			InputStream rInputStream) throws Exception
 		{
-			Reader aReader		 = rConnection.get(ENDPOINT_SOCKET_READER);
-			int    nResponseSize = rConnection.get(MAX_RESPONSE_SIZE);
-			String sResult		 = null;
-
-			if (aReader == null)
-			{
-				aReader = new InputStreamReader(rInputStream);
-				rConnection.set(ENDPOINT_SOCKET_READER, aReader);
-			}
+			String sResult = null;
 
 			if (fGetResponseSize != null)
 			{
-				nResponseSize = fGetResponseSize.evaluate(aReader);
-			}
+				Reader aReader = rConnection.get(ENDPOINT_SOCKET_READER);
 
-			sResult = StreamUtil.readAll(aReader, 1024, nResponseSize);
+				if (aReader == null)
+				{
+					aReader = new InputStreamReader(rInputStream);
+					rConnection.set(ENDPOINT_SOCKET_READER, aReader);
+				}
+
+				int nResponseSize = fGetResponseSize.evaluate(aReader);
+
+				sResult = StreamUtil.readAll(aReader, 1024, nResponseSize);
+			}
 
 			return sResult;
 		}

@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// This file is a part of the 'esoco-gwt' project.
+// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 3.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-2.0
+//	  http://www.apache.org/licenses/LICENSE-3.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -150,11 +150,11 @@ public final class Log
 	 *
 	 * @param rLogAspect The log aspect to register
 	 */
-	public static <T> void addLogAspect(LogAspect<T> rLogAspect)
+	public static void addLogAspect(LogAspect<?> rLogAspect)
 	{
 		@SuppressWarnings("unchecked")
-		Class<? extends LogAspect<T>> rLogAspectType =
-			(Class<? extends LogAspect<T>>) rLogAspect.getClass();
+		Class<? extends LogAspect<?>> rLogAspectType =
+			(Class<? extends LogAspect<?>>) rLogAspect.getClass();
 
 		if (aLogAspects == null)
 		{
@@ -507,8 +507,8 @@ public final class Log
 	 *
 	 * @param rLogAspectType The class of the log aspect to remove
 	 */
-	public static <T> void removeLogAspect(
-		Class<? extends LogAspect<T>> rLogAspectType)
+	public static void removeLogAspect(
+		Class<? extends LogAspect<?>> rLogAspectType)
 	{
 		if (aLogAspects != null)
 		{
