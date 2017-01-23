@@ -304,7 +304,7 @@ public final class StreamUtil
 	 * @param  nMax        The maximum number of bytes to read
 	 * @param  bIgnoreCase TRUE if the case of the token should be ignored
 	 *
-	 * @return The string read from the stream up to and including the search
+	 * @return The string read from the stream up to but excluding the search
 	 *         token or NULL if the token couldn't be found
 	 *
 	 * @throws IOException              If reading from the stream fails

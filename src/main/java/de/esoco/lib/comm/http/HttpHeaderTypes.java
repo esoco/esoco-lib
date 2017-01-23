@@ -16,9 +16,22 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.http;
 
-import org.obrel.core.Annotations.RelationTypeNamespace;
-import org.obrel.core.RelationType;
+import de.esoco.lib.event.ElementEvent.EventType;
+import de.esoco.lib.expression.Function;
+import de.esoco.lib.text.TextConvert;
 
+import java.util.Set;
+
+import org.obrel.core.Annotations.RelationTypeNamespace;
+import org.obrel.core.Relatable;
+import org.obrel.core.Relation;
+import org.obrel.core.RelationEvent;
+import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypeModifier;
+import org.obrel.type.SetType;
+import org.obrel.type.StandardTypes;
+
+import static org.obrel.core.RelationTypes.newIntType;
 import static org.obrel.core.RelationTypes.newType;
 
 
@@ -28,9 +41,47 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * @author eso
  */
-@RelationTypeNamespace("de.esoco.lib.com.http")
+@RelationTypeNamespace("de.esoco.lib.comm.http")
 public class HttpHeaderTypes
 {
+	//~ Enums ------------------------------------------------------------------
+
+	/********************************************************************
+	 * Enumeration of HTTP header field names.
+	 */
+	public enum HttpHeaderField
+	{
+		ACCEPT, ACCEPT_CHARSET, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE,
+		COOKIE, HOST;
+
+		//~ Instance fields ----------------------------------------------------
+
+		private final String sFieldName;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance with a field name derived from the instance
+		 * name.
+		 */
+		private HttpHeaderField()
+		{
+			this.sFieldName = TextConvert.capitalize(name(), "-");
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * Returns the HTTP name of the header field.
+		 *
+		 * @return The field name
+		 */
+		public final String getFieldName()
+		{
+			return sFieldName;
+		}
+	}
+
 	//~ Static fields/initializers ---------------------------------------------
 
 	/** The HTTP Accept header. */
@@ -40,7 +91,7 @@ public class HttpHeaderTypes
 	public static final RelationType<String> ACCEPT_CHARSET = newType();
 
 	/** The HTTP Content-Length header. */
-	public static final RelationType<Integer> CONTENT_LENGTH = newType();
+	public static final RelationType<Integer> CONTENT_LENGTH = newIntType();
 
 	/** The HTTP Content-Type header. */
 	public static final RelationType<String> CONTENT_TYPE = newType();
@@ -66,5 +117,78 @@ public class HttpHeaderTypes
 		sHeaderName = sHeaderName.replaceAll("-", "_").toUpperCase();
 
 		return RelationType.valueOf("de.esoco.lib.com.http." + sHeaderName);
+	}
+
+	//~ Inner Classes ----------------------------------------------------------
+
+	/********************************************************************
+	 * A relation type that collects values on relation updates.
+	 *
+	 * @author eso
+	 */
+	public static class CollectorType<T> extends SetType<T>
+	{
+		//~ Static fields/initializers -----------------------------------------
+
+		private static final long serialVersionUID = 1L;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance.
+		 *
+		 * @param sName          The name of this type
+		 * @param rCollectedType The datatype of the collected values
+		 * @param rModifiers     The relation type modifiers
+		 */
+		public CollectorType(String					 sName,
+							 Class<T>				 rCollectedType,
+							 RelationTypeModifier... rModifiers)
+		{
+			super(sName, rCollectedType, true, rModifiers);
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * @see RelationType#addRelation(Relatable, Relation)
+		 */
+		@Override
+		protected void addRelation(
+			Relatable		 rParent,
+			Relation<Set<T>> rRelation)
+		{
+			super.addRelation(rParent, rRelation);
+
+			rParent.get(StandardTypes.RELATION_LISTENERS)
+				   .add(this::processEvent);
+		}
+
+		/***************************************
+		 * Processes a relation event.
+		 *
+		 * @param rEvent The relation event
+		 */
+		protected void processEvent(RelationEvent<?> rEvent)
+		{
+			Function<Relation, T> fCollector = null;
+
+			if (fCollector != null)
+			{
+				T rValue = fCollector.evaluate(rEvent.getElement());
+
+				if (rValue != null)
+				{
+					if (rEvent.getType() == EventType.ADD)
+					{
+						rEvent.getSource().get(this).add(rValue);
+					}
+					else if (rEvent.getType() == EventType.REMOVE)
+					{
+						rEvent.getSource().get(this).remove(rValue);
+					}
+				}
+			}
+		}
 	}
 }

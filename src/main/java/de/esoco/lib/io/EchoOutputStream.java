@@ -22,58 +22,44 @@ import java.io.OutputStream;
 
 
 /********************************************************************
- * An output stream wrapper that limits the number of bytes that can be written
- * to the stream. If the limit is exceeded any further attempt at writing to the
- * stream will throw a {@link StreamLimitException}. The remaining limit can be
- * queried with the {@link #getRemainingLimit()} method.
+ * An output stream that echos all bytes that are written to a wrapped output
+ * stream to another output stream.
  *
  * @author eso
  */
-public class LimitedOutputStream extends FilterOutputStream
+public class EchoOutputStream extends FilterOutputStream
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private int nRemainingLimit;
+	private final OutputStream rEchoStream;
 
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The stream wrapped by this instance
-	 * @param nMaxBytes      The maximum number of bytes that can be written to
-	 *                       this instance
+	 * @param rWrappedStream The wrapped output stream
+	 * @param rEchoStream    The stream to echo the output to
 	 */
-	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes)
+	public EchoOutputStream(
+		OutputStream rWrappedStream,
+		OutputStream rEchoStream)
 	{
 		super(rWrappedStream);
 
-		nRemainingLimit = nMaxBytes;
+		this.rEchoStream = rEchoStream;
 	}
 
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Returns the remaining limit that can be written.
-	 *
-	 * @return The remaining limit
-	 */
-	public int getRemainingLimit()
-	{
-		return nRemainingLimit;
-	}
-
-	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("boxing")
-	public String toString()
+	public void flush() throws IOException
 	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLimit,
-							 out);
+		super.flush();
+		rEchoStream.flush();
 	}
 
 	/***************************************
@@ -82,13 +68,8 @@ public class LimitedOutputStream extends FilterOutputStream
 	@Override
 	public void write(int nByte) throws IOException
 	{
-		if (nRemainingLimit-- > 0)
-		{
-			super.write(nByte);
-		}
-		else
-		{
-			throw new StreamLimitException("Output limit reached", false);
-		}
+		super.write(nByte);
+
+		rEchoStream.write(nByte);
 	}
 }

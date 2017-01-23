@@ -14,13 +14,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.comm.http;
+package de.esoco.lib.comm;
 
-import de.esoco.lib.comm.CommunicationException;
-import de.esoco.lib.comm.CommunicationMethod;
-import de.esoco.lib.comm.CommunicationRelationTypes;
-import de.esoco.lib.comm.Connection;
-import de.esoco.lib.comm.Endpoint;
+import de.esoco.lib.comm.http.HttpRequestMethod;
+import de.esoco.lib.comm.http.HttpStatusCode;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.LimitedInputStream;

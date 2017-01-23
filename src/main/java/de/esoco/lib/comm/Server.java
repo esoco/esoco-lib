@@ -41,7 +41,6 @@ import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
-import org.obrel.type.MetaTypes;
 import org.obrel.type.StandardTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
@@ -50,6 +49,7 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 
 import static org.obrel.core.RelationTypes.newType;
+import static org.obrel.type.MetaTypes.IMMUTABLE;
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 
@@ -190,6 +190,21 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	}
 
 	/***************************************
+	 * Creates a configuration object for the client requests.
+	 *
+	 * @return The relatable configuration object
+	 */
+	protected Relatable createRequestConfig()
+	{
+		Relatable aRequestConfig = new RelatedObject();
+
+		ObjectRelations.copyRelations(this, aRequestConfig, true);
+		aRequestConfig.set(IMMUTABLE);
+
+		return aRequestConfig;
+	}
+
+	/***************************************
 	 * Creates the server socket to listen on when the server is started.
 	 *
 	 * @param  nPort The port to listen on
@@ -284,10 +299,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 			bRunning = true;
 
-			Relatable aRequestConfig = new RelatedObject();
-
-			ObjectRelations.copyRelations(this, aRequestConfig, true);
-			aRequestConfig.set(MetaTypes.IMMUTABLE);
+			Relatable aRequestConfig = createRequestConfig();
 
 			while (bRunning)
 			{

@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-gwt' project.
+// This file is a part of the 'esoco-lib' project.
 // Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
-// Licensed under the Apache License, Version 3.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-3.0
+//	  http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,14 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
-import de.esoco.lib.expression.Function;
+import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
+import de.esoco.lib.comm.http.HttpRequestHandler.HttpResponse;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
-import java.io.StringReader;
-
-import static de.esoco.lib.expression.Functions.value;
+import org.junit.Test;
 
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
@@ -41,24 +41,30 @@ public class ServerTest
 	/***************************************
 	 * Test of {@link Server#handleClientRequest(java.net.Socket)}
 	 */
-//	@Test
+	@Test
 	public void testHandleClientRequest()
 	{
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
-		Server aServer =
-			new Server(rServer ->
-					   new HttpRequestHandler(sPath -> new StringReader(sPath)))
-			.with(NAME, "TestServer").with(PORT, 8008);
-
-		new Thread(aServer).start();
-
 		@SuppressWarnings("boxing")
-		Function<String, String> fGet =
-			SocketEndpoint.textRequest("GET /index.html\r\n\r\n", value(19))
-						  .from(Endpoint.at("socket://localhost:8008"));
+		HttpRequestMethodHandler aMethodHandler =
+			rRequest -> new HttpResponse(rRequest.getPath());
 
-		System.out.printf("SERVER RESPONSE: %s\n", fGet.result());
-		aServer.stop();
+		RequestHandlerFactory aFactory =
+			rServer -> new HttpRequestHandler(aMethodHandler);
+
+		Server aServer =
+			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008);
+
+		aServer.run();
+//		new Thread(aServer).start();
+
+//		@SuppressWarnings("boxing")
+//		Function<String, String> fGet =
+//			HttpEndpoint.httpGet("index.html")
+//						.from(Endpoint.at("http://localhost:8008"));
+//
+//		System.out.printf("SERVER RESPONSE: %s\n", fGet.result());
+//		aServer.stop();
 	}
 }

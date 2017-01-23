@@ -16,7 +16,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
-import de.esoco.lib.comm.http.HttpEndpoint;
 import de.esoco.lib.expression.BinaryPredicate;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.net.NetUtil;
@@ -28,9 +27,9 @@ import java.util.regex.Pattern;
 
 import org.obrel.type.MetaTypes;
 
+import static de.esoco.lib.comm.HttpEndpoint.httpGet;
+import static de.esoco.lib.comm.HttpEndpoint.httpPost;
 import static de.esoco.lib.comm.SocketEndpoint.textRequest;
-import static de.esoco.lib.comm.http.HttpEndpoint.httpGet;
-import static de.esoco.lib.comm.http.HttpEndpoint.httpPost;
 import static de.esoco.lib.expression.Functions.doIfElse;
 import static de.esoco.lib.expression.Functions.value;
 import static de.esoco.lib.expression.MathFunctions.parseInteger;

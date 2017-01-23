@@ -16,20 +16,25 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.io;
 
-import java.io.FilterOutputStream;
+import java.io.FilterReader;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.Reader;
 
 
 /********************************************************************
- * An output stream wrapper that limits the number of bytes that can be written
- * to the stream. If the limit is exceeded any further attempt at writing to the
- * stream will throw a {@link StreamLimitException}. The remaining limit can be
- * queried with the {@link #getRemainingLimit()} method.
+ * A wrapper for {@link Reader} instances that limits the number of characters
+ * that can be read from it. It limits all (and only) characters read from the
+ * stream, even if the {@link #mark(int)} and {@link #reset()} methods are used.
+ * Characters ignored by invoking the {@link #skip(long)} method will not count
+ * against the limit.
+ *
+ * <p>If the limit is exceeded any further attempt at reading will throw a
+ * {@link StreamLimitException}. The remaining limit can be queried with the
+ * {@link #getRemainingLimit()} method.</p>
  *
  * @author eso
  */
-public class LimitedOutputStream extends FilterOutputStream
+public class LimitedReader extends FilterReader
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -40,21 +45,21 @@ public class LimitedOutputStream extends FilterOutputStream
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The stream wrapped by this instance
-	 * @param nMaxBytes      The maximum number of bytes that can be written to
-	 *                       this instance
+	 * @param rWrappedReader The reader wrapped by this instance
+	 * @param nMax           The maximum number of characters that can be read
+	 *                       from this instance
 	 */
-	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes)
+	public LimitedReader(Reader rWrappedReader, int nMax)
 	{
-		super(rWrappedStream);
+		super(rWrappedReader);
 
-		nRemainingLimit = nMaxBytes;
+		nRemainingLimit = nMax;
 	}
 
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Returns the remaining limit that can be written.
+	 * Returns the remaining limit that can be read.
 	 *
 	 * @return The remaining limit
 	 */
@@ -67,28 +72,57 @@ public class LimitedOutputStream extends FilterOutputStream
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("boxing")
-	public String toString()
+	public int read() throws IOException
 	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLimit,
-							 out);
+		checkLimit();
+		nRemainingLimit--;
+
+		return super.read();
 	}
 
 	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException
+	public int read(char[] rBuffer, int nOffset, int nLength) throws IOException
 	{
-		if (nRemainingLimit-- > 0)
+		checkLimit();
+
+		if (nRemainingLimit < nLength)
 		{
-			super.write(nByte);
+			nLength = nRemainingLimit;
 		}
-		else
+
+		int nRead = super.read(rBuffer, nOffset, nLength);
+
+		nRemainingLimit -= nRead;
+
+		return nRead;
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	@SuppressWarnings("boxing")
+	public String toString()
+	{
+		return String.format("%s(%d, %s)",
+							 getClass().getSimpleName(),
+							 nRemainingLimit,
+							 in);
+	}
+
+	/***************************************
+	 * Checks whether the limit has been reached.
+	 *
+	 * @throws StreamLimitException If the limit has been reached
+	 */
+	protected void checkLimit() throws StreamLimitException
+	{
+		if (nRemainingLimit == 0)
 		{
-			throw new StreamLimitException("Output limit reached", false);
+			throw new StreamLimitException("Input limit reached", true);
 		}
 	}
 }

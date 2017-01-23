@@ -16,20 +16,20 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.io;
 
-import java.io.FilterOutputStream;
+import java.io.FilterWriter;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.Writer;
 
 
 /********************************************************************
- * An output stream wrapper that limits the number of bytes that can be written
- * to the stream. If the limit is exceeded any further attempt at writing to the
- * stream will throw a {@link StreamLimitException}. The remaining limit can be
+ * A wrapper for {@link Writer} instances that limits the number of characters
+ * that can be written to it. If the limit is exceeded any further attempt at
+ * writing will throw a {@link StreamLimitException}. The remaining limit can be
  * queried with the {@link #getRemainingLimit()} method.
  *
  * @author eso
  */
-public class LimitedOutputStream extends FilterOutputStream
+public class LimitedWriter extends FilterWriter
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -40,15 +40,15 @@ public class LimitedOutputStream extends FilterOutputStream
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The stream wrapped by this instance
-	 * @param nMaxBytes      The maximum number of bytes that can be written to
-	 *                       this instance
+	 * @param rWrappedWriter The writer wrapped by this instance
+	 * @param nMax           The maximum number of characters that can be
+	 *                       written to this instance
 	 */
-	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes)
+	public LimitedWriter(Writer rWrappedWriter, int nMax)
 	{
-		super(rWrappedStream);
+		super(rWrappedWriter);
 
-		nRemainingLimit = nMaxBytes;
+		nRemainingLimit = nMax;
 	}
 
 	//~ Methods ----------------------------------------------------------------

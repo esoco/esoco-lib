@@ -16,79 +16,70 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.io;
 
-import java.io.FilterOutputStream;
+import java.io.FilterReader;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 
 
 /********************************************************************
- * An output stream wrapper that limits the number of bytes that can be written
- * to the stream. If the limit is exceeded any further attempt at writing to the
- * stream will throw a {@link StreamLimitException}. The remaining limit can be
- * queried with the {@link #getRemainingLimit()} method.
+ * A {@link Reader} that echos all characters that are read from a wrapped
+ * reader to a {@link Writer}.
  *
  * @author eso
  */
-public class LimitedOutputStream extends FilterOutputStream
+public class EchoReader extends FilterReader
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private int nRemainingLimit;
+	private final Writer rEchoWriter;
 
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The stream wrapped by this instance
-	 * @param nMaxBytes      The maximum number of bytes that can be written to
-	 *                       this instance
+	 * @param rWrappedReader The wrapped reader
+	 * @param rEchoWriter    The writer to echo the input to
 	 */
-	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes)
+	public EchoReader(Reader rWrappedReader, Writer rEchoWriter)
 	{
-		super(rWrappedStream);
+		super(rWrappedReader);
 
-		nRemainingLimit = nMaxBytes;
+		this.rEchoWriter = rEchoWriter;
 	}
 
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Returns the remaining limit that can be written.
-	 *
-	 * @return The remaining limit
+	 * {@inheritDoc}
 	 */
-	public int getRemainingLimit()
+	@Override
+	public int read() throws IOException
 	{
-		return nRemainingLimit;
+		int nChar = super.read();
+
+		if (nChar >= 0)
+		{
+			rEchoWriter.write(nChar);
+		}
+
+		return nChar;
 	}
 
 	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("boxing")
-	public String toString()
+	public int read(char[] rBuffer, int nOffset, int nLength) throws IOException
 	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLimit,
-							 out);
-	}
+		int nRead = super.read(rBuffer, nOffset, nLength);
 
-	/***************************************
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void write(int nByte) throws IOException
-	{
-		if (nRemainingLimit-- > 0)
+		if (nRead >= 0)
 		{
-			super.write(nByte);
+			rEchoWriter.write(rBuffer, nOffset, nRead);
 		}
-		else
-		{
-			throw new StreamLimitException("Output limit reached", false);
-		}
+
+		return nRead;
 	}
 }
