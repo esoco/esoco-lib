@@ -25,6 +25,8 @@ import de.esoco.lib.logging.LogLevel;
 
 import org.junit.Test;
 
+import static de.esoco.lib.comm.http.HttpHeaderTypes.CONTENT_TYPE;
+
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 
@@ -46,9 +48,10 @@ public class ServerTest
 	{
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
-		@SuppressWarnings("boxing")
 		HttpRequestMethodHandler aMethodHandler =
-			rRequest -> new HttpResponse(rRequest.getPath());
+			rRequest ->
+			new HttpResponse(rRequest.getPath()).with(CONTENT_TYPE,
+													  "text/plain; charset=UTF-8");
 
 		RequestHandlerFactory aFactory =
 			rServer -> new HttpRequestHandler(aMethodHandler);

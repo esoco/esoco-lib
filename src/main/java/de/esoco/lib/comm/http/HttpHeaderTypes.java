@@ -16,23 +16,21 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.http;
 
-import de.esoco.lib.event.ElementEvent.EventType;
-import de.esoco.lib.expression.Function;
 import de.esoco.lib.text.TextConvert;
 
-import java.util.Set;
+import java.util.Collection;
 
 import org.obrel.core.Annotations.RelationTypeNamespace;
-import org.obrel.core.Relatable;
 import org.obrel.core.Relation;
-import org.obrel.core.RelationEvent;
 import org.obrel.core.RelationType;
-import org.obrel.core.RelationTypeModifier;
-import org.obrel.type.SetType;
-import org.obrel.type.StandardTypes;
+import org.obrel.core.RelationTypes;
+import org.obrel.type.CollectorType;
 
+import static org.obrel.core.RelationTypeModifier.FINAL;
+import static org.obrel.core.RelationTypeModifier.READONLY;
+import static org.obrel.core.RelationTypes.newEnumType;
 import static org.obrel.core.RelationTypes.newIntType;
-import static org.obrel.core.RelationTypes.newType;
+import static org.obrel.core.RelationTypes.newStringType;
 
 
 /********************************************************************
@@ -41,7 +39,7 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * @author eso
  */
-@RelationTypeNamespace("de.esoco.lib.comm.http")
+@RelationTypeNamespace(HttpHeaderTypes.HTTP_HEADER_TYPES_NAMESPACE)
 public class HttpHeaderTypes
 {
 	//~ Enums ------------------------------------------------------------------
@@ -84,23 +82,58 @@ public class HttpHeaderTypes
 
 	//~ Static fields/initializers ---------------------------------------------
 
+	/** The namespace for the HTTP header types. */
+	public static final String HTTP_HEADER_TYPES_NAMESPACE =
+		"de.esoco.lib.comm.http";
+
+	/** The {@link HttpHeaderField} associated with the header type. */
+	// initialized with explicit name because it is used as a meta-type for the
+	// subsequently declared relation types and must therefore be initialized
+	public static final RelationType<HttpHeaderField> HTTP_HEADER_FIELD =
+		newEnumType(HTTP_HEADER_TYPES_NAMESPACE + ".HTTP_HEADER_FIELD",
+					HttpHeaderField.class,
+					FINAL);
+
 	/** The HTTP Accept header. */
-	public static final RelationType<String> ACCEPT = newType();
+	public static final RelationType<String> ACCEPT =
+		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.ACCEPT);
 
 	/** The HTTP Accept-Charset header. */
-	public static final RelationType<String> ACCEPT_CHARSET = newType();
+	public static final RelationType<String> ACCEPT_CHARSET =
+		newStringType().annotate(HTTP_HEADER_FIELD,
+								 HttpHeaderField.ACCEPT_CHARSET);
 
 	/** The HTTP Content-Length header. */
-	public static final RelationType<Integer> CONTENT_LENGTH = newIntType();
+	public static final RelationType<Integer> CONTENT_LENGTH =
+		newIntType().annotate(HTTP_HEADER_FIELD,
+							  HttpHeaderField.CONTENT_LENGTH);
 
 	/** The HTTP Content-Type header. */
-	public static final RelationType<String> CONTENT_TYPE = newType();
+	public static final RelationType<String> CONTENT_TYPE =
+		newStringType().annotate(HTTP_HEADER_FIELD,
+								 HttpHeaderField.CONTENT_TYPE);
 
 	/** The HTTP Cookie header. */
-	public static final RelationType<String> COOKIE = newType();
+	public static final RelationType<String> COOKIE =
+		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.COOKIE);
 
 	/** The HTTP Host header. */
-	public static final RelationType<String> HOST = newType();
+	public static final RelationType<String> HOST =
+		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.HOST);
+
+	/**
+	 * Collects all HTTP header types that have been set on an object. FINAL to
+	 * prevent external modification.
+	 */
+	public static final RelationType<Collection<RelationType<?>>> HTTP_HEADER_TYPES =
+		CollectorType.newDistinctCollector(RelationType.class,
+										   HttpHeaderTypes::collectHeaderTypes,
+										   READONLY);
+
+	static
+	{
+		RelationTypes.init(HttpHeaderTypes.class);
+	}
 
 	//~ Static methods ---------------------------------------------------------
 
@@ -119,76 +152,24 @@ public class HttpHeaderTypes
 		return RelationType.valueOf("de.esoco.lib.com.http." + sHeaderName);
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
-	 * A relation type that collects values on relation updates.
+	/***************************************
+	 * Implementation of the collector function for the collector type {@link
+	 * #HTTP_HEADER_TYPES}. Returns all relation types that have the {@link
+	 * #HTTP_HEADER_TYPES_NAMESPACE}.
 	 *
-	 * @author eso
+	 * @param  rRelation The relation to check the relation type of
+	 *
+	 * @return The relation type to collect or NULL for none
 	 */
-	public static class CollectorType<T> extends SetType<T>
+	private static RelationType<?> collectHeaderTypes(Relation<?> rRelation)
 	{
-		//~ Static fields/initializers -----------------------------------------
+		RelationType<?> rType = rRelation.getType();
 
-		private static final long serialVersionUID = 1L;
-
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
-		 * Creates a new instance.
-		 *
-		 * @param sName          The name of this type
-		 * @param rCollectedType The datatype of the collected values
-		 * @param rModifiers     The relation type modifiers
-		 */
-		public CollectorType(String					 sName,
-							 Class<T>				 rCollectedType,
-							 RelationTypeModifier... rModifiers)
+		if (!rType.getName().startsWith(HTTP_HEADER_TYPES_NAMESPACE))
 		{
-			super(sName, rCollectedType, true, rModifiers);
+			rType = null;
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * @see RelationType#addRelation(Relatable, Relation)
-		 */
-		@Override
-		protected void addRelation(
-			Relatable		 rParent,
-			Relation<Set<T>> rRelation)
-		{
-			super.addRelation(rParent, rRelation);
-
-			rParent.get(StandardTypes.RELATION_LISTENERS)
-				   .add(this::processEvent);
-		}
-
-		/***************************************
-		 * Processes a relation event.
-		 *
-		 * @param rEvent The relation event
-		 */
-		protected void processEvent(RelationEvent<?> rEvent)
-		{
-			Function<Relation, T> fCollector = null;
-
-			if (fCollector != null)
-			{
-				T rValue = fCollector.evaluate(rEvent.getElement());
-
-				if (rValue != null)
-				{
-					if (rEvent.getType() == EventType.ADD)
-					{
-						rEvent.getSource().get(this).add(rValue);
-					}
-					else if (rEvent.getType() == EventType.REMOVE)
-					{
-						rEvent.getSource().get(this).remove(rValue);
-					}
-				}
-			}
-		}
+		return rType;
 	}
 }
