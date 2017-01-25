@@ -21,7 +21,6 @@ import de.esoco.lib.text.TextConvert;
 import java.util.Collection;
 
 import org.obrel.core.Annotations.RelationTypeNamespace;
-import org.obrel.core.Relation;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 import org.obrel.type.CollectorType;
@@ -157,19 +156,22 @@ public class HttpHeaderTypes
 	 * #HTTP_HEADER_TYPES}. Returns all relation types that have the {@link
 	 * #HTTP_HEADER_TYPES_NAMESPACE}.
 	 *
-	 * @param  rRelation The relation to check the relation type of
+	 * @param  rRelationType The relation to check the relation type of
+	 * @param  rIgnored      Relation value, not used here
 	 *
 	 * @return The relation type to collect or NULL for none
 	 */
-	private static RelationType<?> collectHeaderTypes(Relation<?> rRelation)
+	private static RelationType<?> collectHeaderTypes(
+		RelationType<?> rRelationType,
+		Object			rIgnored)
 	{
-		RelationType<?> rType = rRelation.getType();
-
-		if (!rType.getName().startsWith(HTTP_HEADER_TYPES_NAMESPACE))
+		if (rRelationType.getName().startsWith(HTTP_HEADER_TYPES_NAMESPACE))
 		{
-			rType = null;
+			return rRelationType;
 		}
-
-		return rType;
+		else
+		{
+			return null;
+		}
 	}
 }

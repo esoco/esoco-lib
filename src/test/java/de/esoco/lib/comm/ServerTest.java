@@ -23,8 +23,6 @@ import de.esoco.lib.comm.http.HttpRequestHandler.HttpResponse;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
-import org.junit.Test;
-
 import static de.esoco.lib.comm.http.HttpHeaderTypes.CONTENT_TYPE;
 
 import static org.obrel.type.StandardTypes.NAME;
@@ -38,13 +36,14 @@ import static org.obrel.type.StandardTypes.PORT;
  */
 public class ServerTest
 {
-	//~ Methods ----------------------------------------------------------------
+	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * Test of {@link Server#handleClientRequest(java.net.Socket)}
+	 * Runs a simple HTTP server for testing purposes.
+	 *
+	 * @param rArgs The args
 	 */
-	@Test
-	public void testHandleClientRequest()
+	public static void main(String[] rArgs)
 	{
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
