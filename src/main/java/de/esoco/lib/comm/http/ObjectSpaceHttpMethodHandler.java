@@ -31,7 +31,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private ObjectSpace<String> rObjectSpace;
+	private ObjectSpace<?> rObjectSpace;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -40,7 +40,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	 *
 	 * @param rObjectSpace The object space to get response data from
 	 */
-	public ObjectSpaceHttpMethodHandler(ObjectSpace<String> rObjectSpace)
+	public ObjectSpaceHttpMethodHandler(ObjectSpace<?> rObjectSpace)
 	{
 		this.rObjectSpace = rObjectSpace;
 	}
@@ -57,7 +57,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 
 		try
 		{
-			String rData = rObjectSpace.get(sPath);
+			String rData = rObjectSpace.get(sPath).toString();
 
 			if (rData == null)
 			{

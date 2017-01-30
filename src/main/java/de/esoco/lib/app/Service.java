@@ -17,8 +17,19 @@
 package de.esoco.lib.app;
 
 import de.esoco.lib.comm.Server;
+import de.esoco.lib.comm.Server.RequestHandler;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
+import de.esoco.lib.comm.http.HttpRequestHandler;
+import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
+import de.esoco.lib.expression.Functions;
 
+import org.obrel.core.Relatable;
+import org.obrel.core.RelationType;
+import org.obrel.space.ObjectSpace;
+import org.obrel.space.RelatableObjectSpace;
+
+import static org.obrel.core.RelationTypes.newFlagType;
+import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.StandardTypes.PORT;
 
 
@@ -31,10 +42,22 @@ import static org.obrel.type.StandardTypes.PORT;
  */
 public abstract class Service extends Application
 {
+	//~ Static fields/initializers ---------------------------------------------
+
+	/** TODO: DOCUMENT ME */
+	public static final RelationType<Boolean> RUN = newFlagType();
+
+	/** The {@link ObjectSpace} containing the server status. */
+	public static final RelationType<ObjectSpace<Object>> STATUS = newType();
+
+	/** The {@link ObjectSpace} providing access to server control. */
+	public static final RelationType<ObjectSpace<Object>> CONTROL = newType();
+
 	//~ Instance fields --------------------------------------------------------
 
-	private Server aControlServer;
-	private Thread aControlServerThread;
+	private Thread			    aControlServerThread;
+	private Server			    aControlServer;
+	private ObjectSpace<Object> aControlSpace;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -48,20 +71,55 @@ public abstract class Service extends Application
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Will be invoked to query the {@link RequestHandlerFactory} to be used for
-	 * the control server of this service.
-	 *
-	 * @return The control request handler
-	 */
-	protected abstract RequestHandlerFactory getControlRequestHandlerFactory();
-
-	/***************************************
 	 * Will be invoked to run the actual service after the application has been
 	 * initialized and configured.
 	 *
 	 * @throws Exception If an error occurs during execution
 	 */
 	protected abstract void runService() throws Exception;
+
+	/***************************************
+	 * Builds the {@link ObjectSpace} for the control server. The control server
+	 * uses this to lookup responses for control requests.
+	 *
+	 * @return The new control object space
+	 */
+	protected ObjectSpace<Object> buildControlSpace()
+	{
+		ObjectSpace<Object> aRoot =
+			new RelatableObjectSpace<>(Functions.identity());
+
+		aRoot.set(STATUS, new RelatableObjectSpace<>(Functions.identity()));
+		aRoot.set(CONTROL, new RelatableObjectSpace<>(Functions.identity()));
+
+		return null;
+	}
+
+	/***************************************
+	 * Must be implemented to create new instances of {@link RequestHandler} for
+	 * the the control server of this service.
+	 *
+	 * @param  rContext The service context
+	 *
+	 * @return A new request handler instance
+	 */
+	protected RequestHandler createRequestHandler(Relatable rContext)
+	{
+		return new HttpRequestHandler(rContext,
+									  new ObjectSpaceHttpMethodHandler(aControlSpace));
+	}
+
+	/***************************************
+	 * Will be invoked to query the {@link RequestHandlerFactory} to be used for
+	 * the control server of this service. The default implementation creates a
+	 * factory that invokes {@link #createRequestHandler(Relatable)}.
+	 *
+	 * @return The control request handler factory
+	 */
+	protected RequestHandlerFactory getControlRequestHandlerFactory()
+	{
+		return rContext -> createRequestHandler(rContext);
+	}
 
 	/***************************************
 	 * Will be invoked to query the control server port. The default
@@ -110,7 +168,8 @@ public abstract class Service extends Application
 	@Override
 	protected final void runApp() throws Exception
 	{
-//		aControlServer = startControlServer();
+		aControlServer = startControlServer();
+		aControlSpace.get(CONTROL).set(RUN);
 		runService();
 	}
 
@@ -123,6 +182,8 @@ public abstract class Service extends Application
 	 */
 	protected Server startControlServer() throws Exception
 	{
+		aControlSpace = buildControlSpace();
+
 		Server aServer =
 			new Server(getControlRequestHandlerFactory()).with(PORT,
 															   getControlServerPort());
