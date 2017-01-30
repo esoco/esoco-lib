@@ -16,48 +16,27 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.http;
 
-import de.esoco.lib.comm.CommunicationRelationTypes;
 import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.Server.RequestHandler;
-import de.esoco.lib.expression.Conversions;
 import de.esoco.lib.io.EchoInputStream;
-import de.esoco.lib.io.StreamUtil;
 import de.esoco.lib.logging.Log;
-import de.esoco.lib.net.NetUtil;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringReader;
-import java.io.Writer;
 
 import java.nio.charset.StandardCharsets;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
-import org.obrel.core.RelationType;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_MAX_HEADER_LINE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_RESPONSE_HEADERS;
-import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_STATUS_CODE;
-import static de.esoco.lib.comm.CommunicationRelationTypes.RESPONSE_ENCODING;
-import static de.esoco.lib.comm.http.HttpHeaderTypes.CONTENT_LENGTH;
-import static de.esoco.lib.comm.http.HttpHeaderTypes.HTTP_HEADER_FIELD;
-import static de.esoco.lib.comm.http.HttpHeaderTypes.HTTP_HEADER_TYPES;
 import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
 
 
@@ -70,6 +49,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 {
 	//~ Instance fields --------------------------------------------------------
 
+	private Relatable				 rContext;
 	private HttpRequestMethodHandler rRequestMethodHandler = null;
 
 	//~ Constructors -----------------------------------------------------------
@@ -77,10 +57,14 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	/***************************************
 	 * Creates a new instance with a certain request method handler.
 	 *
+	 * @param rContext The context for this request handler
 	 * @param rHandler The handler for the HTTP request methods
 	 */
-	public HttpRequestHandler(HttpRequestMethodHandler rHandler)
+	public HttpRequestHandler(
+		Relatable				 rContext,
+		HttpRequestMethodHandler rHandler)
 	{
+		this.rContext		  = rContext;
 		rRequestMethodHandler = rHandler;
 	}
 
@@ -90,9 +74,13 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * request method handler directly. Otherwise the handler must be set with
 	 * {@link #setRequestMethodHandler(HttpRequestHandler)} before any requests
 	 * are accepted or else a {@link NullPointerException} will occur.
+	 *
+	 * @param rContext The context of this request handler
 	 */
-	protected HttpRequestHandler()
+	protected HttpRequestHandler(Relatable rContext)
 	{
+		this.rContext = rContext;
+
 		if (this instanceof HttpRequestMethodHandler)
 		{
 			rRequestMethodHandler = (HttpRequestMethodHandler) this;
@@ -100,6 +88,18 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Returns the context of this handler. The context is a {@link Relatable}
+	 * object that provides access to relations containing configuration data.
+	 * It may be readonly and should therefore not be modified by the receiver.
+	 *
+	 * @return The request handler context
+	 */
+	public final Relatable getContext()
+	{
+		return rContext;
+	}
 
 	/***************************************
 	 * Returns the handler for the HTTP request methods.
@@ -115,9 +115,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void handleRequest(Relatable    rServerConfig,
-							  InputStream  rRequestStream,
-							  OutputStream rResponseStream) throws IOException
+	public void handleRequest(
+		InputStream  rRequestStream,
+		OutputStream rResponseStream) throws IOException
 	{
 		try
 		{
@@ -134,7 +134,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 			Log.info("Handling request: " + sRequest);
 
-			sendResponse(rServerConfig, aRequest, rResponseStream);
+			sendResponse(aRequest, rResponseStream);
 		}
 		catch (Exception e)
 		{
@@ -187,20 +187,18 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * Sends the HTTP response for an HTTP request through the given output
 	 * stream.
 	 *
-	 * @param  rServerConfig The configuration to read default values from
-	 * @param  rRequest      The HTTP request to send the response for
-	 * @param  rOutput       The output stream to write the response to
+	 * @param  rRequest The HTTP request to send the response for
+	 * @param  rOutput  The output stream to write the response to
 	 *
 	 * @throws IOException If writing the output fails
 	 */
-	protected void sendResponse(Relatable    rServerConfig,
-								HttpRequest  rRequest,
-								OutputStream rOutput) throws IOException
+	protected void sendResponse(HttpRequest rRequest, OutputStream rOutput)
+		throws IOException
 	{
 		HttpResponse rResponse = rRequestMethodHandler.handleMethod(rRequest);
 
 		Map<String, List<String>> rDefaultResponseHeaders =
-			rServerConfig.get(HTTP_RESPONSE_HEADERS);
+			rContext.get(HTTP_RESPONSE_HEADERS);
 
 		Map<String, List<String>> rResponseHeaders =
 			rResponse.get(HTTP_RESPONSE_HEADERS);
@@ -360,423 +358,6 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			}
 
 			return rResponse;
-		}
-	}
-
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
-	 * A class that collects the data of an HTTP request and additional
-	 * information (like headers) in it's relations.
-	 *
-	 * @author eso
-	 */
-	public static class HttpRequest extends RelatedObject
-	{
-		//~ Instance fields ----------------------------------------------------
-
-		private final HttpRequestMethod eRequestMethod;
-		private final String		    sRequestPath;
-		private final Reader		    aRequestBodyReader;
-
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
-		 * Reads the incoming request and throws an exception if it doesn't
-		 * match the requirements.
-		 *
-		 * @param  rInput rInputReader The reader to read the request from
-		 *
-		 * @return A pair containing the HTTP request method and the
-		 *
-		 * @throws IOException         If reading from the input fails
-		 * @throws HttpStatusException The corresponding HTTP status if the
-		 *                             request violates requirements
-		 */
-		public HttpRequest(InputStream rInput) throws IOException,
-													  HttpStatusException
-		{
-			Reader aHeaderReader =
-				new BufferedReader(new InputStreamReader(rInput,
-														 StandardCharsets.US_ASCII));
-
-			String sRequestLine = readLine(aHeaderReader);
-
-			if (sRequestLine == null)
-			{
-				badRequest("Unterminated request");
-			}
-			else if (sRequestLine.isEmpty())
-			{
-				badRequest("Empty request line");
-			}
-
-			HttpRequestMethod eMethod	    = HttpRequestMethod.GET;
-			String[]		  aRequestParts = sRequestLine.split(" ");
-
-			if (aRequestParts.length != 3 ||
-				!aRequestParts[2].startsWith("HTTP/"))
-			{
-				badRequest("Malformed request line: " + sRequestLine);
-			}
-
-			try
-			{
-				eMethod = HttpRequestMethod.valueOf(aRequestParts[0]);
-			}
-			catch (Exception e)
-			{
-				badRequest("Unknown request method: " + aRequestParts[0]);
-			}
-
-			readHeaders(aHeaderReader);
-
-			eRequestMethod     = eMethod;
-			sRequestPath	   = aRequestParts[1];
-			aRequestBodyReader =
-				new BufferedReader(new InputStreamReader(rInput,
-														 StandardCharsets.UTF_8));
-		}
-
-		/***************************************
-		 * Creates a new instance.
-		 *
-		 * @param rRequestMethod     The request method
-		 * @param rRequestPath       The request path
-		 * @param rRequestBodyReader The reader that given access to the request
-		 *                           body (if applicable)
-		 */
-		public HttpRequest(HttpRequestMethod rRequestMethod,
-						   String			 rRequestPath,
-						   Reader			 rRequestBodyReader)
-		{
-			eRequestMethod     = rRequestMethod;
-			sRequestPath	   = rRequestPath;
-			aRequestBodyReader = rRequestBodyReader;
-		}
-
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * Returns a reader that provides the body of the request. Will be yield
-		 * no data (but will never be NULL) if the request has no body. The
-		 * relation {@link HttpHeaderTypes#CONTENT_LENGTH} will contain the
-		 * length of the body data.
-		 *
-		 * @return A reader that provides the body data
-		 */
-		public final Reader getBody()
-		{
-			return aRequestBodyReader;
-		}
-
-		/***************************************
-		 * Returns the request method.
-		 *
-		 * @return The request method
-		 */
-		public final HttpRequestMethod getMethod()
-		{
-			return eRequestMethod;
-		}
-
-		/***************************************
-		 * Returns the requested path.
-		 *
-		 * @return The requested path
-		 */
-		public final String getPath()
-		{
-			return sRequestPath;
-		}
-
-		/***************************************
-		 * Tries to set an HTTP request header field as a relation on this
-		 * instance. Invokes {@link HttpHeaderTypes#get(String)} with the given
-		 * header name and if successfull tries to parse the value with {@link
-		 * Conversions#parseValue(String, Class)} with the relation datatype.
-		 *
-		 * @param  sHeaderName  The name of the header field
-		 * @param  sHeaderValue The value of the header field
-		 *
-		 * @throws HttpStatusException If the field value could not be parsed
-		 */
-		@SuppressWarnings("unchecked")
-		protected void parseRequestHeader(
-			String sHeaderName,
-			String sHeaderValue) throws HttpStatusException
-		{
-			RelationType<?> rHeaderType = HttpHeaderTypes.get(sHeaderName);
-
-			if (rHeaderType != null)
-			{
-				try
-				{
-					Object rValue =
-						Conversions.parseValue(sHeaderValue,
-											   rHeaderType.getTargetType());
-
-					set((RelationType<Object>) rHeaderType, rValue);
-				}
-				catch (Exception e)
-				{
-					badRequest(String.format("Invalid value for header '%s': %s",
-											 sHeaderName,
-											 sHeaderValue));
-				}
-			}
-		}
-
-		/***************************************
-		 * Reads the request headers into a map and returns it.
-		 *
-		 * @param  rInputReader The reader to read the header fields from
-		 *
-		 * @return A mapping from header field names to field values
-		 *
-		 * @throws IOException         On stream acces failures
-		 * @throws HttpStatusException On malformed requests
-		 */
-		protected Map<String, List<String>> readHeaders(Reader rInputReader)
-			throws IOException, HttpStatusException
-		{
-			Map<String, List<String>> aHeaders = new LinkedHashMap<>();
-			String					  sHeader;
-
-			do
-			{
-				sHeader = readLine(rInputReader);
-
-				if (sHeader == null)
-				{
-					badRequest("Request must be terminated with CRLF on empty line");
-				}
-				else if (!sHeader.isEmpty())
-				{
-					int nColon = sHeader.indexOf(':');
-
-					if (nColon < 1)
-					{
-						badRequest("Malformed header: " + sHeader);
-					}
-
-					String sHeaderName  = sHeader.substring(0, nColon).trim();
-					String sHeaderValue = sHeader.substring(nColon + 1).trim();
-
-					List<String> rHeaderValues = aHeaders.get(sHeaderName);
-
-					if (rHeaderValues == null)
-					{
-						rHeaderValues = new ArrayList<>();
-					}
-
-					rHeaderValues.add(sHeaderValue);
-					aHeaders.put(sHeaderName, rHeaderValues);
-					parseRequestHeader(sHeaderName, sHeaderValue);
-				}
-			}
-			while (!sHeader.isEmpty());
-
-			return aHeaders;
-		}
-
-		/***************************************
-		 * Helper method to read a single HTTP request line (terminated with
-		 * CRLF) from a {@link Reader}.
-		 *
-		 * @param  rReader The reader to read the line from
-		 *
-		 * @return The line string or NULL if no terminating CRLF could be found
-		 *
-		 * @throws IOException         If reading data fails
-		 * @throws HttpStatusException If the line is not terminated correctly
-		 */
-		protected String readLine(Reader rReader) throws IOException
-		{
-			@SuppressWarnings("boxing")
-			String sLine =
-				StreamUtil.readUntil(rReader,
-									 NetUtil.CRLF,
-									 get(HTTP_MAX_HEADER_LINE_SIZE),
-									 false);
-
-			if (sLine == null)
-			{
-				badRequest("Request line not terminated with CRLF: " + sLine);
-			}
-
-			return sLine;
-		}
-	}
-
-	/********************************************************************
-	 * A class that contains the data of an HTTP response and additional
-	 * response information (like headers) in it's relations.
-	 *
-	 * @author eso
-	 */
-	public static class HttpResponse extends RelatedObject
-	{
-		//~ Instance fields ----------------------------------------------------
-
-		private final Reader rResponseBodyReader;
-
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
-		 * Creates a new instance for a successful request from a response data
-		 * string. The HTTP status code will be be set to {@link
-		 * HttpStatusCode#OK}.
-		 *
-		 * @param sResponseData The response data string
-		 *
-		 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader)
-		 */
-		public HttpResponse(String sResponseData)
-		{
-			this(HttpStatusCode.OK, sResponseData);
-		}
-
-		/***************************************
-		 * Creates a new instance for a successful request with the status code
-		 * {@link HttpStatusCode#OK}.
-		 *
-		 * @param rResponseData   A stream reader that provides access to the
-		 *                        data of the response body
-		 * @param nResponseLength The length of the response data stream
-		 *
-		 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader)
-		 */
-		public HttpResponse(Reader rResponseData, int nResponseLength)
-		{
-			this(HttpStatusCode.OK, rResponseData, nResponseLength);
-		}
-
-		/***************************************
-		 * Creates a new instance with a certain status code and (short)
-		 * response data as a string. For longer response bodies it is
-		 * recommended to use the constructor with a {@link Reader} argument.
-		 *
-		 * @param eStatus       The response status code
-		 * @param rResponseData A reader that provides access to the data of the
-		 *                      response body
-		 *
-		 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader)
-		 */
-		public HttpResponse(HttpStatusCode eStatus, String sResponseData)
-		{
-			this(eStatus,
-				 new StringReader(sResponseData),
-				 sResponseData.length());
-		}
-
-		/***************************************
-		 * Creates a new instance with a certain status code. The response data
-		 * must be provided as a {@link Reader} instance. The status code will
-		 * be set on this instance as a relation with the relation type {@link
-		 * CommunicationRelationTypes#HTTP_STATUS_CODE}.
-		 *
-		 * @param eStatus         The response status code
-		 * @param rResponseData   A stream reader that provides access to the
-		 *                        data of the response body
-		 * @param nResponseLength The length of the response data stream
-		 */
-		public HttpResponse(HttpStatusCode eStatus,
-							Reader		   rResponseData,
-							int			   nResponseLength)
-		{
-			rResponseBodyReader = rResponseData;
-
-			init(HTTP_HEADER_TYPES);
-			set(HTTP_STATUS_CODE, eStatus);
-			set(CONTENT_LENGTH, nResponseLength);
-		}
-
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * A builder-pattern variant of {@link #set(RelationType, Object)} which
-		 * returns this response instance to allow the concatenation of multiple
-		 * method invocations.
-		 *
-		 * @param  rType  The type of the relation to set
-		 * @param  rValue The relation value
-		 *
-		 * @return This instance for concatenation
-		 */
-		public <T> HttpResponse with(RelationType<T> rType, T rValue)
-		{
-			set(rType, rValue);
-
-			return this;
-		}
-
-		/***************************************
-		 * Writes this response to the given output stream.
-		 *
-		 * @param  rOutput The target output stream
-		 *
-		 * @throws IOException If writing to the stream fails
-		 */
-		public void write(OutputStream rOutput) throws IOException
-		{
-			Writer aResponseHeaderWriter =
-				new BufferedWriter(new OutputStreamWriter(rOutput,
-														  StandardCharsets.US_ASCII));
-
-			Writer aResponseBodyWriter =
-				new OutputStreamWriter(rOutput, get(RESPONSE_ENCODING));
-
-			Map<String, List<String>> rResponseHeaders =
-				get(HTTP_RESPONSE_HEADERS);
-
-			Collection<RelationType<?>> rHeaderTypes = get(HTTP_HEADER_TYPES);
-
-			for (RelationType<?> rHeader : rHeaderTypes)
-			{
-				String sField = rHeader.get(HTTP_HEADER_FIELD).getFieldName();
-				String sValue = get(rHeader).toString();
-
-				rResponseHeaders.put(sField, Arrays.asList(sValue));
-			}
-
-			writeResponseHeader(HttpStatusCode.OK,
-								rResponseHeaders,
-								aResponseHeaderWriter);
-			StreamUtil.send(rResponseBodyReader, aResponseBodyWriter);
-			aResponseHeaderWriter.flush();
-			aResponseBodyWriter.flush();
-			rOutput.flush();
-		}
-
-		/***************************************
-		 * Writes the header for an HTTP response with a certain status code to
-		 * a {@link Writer}.
-		 *
-		 * @param  eStatus          The response status
-		 * @param  rResponseHeaders
-		 * @param  rOut             The output writer
-		 *
-		 * @throws IOException If writing data fails
-		 */
-		protected void writeResponseHeader(
-			HttpStatusCode			  eStatus,
-			Map<String, List<String>> rResponseHeaders,
-			Writer					  rOut) throws IOException
-		{
-			rOut.write(eStatus.toResponseString());
-
-			for (Entry<String, List<String>> rResponseHeader :
-				 rResponseHeaders.entrySet())
-			{
-				rOut.write(rResponseHeader.getKey());
-				rOut.write(": ");
-				rOut.write(rResponseHeader.getValue().get(0));
-				rOut.write(NetUtil.CRLF);
-			}
-
-			// terminate with empty line
-			rOut.write(NetUtil.CRLF);
 		}
 	}
 }

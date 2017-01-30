@@ -190,7 +190,9 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	}
 
 	/***************************************
-	 * Creates a configuration object for the client requests.
+	 * Creates a configuration object for the client requests. The default
+	 * implementation returns a new {@link Relatable} object with the copied
+	 * relations of this server.
 	 *
 	 * @return The relatable configuration object
 	 */
@@ -235,14 +237,13 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	 * client.
 	 *
 	 * @param  rClientSocket The socket for the communication with the client
-	 * @param  rServerConfig A relatable containing the server configuration
+	 * @param  rContext      A relatable containing context data for the request
 	 *
 	 * @throws IOException If a communication error occurs
 	 */
 	@SuppressWarnings("boxing")
-	protected void handleClientRequest(
-		Socket    rClientSocket,
-		Relatable rServerConfig)
+	protected void handleClientRequest(Socket    rClientSocket,
+									   Relatable rContext)
 	{
 		Log.infof("%s: handling request from %s",
 				  getServerName(),
@@ -251,7 +252,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 		try
 		{
 			RequestHandler aRequestHandler =
-				get(REQUEST_HANDLER_FACTORY).getRequestHandler(this);
+				get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
 
 			InputStream  rInput  =
 				new LimitedInputStream(rClientSocket.getInputStream(),
@@ -260,7 +261,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 				new LimitedOutputStream(rClientSocket.getOutputStream(),
 										get(MAX_RESPONSE_SIZE));
 
-			aRequestHandler.handleRequest(rServerConfig, rInput, rOutput);
+			aRequestHandler.handleRequest(rInput, rOutput);
 		}
 		catch (Exception e)
 		{
@@ -299,7 +300,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 			bRunning = true;
 
-			Relatable aRequestConfig = createRequestConfig();
+			Relatable aRequestContext = createRequestConfig();
 
 			while (bRunning)
 			{
@@ -307,7 +308,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 				aThreadPool.execute(() ->
 									handleClientRequest(rClientSocket,
-														aRequestConfig));
+														aRequestContext));
 			}
 		}
 	}
@@ -332,41 +333,35 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	//~ Inner Interfaces -------------------------------------------------------
 
 	/********************************************************************
-	 * A functional interface that needs to be implemented for server request
-	 * handlers.
+	 * Defines the interface that needs to be implemented for server request
+	 * handlers. This is an extension of {@link Relatable} to allow the request
+	 * handler to communicate information back to the invoking server by setting
+	 * relations.
 	 *
 	 * @author eso
 	 */
-	@FunctionalInterface
-	public static interface RequestHandler
+	public static interface RequestHandler extends Relatable
 	{
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
 		 * Implements the handling of a single server request by reading the
 		 * request from an input stream, processing it, and writing an adequate
-		 * response to the given output stream. The implementation must be
-		 * thread-safe because it may be invoked concurrently. But it should not
-		 * be generally synchronized. If resource synchronization is needed it
-		 * should only be performed where and when it absolutely necessary.
+		 * response to the given output stream. For each request a new instance
+		 * is used so it is not necessary
 		 *
 		 * <p>The implementation doesn't need to perform any kind of resource
 		 * management with the given stream parameters. That will be done by the
 		 * server implementation.</p>
 		 *
-		 * @param  rConfiguration A relatable object that provides access to the
-		 *                        server configuration; it is typically
-		 *                        immutable and should therefore not be written
-		 *                        to
-		 * @param  rRequest       The request input stream
-		 * @param  rResponse      The response output stream
+		 * @param  rRequest  The request input stream
+		 * @param  rResponse The response output stream
 		 *
 		 * @throws Exception Can throw any exception if handling the request
 		 *                   fails
 		 */
-		public void handleRequest(Relatable    rConfiguration,
-								  InputStream  rRequest,
-								  OutputStream rResponse) throws Exception;
+		public void handleRequest(InputStream rRequest, OutputStream rResponse)
+			throws Exception;
 	}
 
 	/********************************************************************
@@ -381,12 +376,15 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
-		 * Returns a request handler instance for the given server.
+		 * Returns a request handler instance for the given server. Typically
+		 * implementations should return a new request handler instance from
+		 * this method.
 		 *
-		 * @param  rServer The server to return the request handler for
+		 * @param  rContext A relatable context containing configuration data
+		 *                  for the request handler
 		 *
-		 * @return The request handler
+		 * @return The request handler for the given configuration
 		 */
-		public RequestHandler getRequestHandler(Server rServer);
+		public RequestHandler getRequestHandler(Relatable rContext);
 	}
 }

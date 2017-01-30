@@ -19,7 +19,7 @@ package de.esoco.lib.comm;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
-import de.esoco.lib.comm.http.HttpRequestHandler.HttpResponse;
+import de.esoco.lib.comm.http.HttpResponse;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
@@ -53,7 +53,7 @@ public class ServerTest
 													  "text/plain; charset=UTF-8");
 
 		RequestHandlerFactory aFactory =
-			rServer -> new HttpRequestHandler(aMethodHandler);
+			rConfig -> new HttpRequestHandler(rConfig, aMethodHandler);
 
 		Server aServer =
 			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008);
