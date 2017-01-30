@@ -19,11 +19,18 @@ package de.esoco.lib.comm;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
-import de.esoco.lib.comm.http.HttpResponse;
+import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
+import de.esoco.lib.io.StreamUtil;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
-import static de.esoco.lib.comm.http.HttpHeaderTypes.CONTENT_TYPE;
+import java.io.File;
+import java.io.FileReader;
+
+import org.obrel.space.FileSystemSpace;
+import org.obrel.space.ObjectSpace;
+
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
@@ -47,16 +54,18 @@ public class ServerTest
 	{
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
+		ObjectSpace<String> aFileSpace =
+			new FileSystemSpace<>("src/test/html/testsite", f -> readFile(f));
+
 		HttpRequestMethodHandler aMethodHandler =
-			rRequest ->
-			new HttpResponse(rRequest.getPath()).with(CONTENT_TYPE,
-													  "text/plain; charset=UTF-8");
+			new ObjectSpaceHttpMethodHandler(aFileSpace);
 
 		RequestHandlerFactory aFactory =
 			rConfig -> new HttpRequestHandler(rConfig, aMethodHandler);
 
 		Server aServer =
-			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008);
+			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008)
+								.with(MAX_CONNECTIONS, 10);
 
 		aServer.run();
 //		new Thread(aServer).start();
@@ -68,5 +77,24 @@ public class ServerTest
 //
 //		System.out.printf("SERVER RESPONSE: %s\n", fGet.result());
 //		aServer.stop();
+	}
+
+	/***************************************
+	 * Reads a file into a string.
+	 *
+	 * @param  rFile The file
+	 *
+	 * @return The file contents as a string
+	 */
+	private static String readFile(File rFile)
+	{
+		try (FileReader aIn = new FileReader(rFile))
+		{
+			return StreamUtil.readAll(aIn, 8 * 1024, Short.MAX_VALUE);
+		}
+		catch (Exception e)
+		{
+			throw new IllegalStateException(e);
+		}
 	}
 }
