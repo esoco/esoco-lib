@@ -174,7 +174,7 @@ public class HttpResponse extends RelatedObject
 			rResponseHeaders.put(sField, Arrays.asList(sValue));
 		}
 
-		writeResponseHeader(HttpStatusCode.OK,
+		writeResponseHeader(get(HTTP_STATUS_CODE),
 							rResponseHeaders,
 							aResponseHeaderWriter);
 		StreamUtil.send(rResponseBodyReader, aResponseBodyWriter);

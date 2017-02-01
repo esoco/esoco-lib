@@ -21,12 +21,14 @@ import de.esoco.lib.comm.Server.RequestHandler;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
-import de.esoco.lib.expression.Functions;
+import de.esoco.lib.json.JsonBuilder;
 
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypes;
+import org.obrel.space.MutableObjectSpace;
 import org.obrel.space.ObjectSpace;
-import org.obrel.space.RelatableObjectSpace;
+import org.obrel.space.SimpleObjectSpace;
 
 import static org.obrel.core.RelationTypes.newFlagType;
 import static org.obrel.core.RelationTypes.newType;
@@ -44,20 +46,27 @@ public abstract class Service extends Application
 {
 	//~ Static fields/initializers ---------------------------------------------
 
-	/** TODO: DOCUMENT ME */
+	/**
+	 * The run flag in the control server that controls the service execution.
+	 */
 	public static final RelationType<Boolean> RUN = newFlagType();
 
 	/** The {@link ObjectSpace} containing the server status. */
-	public static final RelationType<ObjectSpace<Object>> STATUS = newType();
+	public static final RelationType<ObjectSpace<String>> STATUS = newType();
 
 	/** The {@link ObjectSpace} providing access to server control. */
-	public static final RelationType<ObjectSpace<Object>> CONTROL = newType();
+	public static final RelationType<ObjectSpace<String>> CONTROL = newType();
+
+	static
+	{
+		RelationTypes.init(Service.class);
+	}
 
 	//~ Instance fields --------------------------------------------------------
 
 	private Thread			    aControlServerThread;
 	private Server			    aControlServer;
-	private ObjectSpace<Object> aControlSpace;
+	private ObjectSpace<String> aControlSpace;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -80,19 +89,19 @@ public abstract class Service extends Application
 
 	/***************************************
 	 * Builds the {@link ObjectSpace} for the control server. The control server
-	 * uses this to lookup responses for control requests.
+	 * uses this to perform control requests and to lookup status responses.
 	 *
 	 * @return The new control object space
 	 */
-	protected ObjectSpace<Object> buildControlSpace()
+	protected ObjectSpace<String> buildControlSpace()
 	{
-		ObjectSpace<Object> aRoot =
-			new RelatableObjectSpace<>(Functions.identity());
+		ObjectSpace<String> aRoot =
+			new MutableObjectSpace<>(JsonBuilder.convertJson());
 
-		aRoot.set(STATUS, new RelatableObjectSpace<>(Functions.identity()));
-		aRoot.set(CONTROL, new RelatableObjectSpace<>(Functions.identity()));
+		aRoot.set(STATUS, new SimpleObjectSpace<>(JsonBuilder.buildJson()));
+		aRoot.set(CONTROL, new MutableObjectSpace<>(JsonBuilder.convertJson()));
 
-		return null;
+		return aRoot;
 	}
 
 	/***************************************
