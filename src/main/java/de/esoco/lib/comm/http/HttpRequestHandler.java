@@ -132,7 +132,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				aRequestCopy.toString(StandardCharsets.US_ASCII.name())
 							.replaceAll("\r\n", "¶");
 
-			Log.info("Handling request: " + sRequest);
+			Log.debug("Handling request: " + sRequest);
 
 			sendResponse(aRequest, rResponseStream);
 		}

@@ -22,6 +22,10 @@ import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
 import de.esoco.lib.json.JsonBuilder;
+import de.esoco.lib.logging.Log;
+import de.esoco.lib.manage.Stoppable;
+
+import java.util.Date;
 
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
@@ -29,6 +33,7 @@ import org.obrel.core.RelationTypes;
 import org.obrel.space.MutableObjectSpace;
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.SimpleObjectSpace;
+import org.obrel.type.StandardTypes;
 
 import static org.obrel.core.RelationTypes.newFlagType;
 import static org.obrel.core.RelationTypes.newType;
@@ -42,7 +47,7 @@ import static org.obrel.type.StandardTypes.PORT;
  *
  * @author eso
  */
-public abstract class Service extends Application
+public abstract class Service extends Application implements Stoppable
 {
 	//~ Static fields/initializers ---------------------------------------------
 
@@ -154,6 +159,28 @@ public abstract class Service extends Application
 	}
 
 	/***************************************
+	 * Returns the control object space of this service.
+	 *
+	 * @return The control object space
+	 */
+	protected final ObjectSpace<String> getControlSpace()
+	{
+		return aControlSpace;
+	}
+
+	/***************************************
+	 * Can be overridden to return a description string for this service
+	 * instance. The default implementation returns the class name without
+	 * package.
+	 *
+	 * @return The service description string
+	 */
+	protected String getServiceDescription()
+	{
+		return getClass().getSimpleName();
+	}
+
+	/***************************************
 	 * Overridden to stop the control server.
 	 *
 	 * @see Application#handleApplicationError(Exception)
@@ -175,11 +202,31 @@ public abstract class Service extends Application
 	 * @see Application#runApp()
 	 */
 	@Override
+	@SuppressWarnings("boxing")
 	protected final void runApp() throws Exception
 	{
 		aControlServer = startControlServer();
-		aControlSpace.get(CONTROL).set(RUN);
+		aControlSpace.get(CONTROL).set(RUN).onChange(bRun -> stopRequest());
+
+		setStatus(StandardTypes.START_DATE, new Date());
+
+		Log.infof("%s running, control server listening on port %d",
+				  getServiceDescription(),
+				  getControlServerPort());
+
 		runService();
+	}
+
+	/***************************************
+	 * Sets a status value in the status section of the control server object
+	 * space.
+	 *
+	 * @param rType  The status relation type
+	 * @param rValue The status value
+	 */
+	protected <T> void setStatus(RelationType<T> rType, T rValue)
+	{
+		aControlSpace.get(STATUS).set(rType, rValue);
 	}
 
 	/***************************************
@@ -199,22 +246,21 @@ public abstract class Service extends Application
 
 		aControlServerThread = new Thread(aServer);
 
+		// this will stop the server on shutdown
 		manageResource(aServer);
+
 		aControlServerThread.start();
 
 		return aServer;
 	}
 
 	/***************************************
-	 * Overridden to also stop the control server.
-	 *
-	 * @see Application#stopApp()
+	 * Internal method to handle a request from the control server to stop the
+	 * service.
 	 */
-	@Override
-	protected void stopApp() throws Exception
+	private void stopRequest()
 	{
-		aControlServer.stop();
-
-		super.stopApp();
+		Log.info("Stop requested from control server, shutting down");
+		stop();
 	}
 }

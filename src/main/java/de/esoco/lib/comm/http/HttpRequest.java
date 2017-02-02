@@ -16,8 +16,10 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.http;
 
+import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
 import de.esoco.lib.expression.Conversions;
 import de.esoco.lib.io.StreamUtil;
+import de.esoco.lib.logging.Log;
 import de.esoco.lib.net.NetUtil;
 
 import java.io.BufferedReader;
@@ -37,6 +39,7 @@ import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_MAX_HEADER_LINE_SIZE;
+import static de.esoco.lib.comm.http.HttpHeaderTypes.CONTENT_LENGTH;
 import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
 
 
@@ -50,9 +53,10 @@ public class HttpRequest extends RelatedObject
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final HttpRequestMethod eRequestMethod;
-	private final String		    sRequestPath;
-	private final Reader		    aRequestBodyReader;
+	private final HttpRequestMethod   eRequestMethod;
+	private final String			  sRequestPath;
+	private Map<String, List<String>> aRequestHeaders;
+	private final Reader			  aRequestBodyReader;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -76,6 +80,8 @@ public class HttpRequest extends RelatedObject
 													 StandardCharsets.US_ASCII));
 
 		String sRequestLine = readLine(aHeaderReader);
+
+		Log.debugf("Request: ", sRequestLine);
 
 		if (sRequestLine == null)
 		{
@@ -103,13 +109,12 @@ public class HttpRequest extends RelatedObject
 			badRequest("Unknown request method: " + aRequestParts[0]);
 		}
 
-		readHeaders(aHeaderReader);
-
 		eRequestMethod     = eMethod;
 		sRequestPath	   = aRequestParts[1];
-		aRequestBodyReader =
-			new BufferedReader(new InputStreamReader(rInput,
-													 StandardCharsets.UTF_8));
+		aRequestHeaders    = readHeaders(aHeaderReader);
+		aRequestBodyReader = aHeaderReader;
+//			new BufferedReader(new InputStreamReader(rInput,
+//													 StandardCharsets.UTF_8));
 	}
 
 	/***************************************
@@ -132,6 +137,34 @@ public class HttpRequest extends RelatedObject
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
+	 * Returns the complete body of this request by reading it from the reader
+	 * returned by {@link #getBodyReader()}. The maximum length to be read will
+	 * be taken from the {@link HttpHeaderTypes#CONTENT_LENGTH} relation type
+	 * which will be automatically set if the request is read from the input
+	 * stream.
+	 *
+	 * @return A string containing the full body text
+	 *
+	 * @throws HttpStatusException {@link HttpStatusCode#LENGTH_REQUIRED} if no
+	 *                             content length is provided
+	 * @throws IOException         If reading the body content fails
+	 */
+	public final String getBody() throws IOException
+	{
+		Integer rLength = get(CONTENT_LENGTH);
+
+		if (rLength == null)
+		{
+			throw new HttpStatusException(HttpStatusCode.LENGTH_REQUIRED,
+										  "Content-Length header missing");
+		}
+
+		return StreamUtil.readAll(aRequestBodyReader,
+								  8 * 1024,
+								  rLength.intValue());
+	}
+
+	/***************************************
 	 * Returns a reader that provides the body of the request. Will be yield no
 	 * data (but will never be NULL) if the request has no body. The relation
 	 * {@link HttpHeaderTypes#CONTENT_LENGTH} will contain the length of the
@@ -139,9 +172,34 @@ public class HttpRequest extends RelatedObject
 	 *
 	 * @return A reader that provides the body data
 	 */
-	public final Reader getBody()
+	public final Reader getBodyReader()
 	{
 		return aRequestBodyReader;
+	}
+
+	/***************************************
+	 * Returns the value of a header field in this request.
+	 *
+	 * @param  sName The name of the header field
+	 *
+	 * @return The header field value or NULL if the header is not set
+	 */
+	public final List<String> getHeaderField(String sName)
+	{
+		return aRequestHeaders.get(sName);
+	}
+
+	/***************************************
+	 * Returns the value of a header field in this request. Invokes the method
+	 * {@link #getHeaderField(String)} with the field name.
+	 *
+	 * @param  eField sName The header field
+	 *
+	 * @return The header field value or NULL if the header is not set
+	 */
+	public final List<String> getHeaderField(HttpHeaderField eField)
+	{
+		return getHeaderField(eField.getFieldName());
 	}
 
 	/***************************************
@@ -219,6 +277,7 @@ public class HttpRequest extends RelatedObject
 		do
 		{
 			sHeader = readLine(rInputReader);
+			Log.debugf("%s\n", sHeader);
 
 			if (sHeader == null)
 			{

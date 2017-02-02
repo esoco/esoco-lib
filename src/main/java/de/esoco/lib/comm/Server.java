@@ -28,10 +28,13 @@ import java.io.OutputStream;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -75,8 +78,11 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 	//~ Instance fields --------------------------------------------------------
 
+	private ServerSocket	   aServerSocket;
 	private ThreadPoolExecutor aThreadPool;
 	private boolean			   bRunning;
+
+	private Lock aServerLock = new ReentrantLock();
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -146,16 +152,14 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	@Override
 	public void stop()
 	{
-		if (aThreadPool == null)
+		if (aThreadPool != null)
 		{
-			throw new IllegalStateException(getServerName() + " not started");
+			aThreadPool.shutdown();
+			aThreadPool = null;
+			bRunning    = false;
+
+			Log.infof("%s stopped", getServerName());
 		}
-
-		aThreadPool.shutdown();
-		aThreadPool = null;
-		bRunning    = false;
-
-		Log.infof("%s stopped", getServerName());
 	}
 
 	/***************************************
@@ -262,6 +266,11 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 										get(MAX_RESPONSE_SIZE));
 
 			aRequestHandler.handleRequest(rInput, rOutput);
+
+			if (!bRunning)
+			{
+				aServerSocket.close();
+			}
 		}
 		catch (Exception e)
 		{
@@ -289,26 +298,37 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	@SuppressWarnings("boxing")
 	protected void runServerLoop() throws IOException
 	{
-		try (ServerSocket aServerSocket = createServerSocket(get(PORT)))
+		aServerSocket = createServerSocket(get(PORT));
+		aThreadPool   =
+			new ThreadPoolExecutor(0,
+								   get(MAX_CONNECTIONS),
+								   60L,
+								   TimeUnit.SECONDS,
+								   new SynchronousQueue<Runnable>());
+
+		bRunning = true;
+
+		Relatable aRequestContext = createRequestConfig();
+
+		while (bRunning)
 		{
-			aThreadPool =
-				new ThreadPoolExecutor(0,
-									   get(MAX_CONNECTIONS),
-									   60L,
-									   TimeUnit.SECONDS,
-									   new SynchronousQueue<Runnable>());
-
-			bRunning = true;
-
-			Relatable aRequestContext = createRequestConfig();
-
-			while (bRunning)
+			try
 			{
 				Socket rClientSocket = aServerSocket.accept();
 
 				aThreadPool.execute(() ->
 									handleClientRequest(rClientSocket,
 														aRequestContext));
+			}
+			catch (SocketException e)
+			{
+				if (bRunning)
+				{
+					// only throw if still running; if server has been
+					// terminated due to a client request the "socket closed"
+					// exception can be ignored
+					throw e;
+				}
 			}
 		}
 	}

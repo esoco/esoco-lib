@@ -31,7 +31,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private ObjectSpace<?> rObjectSpace;
+	private ObjectSpace<String> rObjectSpace;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -40,7 +40,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	 *
 	 * @param rObjectSpace The object space to get response data from
 	 */
-	public ObjectSpaceHttpMethodHandler(ObjectSpace<?> rObjectSpace)
+	public ObjectSpaceHttpMethodHandler(ObjectSpace<String> rObjectSpace)
 	{
 		this.rObjectSpace = rObjectSpace;
 	}
@@ -57,7 +57,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 
 		try
 		{
-			String rData = rObjectSpace.get(sPath).toString();
+			String rData = rObjectSpace.get(sPath);
 
 			if (rData == null)
 			{
@@ -66,6 +66,31 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 			}
 
 			return new HttpResponse(rData);
+		}
+		catch (Exception e)
+		{
+			throw new HttpStatusException(HttpStatusCode.NOT_FOUND,
+										  "No data at " + sPath);
+		}
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	public HttpResponse doPut(HttpRequest rRequest) throws HttpStatusException
+	{
+		String sPath = rRequest.getPath();
+
+		try
+		{
+			rObjectSpace.put(sPath, rRequest.getBody());
+
+			return new HttpResponse("");
+		}
+		catch (HttpStatusException e)
+		{
+			throw e;
 		}
 		catch (Exception e)
 		{

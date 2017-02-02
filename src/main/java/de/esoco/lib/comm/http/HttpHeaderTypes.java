@@ -28,7 +28,6 @@ import org.obrel.type.CollectorType;
 import static org.obrel.core.RelationTypeModifier.FINAL;
 import static org.obrel.core.RelationTypeModifier.READONLY;
 import static org.obrel.core.RelationTypes.newEnumType;
-import static org.obrel.core.RelationTypes.newIntType;
 import static org.obrel.core.RelationTypes.newStringType;
 
 
@@ -49,7 +48,7 @@ public class HttpHeaderTypes
 	public enum HttpHeaderField
 	{
 		ACCEPT, ACCEPT_CHARSET, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE,
-		COOKIE, HOST;
+		COOKIE, HOST, USER_AGENT;
 
 		//~ Instance fields ----------------------------------------------------
 
@@ -93,32 +92,37 @@ public class HttpHeaderTypes
 					HttpHeaderField.class,
 					FINAL);
 
-	/** The HTTP Accept header. */
+	/** The Accept header. */
 	public static final RelationType<String> ACCEPT =
 		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.ACCEPT);
 
-	/** The HTTP Accept-Charset header. */
+	/** The Accept-Charset header. */
 	public static final RelationType<String> ACCEPT_CHARSET =
 		newStringType().annotate(HTTP_HEADER_FIELD,
 								 HttpHeaderField.ACCEPT_CHARSET);
 
-	/** The HTTP Content-Length header. */
+	/** The Content-Length header. */
 	public static final RelationType<Integer> CONTENT_LENGTH =
-		newIntType().annotate(HTTP_HEADER_FIELD,
-							  HttpHeaderField.CONTENT_LENGTH);
+		RelationTypes.<Integer>newType()
+					 .annotate(HTTP_HEADER_FIELD,
+							   HttpHeaderField.CONTENT_LENGTH);
 
-	/** The HTTP Content-Type header. */
+	/** The Content-Type header. */
 	public static final RelationType<String> CONTENT_TYPE =
 		newStringType().annotate(HTTP_HEADER_FIELD,
 								 HttpHeaderField.CONTENT_TYPE);
 
-	/** The HTTP Cookie header. */
+	/** The Cookie header. */
 	public static final RelationType<String> COOKIE =
 		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.COOKIE);
 
-	/** The HTTP Host header. */
+	/** The Host header. */
 	public static final RelationType<String> HOST =
 		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.HOST);
+
+	/** The User-Agent header. */
+	public static final RelationType<String> USER_AGENT =
+		newStringType().annotate(HTTP_HEADER_FIELD, HttpHeaderField.USER_AGENT);
 
 	/**
 	 * Collects all HTTP header types that have been set on an object. FINAL to
@@ -148,7 +152,8 @@ public class HttpHeaderTypes
 	{
 		sHeaderName = sHeaderName.replaceAll("-", "_").toUpperCase();
 
-		return RelationType.valueOf("de.esoco.lib.com.http." + sHeaderName);
+		return RelationType.valueOf(HttpHeaderTypes.HTTP_HEADER_TYPES_NAMESPACE +
+									"." + sHeaderName);
 	}
 
 	/***************************************

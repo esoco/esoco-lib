@@ -236,7 +236,7 @@ public final class StreamUtil
 		char[]		  aBuffer = new char[nBufferSize];
 		int			  nCount;
 
-		while (nMax > 0 && (nCount = rIn.read(aBuffer)) != -1)
+		while (nMax > 0 && (nCount = rIn.read(aBuffer, 0, nMax)) != -1)
 		{
 			aResult.append(aBuffer, 0, nCount);
 			nMax -= nCount;
