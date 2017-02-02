@@ -108,22 +108,28 @@ public abstract class Service extends Application implements Stoppable
 
 		Date aNow = new Date();
 
-		aRoot.set(STATUS, new SimpleObjectSpace<>(JsonBuilder.buildJson()));
-		aRoot.set(CONTROL, new MutableObjectSpace<>(JsonBuilder.convertJson()));
+		ObjectSpace<String> aStatus  =
+			new SimpleObjectSpace<>(JsonBuilder.buildJson());
+		ObjectSpace<String> aControl =
+			new MutableObjectSpace<>(JsonBuilder.convertJson());
 
-		aRoot.get(CONTROL).set(RUN).onChange(bRun -> stopRequest());
+		aRoot.set(STATUS, aStatus);
+		aRoot.set(CONTROL, aControl);
 
-		aRoot.get(STATUS).set(StandardTypes.START_DATE, aNow)
-			 .viewAs(INFO,
-					 aRoot,
-					 rDate ->
-					 String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
-								   getServiceDescription(),
-								   rDate,
-								   TextUtil.formatDuration(System
-														   .currentTimeMillis() -
-														   rDate.getTime(),
-														   false)));
+		aControl.set(RUN).onChange(bRun -> stopRequest());
+
+		aStatus.init(StandardTypes.UPTIME);
+		aStatus.set(StandardTypes.START_DATE, aNow)
+			   .viewAs(INFO,
+					   aRoot,
+					   rDate ->
+					   String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
+									 getServiceDescription(),
+									 rDate,
+									 TextUtil.formatDuration(System
+															 .currentTimeMillis() -
+															 rDate.getTime(),
+															 false)));
 
 		return aRoot;
 	}
