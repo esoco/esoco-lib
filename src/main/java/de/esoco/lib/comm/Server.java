@@ -47,14 +47,17 @@ import org.obrel.core.RelationTypes;
 import org.obrel.type.StandardTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.LAST_REQUEST;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
+import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HANDLING_TIME;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
+import static org.obrel.type.StandardTypes.TIMER;
 
 
 /********************************************************************
@@ -258,6 +261,8 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 			RequestHandler aRequestHandler =
 				get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
 
+			aRequestHandler.init(TIMER);
+
 			InputStream  rInput  =
 				new LimitedInputStream(rClientSocket.getInputStream(),
 									   get(MAX_REQUEST_SIZE));
@@ -265,7 +270,16 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 				new LimitedOutputStream(rClientSocket.getOutputStream(),
 										get(MAX_RESPONSE_SIZE));
 
-			aRequestHandler.handleRequest(rInput, rOutput);
+			String sRequest = aRequestHandler.handleRequest(rInput, rOutput);
+
+			sRequest = sRequest.replaceAll("(\r\n|\r|\n)", "¶");
+
+			if (aServerLock.tryLock())
+			{
+				Log.debugf("Request: %s", sRequest);
+				set(LAST_REQUEST, sRequest);
+				set(REQUEST_HANDLING_TIME, aRequestHandler.get(TIMER));
+			}
 
 			if (!bRunning)
 			{
@@ -377,11 +391,15 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 		 * @param  rRequest  The request input stream
 		 * @param  rResponse The response output stream
 		 *
+		 * @return A string description of the handled request (used for
+		 *         statistical purposes)
+		 *
 		 * @throws Exception Can throw any exception if handling the request
 		 *                   fails
 		 */
-		public void handleRequest(InputStream rRequest, OutputStream rResponse)
-			throws Exception;
+		public String handleRequest(
+			InputStream  rRequest,
+			OutputStream rResponse) throws Exception;
 	}
 
 	/********************************************************************

@@ -20,10 +20,12 @@ import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.Server.RequestHandler;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
+import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.Stoppable;
+import de.esoco.lib.text.TextUtil;
 
 import java.util.Date;
 
@@ -37,6 +39,7 @@ import org.obrel.type.StandardTypes;
 
 import static org.obrel.core.RelationTypes.newFlagType;
 import static org.obrel.core.RelationTypes.newType;
+import static org.obrel.type.StandardTypes.INFO;
 import static org.obrel.type.StandardTypes.PORT;
 
 
@@ -100,11 +103,27 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected ObjectSpace<String> buildControlSpace()
 	{
-		ObjectSpace<String> aRoot =
+		MutableObjectSpace<String> aRoot =
 			new MutableObjectSpace<>(JsonBuilder.convertJson());
+
+		Date aNow = new Date();
 
 		aRoot.set(STATUS, new SimpleObjectSpace<>(JsonBuilder.buildJson()));
 		aRoot.set(CONTROL, new MutableObjectSpace<>(JsonBuilder.convertJson()));
+
+		aRoot.get(CONTROL).set(RUN).onChange(bRun -> stopRequest());
+
+		aRoot.get(STATUS).set(StandardTypes.START_DATE, aNow)
+			 .viewAs(INFO,
+					 aRoot,
+					 rDate ->
+					 String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
+								   getServiceDescription(),
+								   rDate,
+								   TextUtil.formatDuration(System
+														   .currentTimeMillis() -
+														   rDate.getTime(),
+														   false)));
 
 		return aRoot;
 	}
@@ -119,8 +138,10 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected RequestHandler createRequestHandler(Relatable rContext)
 	{
-		return new HttpRequestHandler(rContext,
-									  new ObjectSpaceHttpMethodHandler(aControlSpace));
+		HttpRequestMethodHandler aMethodHandler =
+			new ObjectSpaceHttpMethodHandler(aControlSpace, "info");
+
+		return new HttpRequestHandler(rContext, aMethodHandler);
 	}
 
 	/***************************************
@@ -206,9 +227,6 @@ public abstract class Service extends Application implements Stoppable
 	protected final void runApp() throws Exception
 	{
 		aControlServer = startControlServer();
-		aControlSpace.get(CONTROL).set(RUN).onChange(bRun -> stopRequest());
-
-		setStatus(StandardTypes.START_DATE, new Date());
 
 		Log.infof("%s running, control server listening on port %d",
 				  getServiceDescription(),

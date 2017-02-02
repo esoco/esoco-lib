@@ -47,8 +47,8 @@ public class HttpHeaderTypes
 	 */
 	public enum HttpHeaderField
 	{
-		ACCEPT, ACCEPT_CHARSET, CONNECTION, CONTENT_LENGTH, CONTENT_TYPE,
-		COOKIE, HOST, USER_AGENT;
+		ACCEPT, ACCEPT_CHARSET, AUTHORIZATION, CONNECTION, CONTENT_LENGTH,
+		CONTENT_TYPE, COOKIE, HOST, USER_AGENT;
 
 		//~ Instance fields ----------------------------------------------------
 
@@ -100,6 +100,11 @@ public class HttpHeaderTypes
 	public static final RelationType<String> ACCEPT_CHARSET =
 		newStringType().annotate(HTTP_HEADER_FIELD,
 								 HttpHeaderField.ACCEPT_CHARSET);
+
+	/** The Authorization header. */
+	public static final RelationType<String> AUTHORIZATION =
+		newStringType().annotate(HTTP_HEADER_FIELD,
+								 HttpHeaderField.AUTHORIZATION);
 
 	/** The Content-Length header. */
 	public static final RelationType<Integer> CONTENT_LENGTH =

@@ -115,10 +115,12 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void handleRequest(
+	public String handleRequest(
 		InputStream  rRequestStream,
 		OutputStream rResponseStream) throws IOException
 	{
+		String sRequest = null;
+
 		try
 		{
 			ByteArrayOutputStream aRequestCopy =
@@ -128,13 +130,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 			HttpRequest aRequest = readRequest(rRequestStream);
 
-			String sRequest =
-				aRequestCopy.toString(StandardCharsets.US_ASCII.name())
-							.replaceAll("\r\n", "¶");
-
-			Log.debug("Handling request: " + sRequest);
-
 			sendResponse(aRequest, rResponseStream);
+
+			sRequest = aRequestCopy.toString(StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e)
 		{
@@ -147,6 +145,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				sMessage = e.getMessage();
 			}
 
+			sRequest = eStatus.toResponseString();
 			Log.errorf(e, "HTTP Request failed (%s): %s", eStatus, sMessage);
 
 			HttpResponse rErrorResponse = new HttpResponse(eStatus, sMessage);
@@ -162,6 +161,8 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		}
 
 		rResponseStream.flush();
+
+		return sRequest;
 	}
 
 	/***************************************

@@ -16,6 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.comm.http.HttpRequestMethod;
 import de.esoco.lib.comm.http.HttpStatusCode;
 
 import java.net.HttpURLConnection;
@@ -73,6 +74,18 @@ public class CommunicationRelationTypes
 
 	/** A password for the authentication on a communication endpoint. */
 	public static final RelationType<String> PASSWORD = newType();
+
+	/**
+	 * Contains a string description of the most recent request that has been
+	 * performed in a network operation.
+	 */
+	public static final RelationType<String> LAST_REQUEST = newType();
+
+	/**
+	 * Contains the time (in milliseconds) that the handling of a request has
+	 * consumed.
+	 */
+	public static final RelationType<Long> REQUEST_HANDLING_TIME = newType();
 
 	/**
 	 * The timeout in milliseconds after which an attempt of a connection to an
@@ -145,6 +158,14 @@ public class CommunicationRelationTypes
 	@SuppressWarnings("boxing")
 	public static final RelationType<Integer> HTTP_MAX_HEADER_LINE_SIZE =
 		newInitialValueType(1024 * 8);
+
+	/** The method of an HTTP request. */
+	public static final RelationType<HttpRequestMethod> HTTP_REQUEST_METHOD =
+		newType();
+
+	/** The target path of an HTTP request. */
+	public static final RelationType<HttpRequestMethod> HTTP_REQUEST_PATH =
+		newType();
 
 	/**
 	 * The headers for an HTTP request. These must be set on a connection or

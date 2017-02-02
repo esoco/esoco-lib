@@ -58,7 +58,7 @@ public class ServerTest
 			new FileSystemSpace<>("src/test/html/testsite", f -> readFile(f));
 
 		HttpRequestMethodHandler aMethodHandler =
-			new ObjectSpaceHttpMethodHandler(aFileSpace);
+			new ObjectSpaceHttpMethodHandler(aFileSpace, "");
 
 		RequestHandlerFactory aFactory =
 			rConfig -> new HttpRequestHandler(rConfig, aMethodHandler);

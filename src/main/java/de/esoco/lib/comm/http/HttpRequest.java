@@ -53,10 +53,10 @@ public class HttpRequest extends RelatedObject
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final HttpRequestMethod   eRequestMethod;
-	private final String			  sRequestPath;
-	private Map<String, List<String>> aRequestHeaders;
-	private final Reader			  aRequestBodyReader;
+	private final Reader				    aRequestReader;
+	private final HttpRequestMethod		    eRequestMethod;
+	private final String				    sRequestPath;
+	private final Map<String, List<String>> aRequestHeaders;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -75,11 +75,11 @@ public class HttpRequest extends RelatedObject
 	public HttpRequest(InputStream rInput) throws IOException,
 												  HttpStatusException
 	{
-		Reader aHeaderReader =
+		aRequestReader =
 			new BufferedReader(new InputStreamReader(rInput,
-													 StandardCharsets.US_ASCII));
+													 StandardCharsets.UTF_8));
 
-		String sRequestLine = readLine(aHeaderReader);
+		String sRequestLine = readLine(aRequestReader);
 
 		Log.debugf("Request: ", sRequestLine);
 
@@ -109,12 +109,9 @@ public class HttpRequest extends RelatedObject
 			badRequest("Unknown request method: " + aRequestParts[0]);
 		}
 
-		eRequestMethod     = eMethod;
-		sRequestPath	   = aRequestParts[1];
-		aRequestHeaders    = readHeaders(aHeaderReader);
-		aRequestBodyReader = aHeaderReader;
-//			new BufferedReader(new InputStreamReader(rInput,
-//													 StandardCharsets.UTF_8));
+		eRequestMethod  = eMethod;
+		sRequestPath    = aRequestParts[1];
+		aRequestHeaders = readHeaders(aRequestReader);
 	}
 
 	/***************************************
@@ -122,16 +119,19 @@ public class HttpRequest extends RelatedObject
 	 *
 	 * @param rRequestMethod     The request method
 	 * @param rRequestPath       The request path
+	 * @param rRequestHeaders    The request headers
 	 * @param rRequestBodyReader The reader that given access to the request
 	 *                           body (if applicable)
 	 */
-	public HttpRequest(HttpRequestMethod rRequestMethod,
-					   String			 rRequestPath,
-					   Reader			 rRequestBodyReader)
+	public HttpRequest(HttpRequestMethod		 rRequestMethod,
+					   String					 rRequestPath,
+					   Map<String, List<String>> rRequestHeaders,
+					   Reader					 rRequestBodyReader)
 	{
-		eRequestMethod     = rRequestMethod;
-		sRequestPath	   = rRequestPath;
-		aRequestBodyReader = rRequestBodyReader;
+		eRequestMethod  = rRequestMethod;
+		sRequestPath    = rRequestPath;
+		aRequestHeaders = rRequestHeaders;
+		aRequestReader  = rRequestBodyReader;
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -159,9 +159,7 @@ public class HttpRequest extends RelatedObject
 										  "Content-Length header missing");
 		}
 
-		return StreamUtil.readAll(aRequestBodyReader,
-								  8 * 1024,
-								  rLength.intValue());
+		return StreamUtil.readAll(aRequestReader, 8 * 1024, rLength.intValue());
 	}
 
 	/***************************************
@@ -174,7 +172,7 @@ public class HttpRequest extends RelatedObject
 	 */
 	public final Reader getBodyReader()
 	{
-		return aRequestBodyReader;
+		return aRequestReader;
 	}
 
 	/***************************************

@@ -32,6 +32,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	//~ Instance fields --------------------------------------------------------
 
 	private ObjectSpace<String> rObjectSpace;
+	private String			    sDefaultPath;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -39,10 +40,15 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	 * Creates a new instance.
 	 *
 	 * @param rObjectSpace The object space to get response data from
+	 * @param sDefaultPath The default path to lookup for the GET method if the
+	 *                     request path is empty
 	 */
-	public ObjectSpaceHttpMethodHandler(ObjectSpace<String> rObjectSpace)
+	public ObjectSpaceHttpMethodHandler(
+		ObjectSpace<String> rObjectSpace,
+		String				sDefaultPath)
 	{
 		this.rObjectSpace = rObjectSpace;
+		this.sDefaultPath = sDefaultPath;
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -54,6 +60,11 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	public HttpResponse doGet(HttpRequest rRequest) throws HttpStatusException
 	{
 		String sPath = rRequest.getPath();
+
+		if (sPath.isEmpty() || sPath.equals("/"))
+		{
+			sPath = sDefaultPath;
+		}
 
 		try
 		{
