@@ -16,10 +16,14 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.http;
 
+import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.Server.RequestHandler;
+import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
+import de.esoco.lib.datatype.Pair;
 import de.esoco.lib.io.EchoInputStream;
 import de.esoco.lib.logging.Log;
+import de.esoco.lib.security.AuthenticationService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,15 +33,24 @@ import java.io.Reader;
 
 import java.nio.charset.StandardCharsets;
 
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_RESPONSE_HEADERS;
 import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
+import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_METHOD;
+import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
+import static de.esoco.lib.security.SecurityRelationTypes.LOGIN_NAME;
+import static de.esoco.lib.security.SecurityRelationTypes.PASSWORD;
+
+import static org.obrel.type.StandardTypes.NAME;
 
 
 /********************************************************************
@@ -47,6 +60,11 @@ import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
  */
 public class HttpRequestHandler extends RelatedObject implements RequestHandler
 {
+	//~ Static fields/initializers ---------------------------------------------
+
+	private static final Set<String> SUPPORTED_AUTH_METHODS =
+		CollectionUtil.setOf("Basic", "BCrypt");
+
 	//~ Instance fields --------------------------------------------------------
 
 	private Relatable				 rContext;
@@ -130,6 +148,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 			HttpRequest aRequest = readRequest(rRequestStream);
 
+			checkAuthentication(aRequest);
 			sendResponse(aRequest, rResponseStream);
 
 			sRequest = aRequestCopy.toString(StandardCharsets.UTF_8.name());
@@ -139,20 +158,40 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			HttpStatusCode eStatus  = HttpStatusCode.INTERNAL_SERVER_ERROR;
 			String		   sMessage = "";
 
+			Map<HttpHeaderField, String> rResponseHeaders =
+				Collections.emptyMap();
+
 			if (e instanceof HttpStatusException)
 			{
-				eStatus  = ((HttpStatusException) e).getStatusCode();
-				sMessage = e.getMessage();
+				HttpStatusException eStatusException = (HttpStatusException) e;
+
+				sMessage		 = eStatusException.getMessage();
+				eStatus			 = eStatusException.getStatusCode();
+				rResponseHeaders = eStatusException.getResponseHeaders();
+
+				Log.infof(e,
+						  "HTTP status exception (%s): %s",
+						  eStatus,
+						  sMessage);
+			}
+			else
+			{
+				Log.error("HTTP Request failed", e);
 			}
 
 			sRequest = eStatus.toResponseString();
-			Log.errorf(e, "HTTP Request failed (%s): %s", eStatus, sMessage);
 
-			HttpResponse rErrorResponse = new HttpResponse(eStatus, sMessage);
+			HttpResponse aErrorResponse = new HttpResponse(eStatus, sMessage);
+
+			for (Entry<HttpHeaderField, String> rHeader :
+				 rResponseHeaders.entrySet())
+			{
+				aErrorResponse.setHeader(rHeader.getKey(), rHeader.getValue());
+			}
 
 			try
 			{
-				rErrorResponse.write(rResponseStream);
+				aErrorResponse.write(rResponseStream);
 			}
 			catch (Exception eResponse)
 			{
@@ -163,6 +202,80 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		rResponseStream.flush();
 
 		return sRequest;
+	}
+
+	/***************************************
+	 * Checks if authentication is needed and if so, whether the request
+	 * contains the necessary authentication information.
+	 *
+	 * @param  rRequest The request to check for authentication if necessary
+	 *
+	 * @throws HttpStatusException If authentication is required but not
+	 *                             provided
+	 */
+	protected void checkAuthentication(HttpRequest rRequest)
+		throws HttpStatusException
+	{
+		AuthenticationService rAuthService =
+			rContext.get(AUTHENTICATION_SERVICE);
+
+		if (rAuthService != null)
+		{
+			boolean bAuthenticated = false;
+
+			String sAuth = rRequest.get(HttpHeaderTypes.AUTHORIZATION);
+
+			if (sAuth == null)
+			{
+				throw new HttpStatusException(HttpStatusCode.UNAUTHORIZED,
+											  "Authentication required",
+											  getAuthErrorHeader());
+			}
+
+			String[] aAuthHeader = sAuth.trim().split(" ");
+
+			if (aAuthHeader.length == 2)
+			{
+				String sMethod = aAuthHeader[0];
+
+				if (SUPPORTED_AUTH_METHODS.contains(sMethod))
+				{
+					String[] aCredential =
+						new String(Base64.getDecoder().decode(aAuthHeader[1]),
+								   StandardCharsets.UTF_8).split(":");
+
+					if (aCredential.length == 2)
+					{
+						Relatable aAuthData = new RelatedObject();
+
+						aAuthData.set(AUTHENTICATION_METHOD, sMethod);
+						aAuthData.set(LOGIN_NAME, aCredential[0]);
+						aAuthData.set(PASSWORD, aCredential[1]);
+						bAuthenticated = rAuthService.authenticate(aAuthData);
+					}
+				}
+			}
+
+			if (!bAuthenticated)
+			{
+				throw new HttpStatusException(HttpStatusCode.UNAUTHORIZED,
+											  "Authentication invalid",
+											  getAuthErrorHeader());
+			}
+		}
+	}
+
+	/***************************************
+	 * Returns a pair of header field name and value for an authentication
+	 * error.
+	 *
+	 * @return The authentication error header
+	 */
+	protected Pair<HttpHeaderField, String> getAuthErrorHeader()
+	{
+		return new Pair<>(HttpHeaderField.WWW_AUTHENTICATE,
+						  String.format("Basic realm=\"%s\"",
+										getContext().get(NAME)));
 	}
 
 	/***************************************
@@ -240,8 +353,15 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * throw an {@link UnsupportedOperationException}. If other request methods
 	 * need to be supported the implementation may also override the method
 	 * {@link #handleMethod(HttpRequestMethod, String, Reader)} which switches
-	 * over the {@link HttpRequestMethod} and throws a bad request exception on
-	 * unsupported exceptions.
+	 * over the {@link HttpRequestMethod} and throws a HTTP status code
+	 * exception on unsupported request methods.
+	 *
+	 * <p>The handling of request methods is intended to be stateless so that a
+	 * single instance should be able to handle multiple requests. The state
+	 * that is associated with the handling of a particular request is stored in
+	 * the associated {@link RequestHandler} instance and will be handed to the
+	 * request method handler in the {@link HttpRequest} argument of the methods
+	 * below.</p>
 	 *
 	 * @author eso
 	 */

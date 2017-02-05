@@ -17,6 +17,7 @@
 package de.esoco.lib.comm.http;
 
 import de.esoco.lib.comm.CommunicationRelationTypes;
+import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
 import de.esoco.lib.io.StreamUtil;
 import de.esoco.lib.net.NetUtil;
 
@@ -130,6 +131,20 @@ public class HttpResponse extends RelatedObject
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
+	 * Sets a header field of this response to a certain value.
+	 *
+	 * @param  eField The header field to set
+	 * @param  sValue The field value
+	 *
+	 * @return
+	 */
+	public List<String> setHeader(HttpHeaderField eField, String sValue)
+	{
+		return get(HTTP_RESPONSE_HEADERS).put(eField.getFieldName(),
+											  Arrays.asList(sValue));
+	}
+
+	/***************************************
 	 * A builder-pattern variant of {@link #set(RelationType, Object)} which
 	 * returns this response instance to allow the concatenation of multiple
 	 * method invocations.
@@ -162,20 +177,15 @@ public class HttpResponse extends RelatedObject
 		Writer aResponseBodyWriter =
 			new OutputStreamWriter(rOutput, get(RESPONSE_ENCODING));
 
-		Map<String, List<String>> rResponseHeaders = get(HTTP_RESPONSE_HEADERS);
-
 		Collection<RelationType<?>> rHeaderTypes = get(HTTP_HEADER_TYPES);
 
 		for (RelationType<?> rHeader : rHeaderTypes)
 		{
-			String sField = rHeader.get(HTTP_HEADER_FIELD).getFieldName();
-			String sValue = get(rHeader).toString();
-
-			rResponseHeaders.put(sField, Arrays.asList(sValue));
+			setHeader(rHeader.get(HTTP_HEADER_FIELD), get(rHeader).toString());
 		}
 
 		writeResponseHeader(get(HTTP_STATUS_CODE),
-							rResponseHeaders,
+							get(HTTP_RESPONSE_HEADERS),
 							aResponseHeaderWriter);
 		StreamUtil.send(rResponseBodyReader, aResponseBodyWriter);
 		aResponseHeaderWriter.flush();

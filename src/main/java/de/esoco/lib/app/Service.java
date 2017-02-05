@@ -25,6 +25,8 @@ import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.Stoppable;
+import de.esoco.lib.security.AuthenticationService;
+import de.esoco.lib.security.SecurityRelationTypes;
 import de.esoco.lib.text.TextUtil;
 
 import java.util.Date;
@@ -37,9 +39,12 @@ import org.obrel.space.ObjectSpace;
 import org.obrel.space.SimpleObjectSpace;
 import org.obrel.type.StandardTypes;
 
+import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
+
 import static org.obrel.core.RelationTypes.newFlagType;
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.StandardTypes.INFO;
+import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 
 
@@ -75,6 +80,8 @@ public abstract class Service extends Application implements Stoppable
 	private Thread			    aControlServerThread;
 	private Server			    aControlServer;
 	private ObjectSpace<String> aControlSpace;
+
+	private HttpRequestMethodHandler rRequestMethodHandler;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -124,7 +131,7 @@ public abstract class Service extends Application implements Stoppable
 					   aRoot,
 					   rDate ->
 					   String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
-									 getServiceDescription(),
+									 getServiceName(),
 									 rDate,
 									 TextUtil.formatDuration(System
 															 .currentTimeMillis() -
@@ -136,7 +143,12 @@ public abstract class Service extends Application implements Stoppable
 
 	/***************************************
 	 * Must be implemented to create new instances of {@link RequestHandler} for
-	 * the the control server of this service.
+	 * the control server of this service. If the subclass implements the {@link
+	 * AuthenticationService} interface it will be set on the request handler
+	 * with the {@link SecurityRelationTypes#AUTHENTICATION_SERVICE} relation
+	 * type to perform request authentications. If authentication is required
+	 * but implemented by a different class the subclass must override this
+	 * method to set the above relation on the request handler by itself.
 	 *
 	 * @param  rContext The service context
 	 *
@@ -144,10 +156,23 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected RequestHandler createRequestHandler(Relatable rContext)
 	{
-		HttpRequestMethodHandler aMethodHandler =
-			new ObjectSpaceHttpMethodHandler(aControlSpace, "info");
+		HttpRequestHandler aRequestHandler =
+			new HttpRequestHandler(rContext, getRequestMethodHandler());
 
-		return new HttpRequestHandler(rContext, aMethodHandler);
+		return aRequestHandler;
+	}
+
+	/***************************************
+	 * Creates a new instance of {@link HttpRequestMethodHandler}. See the
+	 * method {@link #getRequestMethodHandler()} for more details. The default
+	 * implementation returns an instance of {@link
+	 * ObjectSpaceHttpMethodHandler}.
+	 *
+	 * @return The new request method handler
+	 */
+	protected HttpRequestMethodHandler createRequestMethodHandler()
+	{
+		return new ObjectSpaceHttpMethodHandler(aControlSpace, "info");
 	}
 
 	/***************************************
@@ -196,13 +221,33 @@ public abstract class Service extends Application implements Stoppable
 	}
 
 	/***************************************
+	 * Will be invoked to return the handler for HTTP request methods (like GET,
+	 * PUT, etc.). The default implementation creates only a single handler (by
+	 * invoking {@link #createRequestMethodHandler()} which will then be reused
+	 * for all requests, expecting the handler to be stateless. If an
+	 * application needs stateful method handlers it must override this method
+	 * and return a new handler instance on each invocation.
+	 *
+	 * @return
+	 */
+	protected HttpRequestMethodHandler getRequestMethodHandler()
+	{
+		if (rRequestMethodHandler == null)
+		{
+			rRequestMethodHandler = createRequestMethodHandler();
+		}
+
+		return rRequestMethodHandler;
+	}
+
+	/***************************************
 	 * Can be overridden to return a description string for this service
 	 * instance. The default implementation returns the class name without
 	 * package.
 	 *
 	 * @return The service description string
 	 */
-	protected String getServiceDescription()
+	protected String getServiceName()
 	{
 		return getClass().getSimpleName();
 	}
@@ -235,7 +280,7 @@ public abstract class Service extends Application implements Stoppable
 		aControlServer = startControlServer();
 
 		Log.infof("%s running, control server listening on port %d",
-				  getServiceDescription(),
+				  getServiceName(),
 				  getControlServerPort());
 
 		runService();
@@ -265,8 +310,15 @@ public abstract class Service extends Application implements Stoppable
 		aControlSpace = buildControlSpace();
 
 		Server aServer =
-			new Server(getControlRequestHandlerFactory()).with(PORT,
+			new Server(getControlRequestHandlerFactory()).with(NAME,
+															   getServiceName())
+														 .with(PORT,
 															   getControlServerPort());
+
+		if (this instanceof AuthenticationService)
+		{
+			aServer.set(AUTHENTICATION_SERVICE, (AuthenticationService) this);
+		}
 
 		aControlServerThread = new Thread(aServer);
 

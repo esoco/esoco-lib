@@ -203,7 +203,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	 *
 	 * @return The relatable configuration object
 	 */
-	protected Relatable createRequestConfig()
+	protected Relatable createRequestContext()
 	{
 		Relatable aRequestConfig = new RelatedObject();
 
@@ -322,7 +322,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 		bRunning = true;
 
-		Relatable aRequestContext = createRequestConfig();
+		Relatable aRequestContext = createRequestContext();
 
 		while (bRunning)
 		{
@@ -368,9 +368,10 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 	/********************************************************************
 	 * Defines the interface that needs to be implemented for server request
-	 * handlers. This is an extension of {@link Relatable} to allow the request
-	 * handler to communicate information back to the invoking server by setting
-	 * relations.
+	 * handlers. A request handler is a stateful object which means that for
+	 * each request a new instance will be created. All request-specific data
+	 * will be set into relations of the handler object before it's method
+	 * {@link #handleRequest(InputStream, OutputStream)} will be invoked.
 	 *
 	 * @author eso
 	 */

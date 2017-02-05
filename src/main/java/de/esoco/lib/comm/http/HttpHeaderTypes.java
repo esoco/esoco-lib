@@ -48,7 +48,8 @@ public class HttpHeaderTypes
 	public enum HttpHeaderField
 	{
 		ACCEPT, ACCEPT_CHARSET, AUTHORIZATION, CONNECTION, CONTENT_LENGTH,
-		CONTENT_TYPE, COOKIE, HOST, USER_AGENT;
+		CONTENT_TYPE, COOKIE, HOST, USER_AGENT,
+		WWW_AUTHENTICATE("WWW-Authenticate");
 
 		//~ Instance fields ----------------------------------------------------
 
@@ -63,6 +64,16 @@ public class HttpHeaderTypes
 		private HttpHeaderField()
 		{
 			this.sFieldName = TextConvert.capitalize(name(), "-");
+		}
+
+		/***************************************
+		 * Creates a new instance with an explicit field name.
+		 *
+		 * @param sFieldName The field name
+		 */
+		private HttpHeaderField(String sFieldName)
+		{
+			this.sFieldName = sFieldName;
 		}
 
 		//~ Methods ------------------------------------------------------------

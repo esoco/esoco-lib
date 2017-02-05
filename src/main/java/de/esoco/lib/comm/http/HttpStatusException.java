@@ -16,7 +16,14 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.http;
 
+import de.esoco.lib.collection.CollectionUtil;
+import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
+import de.esoco.lib.datatype.Pair;
+
 import java.io.IOException;
+
+import java.util.Collections;
+import java.util.Map;
 
 
 /********************************************************************
@@ -34,20 +41,10 @@ public class HttpStatusException extends IOException
 
 	private final HttpStatusCode eStatusCode;
 
+	private Map<HttpHeaderField, String> rResponseHeaders =
+		Collections.emptyMap();
+
 	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
-	 * Creates a new instance with a status code and message.
-	 *
-	 * @param eStatusCode The status code
-	 * @param sMessage    The error message
-	 */
-	public HttpStatusException(HttpStatusCode eStatusCode, String sMessage)
-	{
-		super(sMessage);
-
-		this.eStatusCode = eStatusCode;
-	}
 
 	/***************************************
 	 * Creates a new instance with a status code and causing exception.
@@ -60,6 +57,27 @@ public class HttpStatusException extends IOException
 		super(eCause);
 
 		this.eStatusCode = eStatusCode;
+	}
+
+	/***************************************
+	 * Creates a new instance with a status code and message.
+	 *
+	 * @param eStatusCode      The status code
+	 * @param sMessage         The error message
+	 * @param rResponseHeaders An optional array of headers to be set on the
+	 *                         response
+	 */
+	@SafeVarargs
+	public HttpStatusException(
+		HttpStatusCode					 eStatusCode,
+		String							 sMessage,
+		Pair<HttpHeaderField, String>... rResponseHeaders)
+	{
+		super(sMessage);
+
+		this.eStatusCode	  = eStatusCode;
+		this.rResponseHeaders =
+			CollectionUtil.fixedOrderedMapOf(rResponseHeaders);
 	}
 
 	/***************************************
@@ -80,6 +98,17 @@ public class HttpStatusException extends IOException
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Returns a map of the optional response headers for this status code
+	 * exception.
+	 *
+	 * @return The response headers map (may be empty but will never be NULL)
+	 */
+	public final Map<HttpHeaderField, String> getResponseHeaders()
+	{
+		return rResponseHeaders;
+	}
 
 	/***************************************
 	 * Returns the HTTP status code.
