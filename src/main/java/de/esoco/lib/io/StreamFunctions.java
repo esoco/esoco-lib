@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 
 
 /********************************************************************
@@ -132,8 +134,10 @@ public class StreamFunctions
 	}
 
 	/***************************************
-	 * Returns a new binary function that invokes {@link
-	 * StreamUtil#readUntil(Reader, String, int, boolean)}.
+	 * Returns a new binary function that invokes the method {@link
+	 * StreamUtil#readUntil(Reader, StringBuilder, String, int, boolean)} and
+	 * returns either the string found or NULL if the given token didn't occur
+	 * in the data that has been read up to the maximum..
 	 *
 	 * @param  sToken      The token to search
 	 * @param  nMax        The maximum number of characters to read
@@ -154,7 +158,22 @@ public class StreamFunctions
 				Reader rReader,
 				String sToken) throws Exception
 			{
-				return StreamUtil.readUntil(rReader, sToken, nMax, bIgnoreCase);
+				Writer aOutput = new StringWriter();
+				String sResult = null;
+
+				if (StreamUtil.readUntil(rReader,
+										 aOutput,
+										 sToken,
+										 nMax,
+										 bIgnoreCase))
+				{
+					sResult = aOutput.toString();
+					sResult =
+						sResult.substring(0,
+										  sResult.length() - sToken.length());
+				}
+
+				return sResult;
 			}
 		};
 	}

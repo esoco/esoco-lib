@@ -43,6 +43,7 @@ import java.util.Set;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_MAX_HEADER_LINE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_RESPONSE_HEADERS;
 import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_METHOD;
@@ -137,21 +138,17 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		InputStream  rRequestStream,
 		OutputStream rResponseStream) throws IOException
 	{
-		String sRequest = null;
+		ByteArrayOutputStream aRequestCopy = new ByteArrayOutputStream(2048);
+		String				  sRequest     = null;
 
 		try
 		{
-			ByteArrayOutputStream aRequestCopy =
-				new ByteArrayOutputStream(2048);
-
 			rRequestStream = new EchoInputStream(rRequestStream, aRequestCopy);
 
 			HttpRequest aRequest = readRequest(rRequestStream);
 
 			checkAuthentication(aRequest);
 			sendResponse(aRequest, rResponseStream);
-
-			sRequest = aRequestCopy.toString(StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e)
 		{
@@ -179,8 +176,6 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				Log.error("HTTP Request failed", e);
 			}
 
-			sRequest = eStatus.toResponseString();
-
 			HttpResponse aErrorResponse = new HttpResponse(eStatus, sMessage);
 
 			for (Entry<HttpHeaderField, String> rHeader :
@@ -195,8 +190,12 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			}
 			catch (Exception eResponse)
 			{
-				Log.error("Response output failed", eResponse);
+				Log.info("Response output failed", eResponse);
 			}
+		}
+		finally
+		{
+			sRequest = aRequestCopy.toString(StandardCharsets.UTF_8.name());
 		}
 
 		rResponseStream.flush();
@@ -285,16 +284,17 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 *
 	 * @param  rInput The input stream to read the request from
 	 *
-	 * @return
+	 * @return A new HTTP request
 	 *
 	 * @throws IOException         If reading from the input fails
 	 * @throws HttpStatusException The corresponding HTTP status if the request
 	 *                             violates requirements
 	 */
+	@SuppressWarnings("boxing")
 	protected HttpRequest readRequest(InputStream rInput)
 		throws IOException, HttpStatusException
 	{
-		return new HttpRequest(rInput);
+		return new HttpRequest(rInput, rContext.get(HTTP_MAX_HEADER_LINE_SIZE));
 	}
 
 	/***************************************

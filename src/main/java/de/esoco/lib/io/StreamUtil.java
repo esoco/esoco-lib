@@ -18,17 +18,13 @@ package de.esoco.lib.io;
 
 import de.esoco.lib.collection.ByteArray;
 
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
-
-import java.util.Arrays;
 
 
 /********************************************************************
@@ -62,7 +58,6 @@ public final class StreamUtil
 	 *
 	 * @throws IOException              If reading from the stream fails
 	 * @throws IllegalArgumentException If the search token is empty
-	 * @throws NullPointerException     If either stream or token is NULL
 	 */
 	public static boolean find(InputStream rIn,
 							   byte[]	   rToken,
@@ -112,14 +107,15 @@ public final class StreamUtil
 	 *
 	 * @param  rInput      The input stream reader to read from
 	 * @param  sToken      The token to search
-	 * @param  nMax        The maximum number of bytes that should be read
+	 * @param  nMax        The maximum number of characters that should be read
 	 * @param  bIgnoreCase TRUE if the case of the token should be ignored
 	 * @param  rHandler    A handler to be invoked for values read or NULL for
 	 *                     none
 	 *
 	 * @return TRUE if the token has been found, FALSE if not
 	 *
-	 * @throws IOException If accessing the stream fails
+	 * @throws IOException              If accessing the stream fails
+	 * @throws IllegalArgumentException If the search token is empty
 	 */
 	public static boolean find(Reader	   rInput,
 							   String	   sToken,
@@ -247,11 +243,17 @@ public final class StreamUtil
 
 	/***************************************
 	 * Reads all bytes from a stream until the next occurrence of a certain
-	 * token and returns the bytes read as a byte array (without the search
-	 * token). Invokes {@link #find(InputStream, byte[], int, ReadHandler)} to
-	 * perform the actual search.
+	 * token and and returns a boolean that indicates whether the token has been
+	 * found. The data will be read into the output stream argument. If the
+	 * token is found the output will end at it's last byte. Otherwise it
+	 * contains all data that had been read until the maximum number of bytes
+	 * had been reached.
+	 *
+	 * <p>Invokes {@link #find(InputStream, byte[], int, ReadHandler)} to
+	 * perform the actual search.</p>
 	 *
 	 * @param  rIn    The input stream to read from
+	 * @param  rOut   The output stream to write data to
 	 * @param  rToken The token to read up to
 	 * @param  nMax   The maximum number of bytes to read
 	 *
@@ -262,46 +264,49 @@ public final class StreamUtil
 	 *                                  token could be found
 	 * @throws IOException              If reading from the stream fails
 	 * @throws IllegalArgumentException If the search string is empty
-	 * @throws NullPointerException     If either argument is NULL
+	 * @throws IllegalStateException    If writing to the output stream fails
+	 *                                  (wraps the IO exception that occurred)
 	 */
-	public static byte[] readUntil(InputStream rIn, byte[] rToken, int nMax)
-		throws IOException
+	public static boolean readUntil(InputStream  rIn,
+									OutputStream rOut,
+									byte[]		 rToken,
+									int			 nMax) throws IOException
 	{
-		final ByteArrayOutputStream aData   = new ByteArrayOutputStream();
-		byte[]					    aResult = null;
-
-		boolean bFound =
-			find(rIn,
-				 rToken,
-				 nMax,
-				new ReadHandler()
+		return find(rIn,
+					rToken,
+					nMax,
+			new ReadHandler()
+			{
+				@Override
+				public void valueRead(int nByte)
 				{
-					@Override
-					public void valueRead(int nByte)
+					try
 					{
-						aData.write(nByte);
+						rOut.write(nByte);
 					}
-				});
-
-		if (bFound)
-		{
-			aResult =
-				Arrays.copyOf(aData.toByteArray(),
-							  aData.size() - rToken.length);
-		}
-
-		return aResult;
+					catch (IOException e)
+					{
+						throw new IllegalStateException(e);
+					}
+				}
+			});
 	}
 
 	/***************************************
 	 * Reads a string from a character stream until the next occurrence of a
-	 * certain token and returns the bytes read as a byte array (without the
-	 * search token). Invokes {@link #find(Reader, String, int, boolean,
-	 * ReadHandler)} to perform the actual search.
+	 * certain token and returns a boolean that indicates whether the token has
+	 * been found. The data will be read into the output writer argument. If the
+	 * token is found the output will end at it's last character. Otherwise it
+	 * contains all data that had been read until the maximum number of
+	 * characters had been reached.
 	 *
-	 * @param  rInput      The input stream to read from
+	 * <p>Invokes {@link #find(Reader, String, int, boolean, ReadHandler)} to
+	 * perform the actual search.</p>
+	 *
+	 * @param  rIn         The reader to read the data from
+	 * @param  rOut        A writer to write the characters that have been to
 	 * @param  sToken      The token to read up to
-	 * @param  nMax        The maximum number of bytes to read
+	 * @param  nMax        The maximum number of characters to read
 	 * @param  bIgnoreCase TRUE if the case of the token should be ignored
 	 *
 	 * @return The string read from the stream up to but excluding the search
@@ -310,37 +315,34 @@ public final class StreamUtil
 	 * @throws IOException              If reading from the stream fails
 	 * @throws IllegalArgumentException If the search string is empty
 	 * @throws NullPointerException     If either argument is NULL
+	 * @throws IllegalStateException    If writing to the output stream fails
+	 *                                  (wraps the IO exception that occurred)
 	 */
-	public static String readUntil(Reader  rInput,
-								   String  sToken,
-								   int	   nMax,
-								   boolean bIgnoreCase) throws IOException
+	public static boolean readUntil(Reader  rIn,
+									Writer  rOut,
+									String  sToken,
+									int		nMax,
+									boolean bIgnoreCase) throws IOException
 	{
-		final StringWriter aData   = new StringWriter();
-		String			   sResult = null;
-
-		boolean bFound =
-			find(rInput,
-				 sToken,
-				 nMax,
-				 bIgnoreCase,
-				new ReadHandler()
+		return find(rIn,
+					sToken,
+					nMax,
+					bIgnoreCase,
+			new ReadHandler()
+			{
+				@Override
+				public void valueRead(int nValue)
 				{
-					@Override
-					public void valueRead(int nValue)
+					try
 					{
-						aData.write(nValue);
+						rOut.write(nValue);
 					}
-				});
-
-		if (bFound)
-		{
-			StringBuffer rBuffer = aData.getBuffer();
-
-			sResult = rBuffer.substring(0, rBuffer.length() - sToken.length());
-		}
-
-		return sResult;
+					catch (IOException e)
+					{
+						throw new IllegalStateException(e);
+					}
+				}
+			});
 	}
 
 	/***************************************

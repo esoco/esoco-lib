@@ -49,6 +49,8 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+
 
 /********************************************************************
  * Utility class containing static network helper methods.
@@ -370,14 +372,20 @@ public class NetUtil
 		rOutputStream.write(aRequestBytes);
 		rOutputStream.flush();
 
-		byte[] aReply =
-			StreamUtil.readUntil(rProxySocket.getInputStream(),
+		ByteOutputStream aOutput = new ByteOutputStream();
+		byte[]			 aReply  = null;
+
+		if (StreamUtil.readUntil(rProxySocket.getInputStream(),
+								 aOutput,
 								 "\r\n\r\n".getBytes(TUNNELING_CHARSET),
-								 512);
+								 512))
+		{
+			aReply = aOutput.getBytes();
+		}
 
 		if (aReply != null)
 		{
-			sReply = new String(aReply, 0, aReply.length, TUNNELING_CHARSET);
+			sReply = new String(aReply, TUNNELING_CHARSET);
 		}
 
 		if (!sReply.startsWith("HTTP/1.0 200"))

@@ -21,6 +21,7 @@ import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
+import de.esoco.lib.security.Certificates;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +31,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
+import java.security.KeyStore;
+
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +40,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLServerSocketFactory;
 
 import org.obrel.core.ObjectRelations;
 import org.obrel.core.Relatable;
@@ -52,6 +54,10 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HANDLING_TIME;
+import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
+import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
+import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
+import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
@@ -166,6 +172,16 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	}
 
 	/***************************************
+	 * A builder-style method to set a certain boolean relation.
+	 *
+	 * @see #with(RelationType, Object)
+	 */
+	public <T> Server with(RelationType<Boolean> rFlagType)
+	{
+		return with(rFlagType, Boolean.TRUE);
+	}
+
+	/***************************************
 	 * A builder-style method to set a certain relation and then return this
 	 * instance for concatenation.
 	 *
@@ -228,7 +244,20 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 		if (hasFlag(ENCRYPTED_CONNECTION))
 		{
-			aServerSocketFactory = SSLServerSocketFactory.getDefault();
+			RelatedObject rParams = new RelatedObject();
+
+			rParams.set(NAME, getServerName());
+			rParams.set(COMMON_NAME, "localhost");
+			rParams.set(KEY_SIZE, 2048);
+			rParams.set(KEY_PASSWORD, "");
+			rParams.set(CERTIFICATE_VALIDITY, 30);
+
+			KeyStore rKeyStore =
+				Certificates.generateSelfSignedCertificate(rParams);
+
+			aServerSocketFactory =
+				Certificates.getSslContext(rKeyStore, "")
+							.getServerSocketFactory();
 		}
 		else
 		{

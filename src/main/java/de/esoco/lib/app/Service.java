@@ -142,6 +142,29 @@ public abstract class Service extends Application implements Stoppable
 	}
 
 	/***************************************
+	 * Creates a new REST server for the control of this service.
+	 *
+	 * @return The new server instance, initialized but not started
+	 */
+	protected Server createControlServer()
+	{
+		RequestHandlerFactory rRequestHandlerFactory =
+			getControlRequestHandlerFactory();
+
+		Server aServer =
+			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
+											  .with(PORT,
+													getControlServerPort());
+
+		if (this instanceof AuthenticationService)
+		{
+			aServer.set(AUTHENTICATION_SERVICE, (AuthenticationService) this);
+		}
+
+		return aServer;
+	}
+
+	/***************************************
 	 * Must be implemented to create new instances of {@link RequestHandler} for
 	 * the control server of this service. If the subclass implements the {@link
 	 * AuthenticationService} interface it will be set on the request handler
@@ -277,6 +300,7 @@ public abstract class Service extends Application implements Stoppable
 	@SuppressWarnings("boxing")
 	protected final void runApp() throws Exception
 	{
+		aControlSpace  = buildControlSpace();
 		aControlServer = startControlServer();
 
 		Log.infof("%s running, control server listening on port %d",
@@ -307,18 +331,7 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected Server startControlServer() throws Exception
 	{
-		aControlSpace = buildControlSpace();
-
-		Server aServer =
-			new Server(getControlRequestHandlerFactory()).with(NAME,
-															   getServiceName())
-														 .with(PORT,
-															   getControlServerPort());
-
-		if (this instanceof AuthenticationService)
-		{
-			aServer.set(AUTHENTICATION_SERVICE, (AuthenticationService) this);
-		}
+		Server aServer = createControlServer();
 
 		aControlServerThread = new Thread(aServer);
 

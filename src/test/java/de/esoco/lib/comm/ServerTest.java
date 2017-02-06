@@ -30,8 +30,6 @@ import java.io.FileReader;
 import org.obrel.space.FileSystemSpace;
 import org.obrel.space.ObjectSpace;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
-
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 
@@ -64,8 +62,7 @@ public class ServerTest
 			rConfig -> new HttpRequestHandler(rConfig, aMethodHandler);
 
 		Server aServer =
-			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008)
-								.with(MAX_CONNECTIONS, 10);
+			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008);
 
 		aServer.run();
 //		new Thread(aServer).start();

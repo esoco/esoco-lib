@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 
 import java.nio.charset.StandardCharsets;
 
@@ -38,7 +39,6 @@ import java.util.Map;
 import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_MAX_HEADER_LINE_SIZE;
 import static de.esoco.lib.comm.http.HttpHeaderTypes.CONTENT_LENGTH;
 import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
 
@@ -58,13 +58,17 @@ public class HttpRequest extends RelatedObject
 	private final String				    sRequestPath;
 	private final Map<String, List<String>> aRequestHeaders;
 
+	private int nMaxLineLength;
+
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
 	 * Reads the incoming request and throws an exception if it doesn't match
 	 * the requirements.
 	 *
-	 * @param  rInput rInputReader The reader to read the request from
+	 * @param  rInput         rInputReader The reader to read the request from
+	 * @param  nMaxLineLength The maximum length a request header line
+	 *                        (terminated with CRLF) is allowed to have
 	 *
 	 * @return A pair containing the HTTP request method and the
 	 *
@@ -72,10 +76,11 @@ public class HttpRequest extends RelatedObject
 	 * @throws HttpStatusException The corresponding HTTP status if the request
 	 *                             violates requirements
 	 */
-	public HttpRequest(InputStream rInput) throws IOException,
-												  HttpStatusException
+	public HttpRequest(InputStream rInput, int nMaxLineLength)
+		throws IOException, HttpStatusException
 	{
-		aRequestReader =
+		this.nMaxLineLength = nMaxLineLength;
+		aRequestReader	    =
 			new BufferedReader(new InputStreamReader(rInput,
 													 StandardCharsets.UTF_8));
 
@@ -323,16 +328,25 @@ public class HttpRequest extends RelatedObject
 	 */
 	protected String readLine(Reader rReader) throws IOException
 	{
-		@SuppressWarnings("boxing")
-		String sLine =
-			StreamUtil.readUntil(rReader,
-								 NetUtil.CRLF,
-								 get(HTTP_MAX_HEADER_LINE_SIZE),
-								 false);
+		StringWriter aLine = new StringWriter();
+		String		 sLine = null;
 
-		if (sLine == null)
+		if (StreamUtil.readUntil(rReader,
+								 aLine,
+								 NetUtil.CRLF,
+								 nMaxLineLength,
+								 false))
 		{
-			badRequest("Request line not terminated with CRLF: " + sLine);
+			sLine = aLine.toString();
+			sLine = sLine.substring(0, sLine.length() - 2);
+		}
+		else if (aLine.getBuffer().length() == 0)
+		{
+			badRequest("Request empty");
+		}
+		else
+		{
+			badRequest("Request line not terminated with CRLF");
 		}
 
 		return sLine;
