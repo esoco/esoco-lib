@@ -194,12 +194,14 @@ public final class StreamUtil
 
 		ByteArray aReadBuffer = new ByteArray(nBufferSize);
 		byte[]    aBytes	  = new byte[nBufferSize];
+		int		  nReadMax    = Math.min(nMax, nBufferSize);
 		int		  nCount;
 
-		while (nMax > 0 && (nCount = rIn.read(aBytes)) != -1)
+		while (nMax > 0 && (nCount = rIn.read(aBytes, 0, nReadMax)) != -1)
 		{
 			aReadBuffer.add(aBytes, 0, nCount);
-			nMax -= nCount;
+			nMax     -= nCount;
+			nReadMax = Math.min(nMax, nBufferSize);
 		}
 
 		return aReadBuffer.toByteArray();
@@ -228,14 +230,16 @@ public final class StreamUtil
 			throw new IllegalArgumentException("Buffer size must be > 0");
 		}
 
-		StringBuilder aResult = new StringBuilder(nBufferSize);
-		char[]		  aBuffer = new char[nBufferSize];
+		StringBuilder aResult  = new StringBuilder(nBufferSize);
+		char[]		  aBuffer  = new char[nBufferSize];
+		int			  nReadMax = Math.min(nMax, nBufferSize);
 		int			  nCount;
 
-		while (nMax > 0 && (nCount = rIn.read(aBuffer, 0, nMax)) != -1)
+		while (nMax > 0 && (nCount = rIn.read(aBuffer, 0, nReadMax)) != -1)
 		{
 			aResult.append(aBuffer, 0, nCount);
-			nMax -= nCount;
+			nMax     -= nCount;
+			nReadMax = Math.min(nMax, nBufferSize);
 		}
 
 		return aResult.toString();
