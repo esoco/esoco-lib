@@ -98,11 +98,11 @@ public class CommunicationRelationTypes
 
 	/**
 	 * The maximum number of (concurrent) connections to or from a communication
-	 * component. Defaults to 10.
+	 * component. Defaults to 1.
 	 */
 	@SuppressWarnings("boxing")
 	public static final RelationType<Integer> MAX_CONNECTIONS =
-		newInitialValueType(10);
+		newInitialValueType(1);
 
 	/**
 	 * The maximum size that a request to a server allowed to have. Has a

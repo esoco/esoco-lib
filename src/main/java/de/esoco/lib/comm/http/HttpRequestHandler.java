@@ -166,10 +166,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				eStatus			 = eStatusException.getStatusCode();
 				rResponseHeaders = eStatusException.getResponseHeaders();
 
-				Log.infof(e,
-						  "HTTP status exception (%s): %s",
-						  eStatus,
-						  sMessage);
+				Log.infof("HTTP status exception (%s): %s", eStatus, sMessage);
 			}
 			else
 			{

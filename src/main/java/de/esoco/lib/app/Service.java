@@ -39,6 +39,7 @@ import org.obrel.space.ObjectSpace;
 import org.obrel.space.SimpleObjectSpace;
 import org.obrel.type.StandardTypes;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 
 import static org.obrel.core.RelationTypes.newFlagType;
@@ -123,7 +124,7 @@ public abstract class Service extends Application implements Stoppable
 		aRoot.set(STATUS, aStatus);
 		aRoot.set(CONTROL, aControl);
 
-		aControl.set(RUN).onChange(bRun -> stopRequest());
+		aControl.set(RUN).onChange(bRun -> stopRequest(null));
 
 		aStatus.init(StandardTypes.UPTIME);
 		aStatus.set(StandardTypes.START_DATE, aNow)
@@ -154,7 +155,8 @@ public abstract class Service extends Application implements Stoppable
 		Server aServer =
 			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
 											  .with(PORT,
-													getControlServerPort());
+													getControlServerPort())
+											  .with(MAX_CONNECTIONS, 2);
 
 		if (this instanceof AuthenticationService)
 		{
@@ -338,6 +340,8 @@ public abstract class Service extends Application implements Stoppable
 		// this will stop the server on shutdown
 		manageResource(aServer);
 
+		aControlServerThread.setUncaughtExceptionHandler((t, e) ->
+														 stopRequest(e));
 		aControlServerThread.start();
 
 		return aServer;
@@ -346,10 +350,21 @@ public abstract class Service extends Application implements Stoppable
 	/***************************************
 	 * Internal method to handle a request from the control server to stop the
 	 * service.
+	 *
+	 * @param e An optional exception to indicate a control server error or NULL
+	 *          for a regular request to shutdown this service
 	 */
-	private void stopRequest()
+	private void stopRequest(Throwable e)
 	{
-		Log.info("Stop requested from control server, shutting down");
+		if (e != null)
+		{
+			Log.error("Control server error, shutting down", e);
+		}
+		else
+		{
+			Log.info("Stop requested from control server, shutting down");
+		}
+
 		stop();
 	}
 }

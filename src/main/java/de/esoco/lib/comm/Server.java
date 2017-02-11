@@ -21,8 +21,9 @@ import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
-import de.esoco.lib.security.Certificates;
+import de.esoco.lib.security.Security;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,9 +32,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import java.security.KeyStore;
+import java.nio.file.Files;
 
-import java.util.concurrent.SynchronousQueue;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -58,6 +63,7 @@ import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
 import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
+import static de.esoco.lib.security.SecurityRelationTypes.KEY_STORE;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
@@ -244,20 +250,39 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 		if (hasFlag(ENCRYPTED_CONNECTION))
 		{
-			RelatedObject rParams = new RelatedObject();
+			RelatedObject aCertParams = new RelatedObject();
 
-			rParams.set(NAME, getServerName());
-			rParams.set(COMMON_NAME, "localhost");
-			rParams.set(KEY_SIZE, 2048);
-			rParams.set(KEY_PASSWORD, "");
-			rParams.set(CERTIFICATE_VALIDITY, 30);
+			aCertParams.set(NAME, getServerName());
+			aCertParams.set(COMMON_NAME, "localhost");
+			aCertParams.set(KEY_SIZE, 2048);
+			aCertParams.set(KEY_PASSWORD, "");
+			aCertParams.set(CERTIFICATE_VALIDITY, 30);
 
-			KeyStore rKeyStore =
-				Certificates.generateSelfSignedCertificate(rParams);
+			byte[] aCertData =
+				Files.readAllBytes(new File("S:/test/ca/rootCA.pem").toPath());
+			byte[] aKeyData  =
+				Files.readAllBytes(new File("S:/test/ca/rootCA.pkcs8")
+								   .toPath());
+
+			X509Certificate aCACert = Security.decodeCertificate(aCertData);
+			PrivateKey	    aCAKey  = Security.decodePrivateKey(aKeyData);
+
+			if (aCACert != null)
+			{
+				aCertParams.set(KEY_STORE,
+								Security.createKeyStore(Security.SIGNING_CERTIFICATE,
+														"",
+														aCAKey,
+														new X509Certificate[]
+														{
+															aCACert
+														}));
+			}
+
+			KeyStore rKeyStore = Security.createCertificate(aCertParams);
 
 			aServerSocketFactory =
-				Certificates.getSslContext(rKeyStore, "")
-							.getServerSocketFactory();
+				Security.getSslContext(rKeyStore, "").getServerSocketFactory();
 		}
 		else
 		{
@@ -342,12 +367,16 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	protected void runServerLoop() throws IOException
 	{
 		aServerSocket = createServerSocket(get(PORT));
-		aThreadPool   =
+
+		Integer nMaxConnections = get(MAX_CONNECTIONS);
+
+		aThreadPool =
 			new ThreadPoolExecutor(0,
-								   get(MAX_CONNECTIONS),
+								   nMaxConnections,
 								   60L,
 								   TimeUnit.SECONDS,
-								   new SynchronousQueue<Runnable>());
+								   new ArrayBlockingQueue<>(nMaxConnections *
+															10));
 
 		bRunning = true;
 
