@@ -130,11 +130,10 @@ public class CommunicationRelationTypes
 
 	/**
 	 * A flag that indicates that a connection performs encrypted communication
-	 * like SSL, TLS, or SSH. A final relation that is determined during
+	 * like SSL, TLS, or SSH. Declared as final to prevent changes after
 	 * initialization.
 	 */
-	public static final RelationType<Boolean> ENCRYPTION =
-		newFlagType(FINAL);
+	public static final RelationType<Boolean> ENCRYPTION = newFlagType(FINAL);
 
 	/**
 	 * A flag to enabled SSL/TLS connections to endpoints that use self-signed

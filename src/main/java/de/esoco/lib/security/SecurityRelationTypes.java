@@ -80,17 +80,26 @@ public class SecurityRelationTypes
 		RelationTypes.newType();
 
 	/**
-	 * A Java security key store that holds cryptographic keys and certificates.
+	 * A Java security key store that holds a cryptographic certificate and the
+	 * corresponding private key. The alias under which the certificate will be
+	 * available depends on the application. The class {@link Security} contains
+	 * some predefined alias names, e.g. {@link Security#ALIAS_SERVER_CERT}.
 	 */
-	public static final RelationType<KeyStore> KEY_STORE = newType();
+	public static final RelationType<KeyStore> CERTIFICATE = newType();
+
+	/**
+	 * A Java security key store that holds a cryptographic certificate and the
+	 * corresponding private key for the signing of other certificates. The
+	 * signing certificate must me stored under the alias {@link
+	 * Security#ALIAS_SIGNING_CERT}.
+	 */
+	public static final RelationType<KeyStore> SIGNING_CERTIFICATE = newType();
 
 	/** A pair of public and private key for asymmetric cryptography. */
 	public static final RelationType<KeyPair> KEY_PAIR = newType();
 
-	/** The size of a cryptographic key. Defaults to 2048 bit. */
-	@SuppressWarnings("boxing")
-	public static final RelationType<Integer> KEY_SIZE =
-		newInitialValueType(2048);
+	/** The size of a cryptographic key. */
+	public static final RelationType<Integer> KEY_SIZE = newType();
 
 	/** The password for a cryptographic key. */
 	public static final RelationType<String> KEY_PASSWORD = newType();

@@ -39,6 +39,7 @@ import org.obrel.space.ObjectSpace;
 import org.obrel.space.SimpleObjectSpace;
 import org.obrel.type.StandardTypes;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 
@@ -156,7 +157,8 @@ public abstract class Service extends Application implements Stoppable
 			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
 											  .with(PORT,
 													getControlServerPort())
-											  .with(MAX_CONNECTIONS, 2);
+											  .with(MAX_CONNECTIONS, 2)
+											  .with(ENCRYPTION);
 
 		if (this instanceof AuthenticationService)
 		{
@@ -305,7 +307,7 @@ public abstract class Service extends Application implements Stoppable
 		aControlSpace  = buildControlSpace();
 		aControlServer = startControlServer();
 
-		Log.infof("%s running, control server listening on port %d",
+		Log.infof("%s running, control server listening on TLS port %d",
 				  getServiceName(),
 				  getControlServerPort());
 

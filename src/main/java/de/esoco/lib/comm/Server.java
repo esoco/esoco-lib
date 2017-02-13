@@ -19,9 +19,11 @@ package de.esoco.lib.comm;
 import de.esoco.lib.io.LimitedInputStream;
 import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
+import de.esoco.lib.manage.Releasable;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.security.Security;
+import de.esoco.lib.security.SecurityRelationTypes;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,20 +56,70 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HANDLING_TIME;
+import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE;
 import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
 import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
+import static de.esoco.lib.security.SecurityRelationTypes.SIGNING_CERTIFICATE;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
+import static org.obrel.type.StandardTypes.HOST;
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 import static org.obrel.type.StandardTypes.TIMER;
 
 
 /********************************************************************
- * A simple server class that listens on a socket for requests.
+ * A server that listens on a socket for requests. To create a new instance the
+ * constructor expects an instance of {@link RequestHandlerFactory}. This
+ * factory must then return new instances of the {@link RequestHandler}
+ * interface which will be invoked to perform the client request by analyzing
+ * the request data from an input stream and writing the response data to an
+ * output stream.
+ *
+ * <p>A server is started by invoking the {@link #run()} method. A running
+ * server can be stopped by invoking {@link #stop()} and it's current state can
+ * be queried with {@link #isRunning()}. The configuration of a server is done
+ * by settings relations on it before it is started. The only mandatory relation
+ * is {@link StandardTypes#PORT} containing the port on which the server will
+ * listen. Optional configuration parameters are:</p>
+ *
+ * <ul>
+ *   <li>{@link StandardTypes#NAME}: the name of the server. Will be used as
+ *     identifier in log output (default: simple class name).</li>
+ *   <li>{@link CommunicationRelationTypes#MAX_REQUEST_SIZE}: the maximum size
+ *     of client requests. Requests exceeding this size will be rejected.</li>
+ *   <li>{@link CommunicationRelationTypes#MAX_RESPONSE_SIZE}: the maximum size
+ *     of a response to a request.</li>
+ *   <li>{@link CommunicationRelationTypes#ENCRYPTION}: if set to TRUE the
+ *     server will only accept encrypted connections. In that case the following
+ *     additional configuration parameters may be set:
+ *
+ *     <ul>
+ *       <li>{@link SecurityRelationTypes#KEY_PASSWORD}: the password for
+ *         private keys in any of the key stores mentioned below (default: empty
+ *         string).</li>
+ *       <li>{@link SecurityRelationTypes#CERTIFICATE}: a Java {@link KeyStore}
+ *         containing the server certificate and the corresponding private key,
+ *         stored under the alias {@link Security#ALIAS_SERVER_CERT}. If not
+ *         provided a certificate will be generated automatically under
+ *         consideration of the following optional parameters.</li>
+ *       <li>{@link SecurityRelationTypes#SIGNING_CERTIFICATE}: used to sign an
+ *         automatically generated certificate (typically some kind of
+ *         self-signed certificate authority). If not set a self-signed
+ *         certificate will be generated.</li>
+ *       <li>{@link StandardTypes#HOST}: the host name of the server. Will be
+ *         used as the common name of a generated certificate (default:
+ *         'localhost').</li>
+ *       <li>{@link SecurityRelationTypes#KEY_SIZE}: the bit size of the private
+ *         key for the TLS certificate (default: 2048).</li>
+ *       <li>{@link SecurityRelationTypes#CERTIFICATE_VALIDITY}: the validity
+ *         period of a generated certificate in days (default: 30).</li>
+ *     </ul>
+ *   </li>
+ * </ul>
  *
  * @author eso
  */
@@ -135,6 +187,8 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	@Override
 	public void run()
 	{
+		ObjectRelations.require(this, PORT);
+
 		if (aThreadPool != null)
 		{
 			throw new IllegalStateException(getServerName() +
@@ -244,17 +298,11 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 		if (hasFlag(ENCRYPTION))
 		{
-			RelatedObject aCertParams = new RelatedObject();
-
-			aCertParams.set(COMMON_NAME, "localhost");
-			aCertParams.set(KEY_SIZE, 2048);
-			aCertParams.set(KEY_PASSWORD, "");
-			aCertParams.set(CERTIFICATE_VALIDITY, 30);
-
-			KeyStore aCertKeyStore = Security.createCertificate(aCertParams);
+			String   sKeyPassword = get(KEY_PASSWORD, "");
+			KeyStore rCertificate = getServerCertificate(sKeyPassword);
 
 			aServerSocketFactory =
-				Security.getSslContext(aCertKeyStore, "")
+				Security.getSslContext(rCertificate, sKeyPassword)
 						.getServerSocketFactory();
 		}
 		else
@@ -263,6 +311,57 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 		}
 
 		return aServerSocketFactory.createServerSocket(nPort);
+	}
+
+	/***************************************
+	 * A variant of {@link #get(RelationType)} that returns a default value if a
+	 * relation value is NULL. This method will always resolve the relation with
+	 * the given type, therefore initializing it if the relation type has an
+	 * initial value function or using it's default value if available. Only if
+	 * the resolved relation value is NULL will the default value be returned.
+	 *
+	 * @param  rType    The type of relation to retrieve
+	 * @param  rDefault The default value to return for a NULL relation value
+	 *
+	 * @return The relation value or if NULL, the default value
+	 */
+	protected <T> T get(RelationType<T> rType, T rDefault)
+	{
+		T rValue = get(rType);
+
+		return rValue != null ? rValue : rDefault;
+	}
+
+	/***************************************
+	 * Returns the server certificate from the parameters stored in this
+	 * server's relations. If no explicit certificate has been provided a new
+	 * one will be generated based on the parameters.
+	 *
+	 * @param  sKeyPassword The password to protect the private key of the
+	 *                      certificate with
+	 *
+	 * @return A key store containing the server certificate and it's key
+	 */
+	@SuppressWarnings("boxing")
+	protected KeyStore getServerCertificate(String sKeyPassword)
+	{
+		KeyStore aCertKeyStore = get(CERTIFICATE);
+
+		if (aCertKeyStore == null)
+		{
+			RelatedObject aCertParams = new RelatedObject();
+
+			aCertParams.set(COMMON_NAME, get(HOST, "localhost"));
+			aCertParams.set(KEY_SIZE, get(KEY_SIZE, 2048));
+			aCertParams.set(KEY_PASSWORD, sKeyPassword);
+			aCertParams.set(CERTIFICATE_VALIDITY,
+							get(CERTIFICATE_VALIDITY, 30));
+			aCertParams.set(SIGNING_CERTIFICATE, get(SIGNING_CERTIFICATE));
+
+			aCertKeyStore = Security.createCertificate(aCertParams);
+		}
+
+		return aCertKeyStore;
 	}
 
 	/***************************************
@@ -283,12 +382,12 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 				  getServerName(),
 				  rClientSocket.getInetAddress());
 
+		RequestHandler rRequestHandler =
+			get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
+
 		try
 		{
-			RequestHandler aRequestHandler =
-				get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
-
-			aRequestHandler.init(TIMER);
+			rRequestHandler.init(TIMER);
 
 			InputStream  rInput  =
 				new LimitedInputStream(rClientSocket.getInputStream(),
@@ -297,7 +396,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 				new LimitedOutputStream(rClientSocket.getOutputStream(),
 										get(MAX_RESPONSE_SIZE));
 
-			String sRequest = aRequestHandler.handleRequest(rInput, rOutput);
+			String sRequest = rRequestHandler.handleRequest(rInput, rOutput);
 
 			sRequest = sRequest.replaceAll("(\r\n|\r|\n)", "¶");
 
@@ -305,7 +404,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 			{
 				Log.debugf("Request: %s", sRequest);
 				set(LAST_REQUEST, sRequest);
-				set(REQUEST_HANDLING_TIME, aRequestHandler.get(TIMER));
+				set(REQUEST_HANDLING_TIME, rRequestHandler.get(TIMER));
 			}
 
 			if (!bRunning)
@@ -319,6 +418,11 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 		}
 		finally
 		{
+			if (rRequestHandler instanceof Releasable)
+			{
+				((Releasable) rRequestHandler).release();
+			}
+
 			try
 			{
 				rClientSocket.close();
@@ -400,9 +504,14 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	/********************************************************************
 	 * Defines the interface that needs to be implemented for server request
 	 * handlers. A request handler is a stateful object which means that for
-	 * each request a new instance will be created. All request-specific data
-	 * will be set into relations of the handler object before it's method
-	 * {@link #handleRequest(InputStream, OutputStream)} will be invoked.
+	 * each request a new instance will be created (or at least requested, see
+	 * {@link RequestHandlerFactory} for details). How exactly a handler will be
+	 * configured depends on the factory which receives an instance of {@link
+	 * Relatable} with the server configuration. It may either copy the
+	 * relations of the context into the handler or embed them.
+	 *
+	 * <p>This interface extends {@link Relatable} to allow the server to set
+	 * request state information directly on a handler object.</p>
 	 *
 	 * @author eso
 	 */
@@ -436,7 +545,14 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 	/********************************************************************
 	 * A functional interface for the implementation of factories that create
-	 * instances of {@link RequestHandler}.
+	 * instances of {@link RequestHandler}. A {@link Server} will request a new
+	 * handler for each client request it receives. If an implementation wants
+	 * to re-use request handlers (e.g. in the case of costly initialization)
+	 * the returned handlers can implement the {@link Releasable} interface. In
+	 * that case the server will call that method after the request handling has
+	 * been completed, even in the case of an error. The implementation is
+	 * responsible to reset the handler into a re-usable state for subsequent
+	 * invocations, including the handler relations.
 	 *
 	 * @author eso
 	 */

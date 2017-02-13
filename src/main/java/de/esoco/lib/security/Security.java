@@ -62,10 +62,10 @@ import static de.esoco.lib.security.SecurityRelationTypes.COUNTRY;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_ALGORITHM;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
-import static de.esoco.lib.security.SecurityRelationTypes.KEY_STORE;
 import static de.esoco.lib.security.SecurityRelationTypes.LOCALITY;
 import static de.esoco.lib.security.SecurityRelationTypes.ORGANIZATION;
 import static de.esoco.lib.security.SecurityRelationTypes.ORGANIZATION_UNIT;
+import static de.esoco.lib.security.SecurityRelationTypes.SIGNING_CERTIFICATE;
 import static de.esoco.lib.security.SecurityRelationTypes.STATE_PROVINCE_REGION;
 
 import static org.obrel.type.StandardTypes.START_DATE;
@@ -85,17 +85,20 @@ public class Security
 {
 	//~ Static fields/initializers ---------------------------------------------
 
+	/** A standard {@link KeyStore} alias for a server certificate. */
+	public static final String ALIAS_SERVER_CERT = "_ServerCert";
+
 	/**
 	 * A standard {@link KeyStore} alias for the signing certificate in a
 	 * certificate creation request.
 	 */
-	public static final String SIGNING_CERTIFICATE = "_SigningCert";
+	public static final String ALIAS_SIGNING_CERT = "_SigningCert";
 
 	/**
 	 * A standard {@link KeyStore} alias for the certificate that has been
 	 * created in a certificate creation request.
 	 */
-	public static final String GENERATED_CERTIFICATE = "_GeneratedCert";
+	public static final String ALIAS_GENERATED_CERT = "_GeneratedCert";
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -112,7 +115,7 @@ public class Security
 	 * Creates a new X509 certificate from the given parameters and returns a
 	 * key store containing the certificate and it's private key. The
 	 * certificate and key will be stored in the key store under the alias
-	 * {@link #GENERATED_CERTIFICATE}. The following parameters must be provided
+	 * {@link #ALIAS_GENERATED_CERT}. The following parameters must be provided
 	 * or else an exception will be thrown:
 	 *
 	 * <ul>
@@ -138,11 +141,11 @@ public class Security
 	 *     key for the certificate.</li>
 	 *   <li>{@link SecurityRelationTypes#KEY_ALGORITHM}: the algorithm for the
 	 *     private key generation.</li>
-	 *   <li>{@link SecurityRelationTypes#KEY_STORE}: A {@link KeyStore} that
-	 *     contains a certificate and private key to sign the new certificate
-	 *     with. The password to access it private key must be set in the
-	 *     parameters with {@link SecurityRelationTypes#KEY_PASSWORD} and the
-	 *     alias must be {@link #SIGNING_CERTIFICATE}. If not present the new
+	 *   <li>{@link SecurityRelationTypes#SIGNING_CERTIFICATE}: A {@link
+	 *     KeyStore} that contains a certificate and private key to sign the new
+	 *     certificate with. The password to access it private key must be set
+	 *     in the parameters with {@link SecurityRelationTypes#KEY_PASSWORD} and
+	 *     the alias must be {@link #ALIAS_SIGNING_CERT}. If not present the new
 	 *     certificate will be self-signed.</li>
 	 *   <li>{@link SecurityRelationTypes#CERTIFICATE_ALGORITHM}</li>
 	 *   <li>{@link SecurityRelationTypes#ORGANIZATION}</li>
@@ -166,7 +169,7 @@ public class Security
 									   KEY_PASSWORD,
 									   CERTIFICATE_VALIDITY);
 
-		KeyStore rSigningKeyStore = rParams.get(KEY_STORE);
+		KeyStore rSigningKeyStore = rParams.get(SIGNING_CERTIFICATE);
 		String   sKeyPassword     = rParams.get(KEY_PASSWORD);
 		String   sCertAlgorithm   = rParams.get(CERTIFICATE_ALGORITHM);
 		String   sKeyAlgorithm    = rParams.get(KEY_ALGORITHM);
@@ -203,10 +206,10 @@ public class Security
 			try
 			{
 				rSigningCert =
-					(X509Certificate) rSigningKeyStore.getCertificate(SIGNING_CERTIFICATE);
+					(X509Certificate) rSigningKeyStore.getCertificate(ALIAS_SIGNING_CERT);
 
 				rSigningKey =
-					(PrivateKey) rSigningKeyStore.getKey(SIGNING_CERTIFICATE,
+					(PrivateKey) rSigningKeyStore.getKey(ALIAS_SIGNING_CERT,
 														 sKeyPassword
 														 .toCharArray());
 			}
@@ -269,16 +272,10 @@ public class Security
 			aCertChain[0] = aCertificate;
 
 			KeyStore aKeyStore =
-				createKeyStore(GENERATED_CERTIFICATE,
+				createKeyStore(ALIAS_GENERATED_CERT,
 							   sKeyPassword,
 							   aCertKeys.getPrivate(),
 							   aCertChain);
-
-			if (rSigningCert != null)
-			{
-				aKeyStore.setCertificateEntry(SIGNING_CERTIFICATE,
-											  rSigningCert);
-			}
 
 			return aKeyStore;
 		}
