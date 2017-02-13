@@ -105,8 +105,8 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 		}
 		catch (Exception e)
 		{
-			throw new HttpStatusException(HttpStatusCode.NOT_FOUND,
-										  "No data at " + sPath);
+			throw new HttpStatusException(HttpStatusCode.METHOD_NOT_ALLOWED,
+										  "Put not allowed at " + sPath);
 		}
 	}
 }

@@ -34,6 +34,7 @@ import java.util.Date;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
+import org.obrel.space.MappedObjectSpace;
 import org.obrel.space.MutableObjectSpace;
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.SimpleObjectSpace;
@@ -67,10 +68,10 @@ public abstract class Service extends Application implements Stoppable
 	public static final RelationType<Boolean> RUN = newFlagType();
 
 	/** The {@link ObjectSpace} containing the server status. */
-	public static final RelationType<ObjectSpace<String>> STATUS = newType();
+	public static final RelationType<ObjectSpace<Object>> STATUS = newType();
 
 	/** The {@link ObjectSpace} providing access to server control. */
-	public static final RelationType<ObjectSpace<String>> CONTROL = newType();
+	public static final RelationType<ObjectSpace<Object>> CONTROL = newType();
 
 	static
 	{
@@ -112,15 +113,12 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected ObjectSpace<String> buildControlSpace()
 	{
-		MutableObjectSpace<String> aRoot =
-			new MutableObjectSpace<>(JsonBuilder.convertJson());
+		MutableObjectSpace<Object> aRoot = new MutableObjectSpace<>();
 
 		Date aNow = new Date();
 
-		ObjectSpace<String> aStatus  =
-			new SimpleObjectSpace<>(JsonBuilder.buildJson());
-		ObjectSpace<String> aControl =
-			new MutableObjectSpace<>(JsonBuilder.convertJson());
+		ObjectSpace<Object> aStatus  = new SimpleObjectSpace<>();
+		ObjectSpace<Object> aControl = new MutableObjectSpace<>();
 
 		aRoot.set(STATUS, aStatus);
 		aRoot.set(CONTROL, aControl);
@@ -140,7 +138,7 @@ public abstract class Service extends Application implements Stoppable
 															 rDate.getTime(),
 															 false)));
 
-		return aRoot;
+		return new MappedObjectSpace<>(aRoot, JsonBuilder.convertJson());
 	}
 
 	/***************************************
