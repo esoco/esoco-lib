@@ -34,10 +34,9 @@ import java.util.Date;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
-import org.obrel.space.MappedObjectSpace;
-import org.obrel.space.MutableObjectSpace;
+import org.obrel.space.MappedSpace;
 import org.obrel.space.ObjectSpace;
-import org.obrel.space.SimpleObjectSpace;
+import org.obrel.space.RelationSpace;
 import org.obrel.type.StandardTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
@@ -113,12 +112,12 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected ObjectSpace<String> buildControlSpace()
 	{
-		MutableObjectSpace<Object> aRoot = new MutableObjectSpace<>();
+		RelationSpace<Object> aRoot = new RelationSpace<>(true);
 
 		Date aNow = new Date();
 
-		ObjectSpace<Object> aStatus  = new SimpleObjectSpace<>();
-		ObjectSpace<Object> aControl = new MutableObjectSpace<>();
+		ObjectSpace<Object> aStatus  = new RelationSpace<>();
+		ObjectSpace<Object> aControl = new RelationSpace<>(true);
 
 		aRoot.set(STATUS, aStatus);
 		aRoot.set(CONTROL, aControl);
@@ -138,7 +137,7 @@ public abstract class Service extends Application implements Stoppable
 															 rDate.getTime(),
 															 false)));
 
-		return new MappedObjectSpace<>(aRoot, JsonBuilder.convertJson());
+		return new MappedSpace<>(aRoot, JsonBuilder.convertJson());
 	}
 
 	/***************************************
