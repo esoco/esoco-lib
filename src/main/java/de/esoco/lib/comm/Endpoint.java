@@ -31,7 +31,7 @@ import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
@@ -138,9 +138,9 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 				aEndpoint.set(ENDPOINT_ADDRESS, sUri);
 				aEndpoint.init();
 
-				if (!aEndpoint.hasRelation(ENCRYPTED_CONNECTION))
+				if (!aEndpoint.hasRelation(ENCRYPTION))
 				{
-					aEndpoint.set(ENCRYPTED_CONNECTION, bEncrypted);
+					aEndpoint.set(ENCRYPTION, bEncrypted);
 				}
 			}
 			catch (Exception e)

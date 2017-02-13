@@ -18,6 +18,8 @@ package de.esoco.lib.security;
 
 import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.cert.CertificateFactory;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
@@ -58,6 +60,20 @@ public class SecurityRelationTypes
 	 * representation of a certificate).
 	 */
 	public static final RelationType<byte[]> BINARY_CREDENTIAL = newType();
+
+	/**
+	 * The certificate of a certificate authority. For typical usage the data
+	 * should be in a format that can be processed by {@link
+	 * CertificateFactory#generateCertificate(java.io.InputStream)}.
+	 */
+	public static final RelationType<byte[]> CA_CERTIFICATE = newType();
+
+	/**
+	 * The private key for the certificate of a certificate authority. For
+	 * typical usage the data should be in PKCS8 format that can be handed to
+	 * {@link PKCS8EncodedKeySpec}.
+	 */
+	public static final RelationType<byte[]> CA_PRIVATE_KEY = newType();
 
 	/** A reference to an {@link AuthenticationService}. */
 	public static final RelationType<AuthenticationService> AUTHENTICATION_SERVICE =

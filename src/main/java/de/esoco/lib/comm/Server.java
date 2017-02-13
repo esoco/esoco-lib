@@ -23,7 +23,6 @@ import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.security.Security;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,11 +31,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import java.nio.file.Files;
-
 import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -53,7 +48,7 @@ import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 import org.obrel.type.StandardTypes;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.LAST_REQUEST;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
@@ -63,7 +58,6 @@ import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
 import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
-import static de.esoco.lib.security.SecurityRelationTypes.KEY_STORE;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
@@ -248,41 +242,20 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	{
 		ServerSocketFactory aServerSocketFactory;
 
-		if (hasFlag(ENCRYPTED_CONNECTION))
+		if (hasFlag(ENCRYPTION))
 		{
 			RelatedObject aCertParams = new RelatedObject();
 
-			aCertParams.set(NAME, getServerName());
 			aCertParams.set(COMMON_NAME, "localhost");
 			aCertParams.set(KEY_SIZE, 2048);
 			aCertParams.set(KEY_PASSWORD, "");
 			aCertParams.set(CERTIFICATE_VALIDITY, 30);
 
-			byte[] aCertData =
-				Files.readAllBytes(new File("S:/test/ca/rootCA.pem").toPath());
-			byte[] aKeyData  =
-				Files.readAllBytes(new File("S:/test/ca/rootCA.pkcs8")
-								   .toPath());
-
-			X509Certificate aCACert = Security.decodeCertificate(aCertData);
-			PrivateKey	    aCAKey  = Security.decodePrivateKey(aKeyData);
-
-			if (aCACert != null)
-			{
-				aCertParams.set(KEY_STORE,
-								Security.createKeyStore(Security.SIGNING_CERTIFICATE,
-														"",
-														aCAKey,
-														new X509Certificate[]
-														{
-															aCACert
-														}));
-			}
-
-			KeyStore rKeyStore = Security.createCertificate(aCertParams);
+			KeyStore aCertKeyStore = Security.createCertificate(aCertParams);
 
 			aServerSocketFactory =
-				Security.getSslContext(rKeyStore, "").getServerSocketFactory();
+				Security.getSslContext(aCertKeyStore, "")
+						.getServerSocketFactory();
 		}
 		else
 		{

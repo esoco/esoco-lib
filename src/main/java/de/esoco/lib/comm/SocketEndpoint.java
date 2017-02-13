@@ -36,7 +36,7 @@ import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.CONNECTION_TIMEOUT;
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTED_CONNECTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.TRUST_SELF_SIGNED_CERTIFICATES;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
@@ -191,7 +191,7 @@ public class SocketEndpoint extends Endpoint
 	{
 		URI		   rUri		   = rConnection.getUri();
 		SocketType eSocketType =
-			hasFlag(ENCRYPTED_CONNECTION) ? SocketType.SSL : SocketType.PLAIN;
+			hasFlag(ENCRYPTION) ? SocketType.SSL : SocketType.PLAIN;
 
 		if (eSocketType == SocketType.SSL &&
 			rConnection.hasFlag(TRUST_SELF_SIGNED_CERTIFICATES))
@@ -206,9 +206,9 @@ public class SocketEndpoint extends Endpoint
 		rConnection.set(ENDPOINT_SOCKET, aSocket);
 
 		if (eSocketType != SocketType.PLAIN &&
-			!hasRelation(ENCRYPTED_CONNECTION))
+			!hasRelation(ENCRYPTION))
 		{
-			rConnection.set(ENCRYPTED_CONNECTION);
+			rConnection.set(ENCRYPTION);
 		}
 	}
 

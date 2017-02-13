@@ -133,7 +133,7 @@ public class CommunicationRelationTypes
 	 * like SSL, TLS, or SSH. A final relation that is determined during
 	 * initialization.
 	 */
-	public static final RelationType<Boolean> ENCRYPTED_CONNECTION =
+	public static final RelationType<Boolean> ENCRYPTION =
 		newFlagType(FINAL);
 
 	/**

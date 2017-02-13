@@ -180,10 +180,12 @@ public class Security
 		X509CertInfo aCertInfo = new X509CertInfo();
 		Calendar     aEndDate  = Calendar.getInstance();
 
-		X509CertImpl aCertificate;
-		KeyPair		 aCertKeys;
-		KeyPair		 aSigningKeys;
-		String		 sIssuer;
+		X509CertImpl	  aCertificate;
+		X509Certificate[] aCertChain;
+
+		KeyPair aCertKeys;
+		KeyPair aSigningKeys;
+		String  sIssuer;
 
 		if (rStartDate == null)
 		{
@@ -192,10 +194,11 @@ public class Security
 
 		aCertKeys = generateKeyPair(sKeyAlgorithm, nKeySize);
 
+		X509Certificate rSigningCert = null;
+
 		if (rSigningKeyStore != null)
 		{
-			X509Certificate rSigningCert;
-			PrivateKey	    rSigningKey;
+			PrivateKey rSigningKey;
 
 			try
 			{
@@ -220,11 +223,13 @@ public class Security
 
 			aSigningKeys = new KeyPair(aCertKeys.getPublic(), rSigningKey);
 			sIssuer		 = rSigningCert.getSubjectX500Principal().toString();
+			aCertChain   = new X509Certificate[] { null, rSigningCert };
 		}
 		else // self-signing
 		{
 			aSigningKeys = aCertKeys;
 			sIssuer		 = aSubject.toString();
+			aCertChain   = new X509Certificate[1];
 		}
 
 		aEndDate.setTime(rStartDate);
@@ -261,15 +266,21 @@ public class Security
 			aCertificate = new X509CertImpl(aCertInfo);
 			aCertificate.sign(aSigningKeys.getPrivate(), sCertAlgorithm);
 
-			System.out.printf("CERT: %s\n", aCertificate.toString());
-			System.out.printf("%s\n",
-							  encodeBase64(aCertificate.getEncoded(),
-										   "CERTIFICATE"));
+			aCertChain[0] = aCertificate;
 
-			return createKeyStore(GENERATED_CERTIFICATE,
-								  sKeyPassword,
-								  aCertKeys.getPrivate(),
-								  new X509Certificate[] { aCertificate });
+			KeyStore aKeyStore =
+				createKeyStore(GENERATED_CERTIFICATE,
+							   sKeyPassword,
+							   aCertKeys.getPrivate(),
+							   aCertChain);
+
+			if (rSigningCert != null)
+			{
+				aKeyStore.setCertificateEntry(SIGNING_CERTIFICATE,
+											  rSigningCert);
+			}
+
+			return aKeyStore;
 		}
 		catch (Exception e)
 		{
