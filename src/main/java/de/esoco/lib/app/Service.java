@@ -34,10 +34,10 @@ import java.util.Date;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
+import org.obrel.space.HtmlSpace;
 import org.obrel.space.MappedSpace;
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.RelationSpace;
-import org.obrel.type.StandardTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
@@ -48,6 +48,8 @@ import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.StandardTypes.INFO;
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
+import static org.obrel.type.StandardTypes.START_DATE;
+import static org.obrel.type.StandardTypes.UPTIME;
 
 
 /********************************************************************
@@ -66,11 +68,17 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	public static final RelationType<Boolean> RUN = newFlagType();
 
-	/** The {@link ObjectSpace} containing the server status. */
+	/** The {@link ObjectSpace} containing the server API. */
+	public static final RelationType<ObjectSpace<String>> API = newType();
+
+	/** The part of the API containing the server status. */
 	public static final RelationType<ObjectSpace<Object>> STATUS = newType();
 
-	/** The {@link ObjectSpace} providing access to server control. */
+	/** The part of the API providing access to server control. */
 	public static final RelationType<ObjectSpace<Object>> CONTROL = newType();
+
+	/** The {@link HtmlSpace} providing web access to the server API. */
+	public static final RelationType<HtmlSpace> WEBAPI = newType();
 
 	static
 	{
@@ -81,7 +89,7 @@ public abstract class Service extends Application implements Stoppable
 
 	private Thread			    aControlServerThread;
 	private Server			    aControlServer;
-	private ObjectSpace<String> aControlSpace;
+	private ObjectSpace<Object> aControlSpace;
 
 	private HttpRequestMethodHandler rRequestMethodHandler;
 
@@ -110,22 +118,25 @@ public abstract class Service extends Application implements Stoppable
 	 *
 	 * @return The new control object space
 	 */
-	protected ObjectSpace<String> buildControlSpace()
+	protected ObjectSpace<Object> buildControlSpace()
 	{
 		RelationSpace<Object> aRoot = new RelationSpace<>(true);
 
 		Date aNow = new Date();
 
+		ObjectSpace<Object> aApi     = new RelationSpace<>();
 		ObjectSpace<Object> aStatus  = new RelationSpace<>();
 		ObjectSpace<Object> aControl = new RelationSpace<>(true);
 
-		aRoot.set(STATUS, aStatus);
-		aRoot.set(CONTROL, aControl);
+		aRoot.set(API, new MappedSpace<>(aApi, JsonBuilder.convertJson()));
+		aRoot.set(WEBAPI, new HtmlSpace("webapi", aApi));
+		aApi.set(STATUS, aStatus);
+		aApi.set(CONTROL, aControl);
 
 		aControl.set(RUN).onChange(bRun -> stopRequest(null));
 
-		aStatus.init(StandardTypes.UPTIME);
-		aStatus.set(StandardTypes.START_DATE, aNow)
+		aStatus.init(UPTIME);
+		aStatus.set(START_DATE, aNow)
 			   .viewAs(INFO,
 					   aRoot,
 					   rDate ->
@@ -137,11 +148,12 @@ public abstract class Service extends Application implements Stoppable
 															 rDate.getTime(),
 															 false)));
 
-		return new MappedSpace<>(aRoot, JsonBuilder.convertJson());
+		return aRoot;
 	}
 
 	/***************************************
-	 * Creates a new REST server for the control of this service.
+	 * Creates a new REST server that returns status information and allows to
+	 * control this service.
 	 *
 	 * @return The new server instance, initialized but not started
 	 */
@@ -239,7 +251,7 @@ public abstract class Service extends Application implements Stoppable
 	 *
 	 * @return The control object space
 	 */
-	protected final ObjectSpace<String> getControlSpace()
+	protected final ObjectSpace<Object> getControlSpace()
 	{
 		return aControlSpace;
 	}

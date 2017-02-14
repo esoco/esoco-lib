@@ -31,8 +31,8 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private ObjectSpace<String> rObjectSpace;
-	private String			    sDefaultPath;
+	private ObjectSpace<? super String> rObjectSpace;
+	private String					    sDefaultPath;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -44,8 +44,8 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	 *                     request path is empty
 	 */
 	public ObjectSpaceHttpMethodHandler(
-		ObjectSpace<String> rObjectSpace,
-		String				sDefaultPath)
+		ObjectSpace<? super String> rObjectSpace,
+		String						sDefaultPath)
 	{
 		this.rObjectSpace = rObjectSpace;
 		this.sDefaultPath = sDefaultPath;
@@ -68,7 +68,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 
 		try
 		{
-			String rData = rObjectSpace.get(sPath);
+			Object rData = rObjectSpace.get(sPath);
 
 			if (rData == null)
 			{
@@ -76,7 +76,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 				throw new IllegalArgumentException();
 			}
 
-			return new HttpResponse(rData);
+			return new HttpResponse(rData.toString());
 		}
 		catch (Exception e)
 		{
