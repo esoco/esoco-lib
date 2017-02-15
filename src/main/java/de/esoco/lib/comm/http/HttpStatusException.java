@@ -119,4 +119,28 @@ public class HttpStatusException extends IOException
 	{
 		return eStatusCode;
 	}
+
+	//~ Inner Classes ----------------------------------------------------------
+
+	/********************************************************************
+	 * A subclass that indicates a bad request that has no content.
+	 *
+	 * @author eso
+	 */
+	public static class EmptyRequestException extends HttpStatusException
+	{
+		//~ Static fields/initializers -----------------------------------------
+
+		private static final long serialVersionUID = 1L;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance.
+		 */
+		public EmptyRequestException()
+		{
+			super(HttpStatusCode.BAD_REQUEST, "Request empty");
+		}
+	}
 }

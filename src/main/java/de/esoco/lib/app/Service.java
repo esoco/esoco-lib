@@ -39,7 +39,6 @@ import org.obrel.space.MappedSpace;
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.RelationSpace;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 
@@ -129,24 +128,14 @@ public abstract class Service extends Application implements Stoppable
 		ObjectSpace<Object> aControl = new RelationSpace<>(true);
 
 		aRoot.set(API, new MappedSpace<>(aApi, JsonBuilder.convertJson()));
-		aRoot.set(WEBAPI, new HtmlSpace("webapi", aApi));
+		aRoot.set(WEBAPI, new HtmlSpace(aApi).with(NAME, getServiceName()));
 		aApi.set(STATUS, aStatus);
 		aApi.set(CONTROL, aControl);
 
 		aControl.set(RUN).onChange(bRun -> stopRequest(null));
 
 		aStatus.init(UPTIME);
-		aStatus.set(START_DATE, aNow)
-			   .viewAs(INFO,
-					   aRoot,
-					   rDate ->
-					   String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
-									 getServiceName(),
-									 rDate,
-									 TextUtil.formatDuration(System
-															 .currentTimeMillis() -
-															 rDate.getTime(),
-															 false)));
+		aStatus.set(START_DATE, aNow).viewAs(INFO, aRoot, this::getServiceInfo);
 
 		return aRoot;
 	}
@@ -166,8 +155,8 @@ public abstract class Service extends Application implements Stoppable
 			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
 											  .with(PORT,
 													getControlServerPort())
-											  .with(MAX_CONNECTIONS, 2)
-											  .with(ENCRYPTION);
+											  .with(MAX_CONNECTIONS, 2);
+//											  .with(ENCRYPTION);
 
 		if (this instanceof AuthenticationService)
 		{
@@ -274,6 +263,23 @@ public abstract class Service extends Application implements Stoppable
 		}
 
 		return rRequestMethodHandler;
+	}
+
+	/***************************************
+	 * Returns a string that contains information about this service.
+	 *
+	 * @param  rStartDate The start date of the service
+	 *
+	 * @return The service information string
+	 */
+	protected String getServiceInfo(Date rStartDate)
+	{
+		return String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
+							 getServiceName(),
+							 rStartDate,
+							 TextUtil.formatDuration(System.currentTimeMillis() -
+													 rStartDate.getTime(),
+													 false));
 	}
 
 	/***************************************

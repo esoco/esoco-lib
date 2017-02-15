@@ -20,6 +20,7 @@ import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.Server.RequestHandler;
 import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
+import de.esoco.lib.comm.http.HttpStatusException.EmptyRequestException;
 import de.esoco.lib.datatype.Pair;
 import de.esoco.lib.io.EchoInputStream;
 import de.esoco.lib.logging.Log;
@@ -51,6 +52,7 @@ import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE
 import static de.esoco.lib.security.SecurityRelationTypes.LOGIN_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.PASSWORD;
 
+import static org.obrel.type.StandardTypes.EXCEPTION;
 import static org.obrel.type.StandardTypes.NAME;
 
 
@@ -158,6 +160,8 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			Map<HttpHeaderField, String> rResponseHeaders =
 				Collections.emptyMap();
 
+			set(EXCEPTION, e);
+
 			if (e instanceof HttpStatusException)
 			{
 				HttpStatusException eStatusException = (HttpStatusException) e;
@@ -173,21 +177,27 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				Log.error("HTTP Request failed", e);
 			}
 
-			HttpResponse aErrorResponse = new HttpResponse(eStatus, sMessage);
+			// ignore empty requests; some browsers open connections in advance
+			if (!(e instanceof EmptyRequestException))
+			{
+				HttpResponse aErrorResponse =
+					new HttpResponse(eStatus, sMessage);
 
-			for (Entry<HttpHeaderField, String> rHeader :
-				 rResponseHeaders.entrySet())
-			{
-				aErrorResponse.setHeader(rHeader.getKey(), rHeader.getValue());
-			}
+				for (Entry<HttpHeaderField, String> rHeader :
+					 rResponseHeaders.entrySet())
+				{
+					aErrorResponse.setHeader(rHeader.getKey(),
+											 rHeader.getValue());
+				}
 
-			try
-			{
-				aErrorResponse.write(rResponseStream);
-			}
-			catch (Exception eResponse)
-			{
-				Log.info("Response output failed", eResponse);
+				try
+				{
+					aErrorResponse.write(rResponseStream);
+				}
+				catch (Exception eResponse)
+				{
+					Log.info("Response output failed", eResponse);
+				}
 			}
 		}
 		finally

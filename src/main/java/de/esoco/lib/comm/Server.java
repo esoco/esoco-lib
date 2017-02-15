@@ -16,6 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.comm.http.HttpStatusException.EmptyRequestException;
 import de.esoco.lib.io.LimitedInputStream;
 import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -378,20 +380,30 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	protected void handleClientRequest(Socket    rClientSocket,
 									   Relatable rContext)
 	{
-		Log.infof("%s: handling request from %s",
-				  getServerName(),
-				  rClientSocket.getInetAddress());
-
 		RequestHandler rRequestHandler =
 			get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
 
+		rRequestHandler.init(TIMER);
+
 		try
 		{
-			rRequestHandler.init(TIMER);
+			InputStream rClientIn	   = rClientSocket.getInputStream();
+			InetAddress rClientAddress = rClientSocket.getInetAddress();
+
+			if (rClientIn.available() == 0)
+			{
+				Log.debug("Ignoring request without data from " +
+						  rClientAddress);
+
+				return;
+			}
+
+			Log.infof("%s: handling request from %s",
+					  getServerName(),
+					  rClientAddress);
 
 			InputStream  rInput  =
-				new LimitedInputStream(rClientSocket.getInputStream(),
-									   get(MAX_REQUEST_SIZE));
+				new LimitedInputStream(rClientIn, get(MAX_REQUEST_SIZE));
 			OutputStream rOutput =
 				new LimitedOutputStream(rClientSocket.getOutputStream(),
 										get(MAX_RESPONSE_SIZE));
@@ -405,6 +417,14 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 				Log.debugf("Request: %s", sRequest);
 				set(LAST_REQUEST, sRequest);
 				set(REQUEST_HANDLING_TIME, rRequestHandler.get(TIMER));
+
+				if (rRequestHandler.get(StandardTypes.EXCEPTION) instanceof
+					EmptyRequestException)
+				{
+					System.out.printf("Conn: %s, Closed: %s\n",
+									  rClientSocket.isConnected(),
+									  rClientSocket.isClosed());
+				}
 			}
 
 			if (!bRunning)

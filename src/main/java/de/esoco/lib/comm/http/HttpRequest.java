@@ -17,6 +17,7 @@
 package de.esoco.lib.comm.http;
 
 import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
+import de.esoco.lib.comm.http.HttpStatusException.EmptyRequestException;
 import de.esoco.lib.expression.Conversions;
 import de.esoco.lib.io.StreamUtil;
 import de.esoco.lib.logging.Log;
@@ -342,7 +343,7 @@ public class HttpRequest extends RelatedObject
 		}
 		else if (aLine.getBuffer().length() == 0)
 		{
-			badRequest("Request empty");
+			throw new EmptyRequestException();
 		}
 		else
 		{
