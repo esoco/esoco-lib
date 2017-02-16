@@ -391,17 +391,10 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 			InputStream rClientIn	   = rClientSocket.getInputStream();
 			InetAddress rClientAddress = rClientSocket.getInetAddress();
 
-			if (rClientIn.available() == 0)
-			{
-				Log.debug("Ignoring request without data from " +
-						  rClientAddress);
-
-				return;
-			}
-
-			Log.infof("%s: handling request from %s",
+			Log.infof("%s: handling request from %s [%s]",
 					  getServerName(),
-					  rClientAddress);
+					  rClientAddress.getHostName(),
+					  rClientAddress.getHostAddress());
 
 			InputStream  rInput  =
 				new LimitedInputStream(rClientIn, get(MAX_REQUEST_SIZE));

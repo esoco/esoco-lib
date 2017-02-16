@@ -39,8 +39,8 @@ import org.obrel.space.MappedSpace;
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.RelationSpace;
 
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
-import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HISTORY;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 
 import static org.obrel.core.RelationTypes.newFlagType;
@@ -161,8 +161,8 @@ public abstract class Service extends Application implements Stoppable
 			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
 											  .with(PORT,
 													getControlServerPort())
-											  .with(MAX_CONNECTIONS, 2);
-//											  .with(ENCRYPTION);
+											  .with(MAX_CONNECTIONS, 2)
+											  .with(ENCRYPTION);
 
 		if (this instanceof AuthenticationService)
 		{
@@ -357,9 +357,6 @@ public abstract class Service extends Application implements Stoppable
 	protected Server startControlServer() throws Exception
 	{
 		Server aServer = createControlServer();
-
-		aServer.getRelation(REQUEST_HISTORY)
-			   .viewAs(REQUEST_HISTORY, aStatusSpace);
 
 		// this will stop the server on service shutdown
 		manageResource(aServer);

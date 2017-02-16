@@ -154,8 +154,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		}
 		catch (Exception e)
 		{
-			HttpStatusCode eStatus  = HttpStatusCode.INTERNAL_SERVER_ERROR;
-			String		   sMessage = "";
+			HttpStatusCode eStatus		 = HttpStatusCode.INTERNAL_SERVER_ERROR;
+			boolean		   bEmptyRequest = (e instanceof EmptyRequestException);
+			String		   sMessage		 = "";
 
 			Map<HttpHeaderField, String> rResponseHeaders =
 				Collections.emptyMap();
@@ -170,7 +171,12 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				eStatus			 = eStatusException.getStatusCode();
 				rResponseHeaders = eStatusException.getResponseHeaders();
 
-				Log.infof("HTTP status exception (%s): %s", eStatus, sMessage);
+				if (!bEmptyRequest)
+				{
+					Log.infof("HTTP status exception (%s): %s",
+							  eStatus,
+							  sMessage);
+				}
 			}
 			else
 			{
@@ -178,7 +184,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			}
 
 			// ignore empty requests; some browsers open connections in advance
-			if (!(e instanceof EmptyRequestException))
+			if (!bEmptyRequest)
 			{
 				HttpResponse aErrorResponse =
 					new HttpResponse(eStatus, sMessage);

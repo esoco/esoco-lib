@@ -20,11 +20,13 @@ import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
+import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.StreamUtil;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
+import java.io.File;
 import java.io.FileReader;
 
 import org.obrel.space.FileSystemSpace;
@@ -52,13 +54,14 @@ public class ServerTest
 	{
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
+		Function<File, String> fReadFile =
+			Functions.tryWith(f -> new FileReader(f),
+							  r -> StreamUtil.readAll(r, 8192, Short.MAX_VALUE));
+
 		ObjectSpace<String> aFileSpace =
 			new FileSystemSpace<>("src/test/html/testsite",
 								  "index.html",
-								  Functions.tryWith(f -> new FileReader(f),
-													r -> StreamUtil.readAll(r,
-																			8192,
-																			Short.MAX_VALUE)));
+								  fReadFile);
 
 		HttpRequestMethodHandler aMethodHandler =
 			new ObjectSpaceHttpMethodHandler(aFileSpace, "");
