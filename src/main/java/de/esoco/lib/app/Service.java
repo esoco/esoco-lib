@@ -40,6 +40,7 @@ import org.obrel.space.ObjectSpace;
 import org.obrel.space.RelationSpace;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
+import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HISTORY;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 
 import static org.obrel.core.RelationTypes.newFlagType;
@@ -92,6 +93,8 @@ public abstract class Service extends Application implements Stoppable
 
 	private HttpRequestMethodHandler rRequestMethodHandler;
 
+	private RelationSpace<Object> aStatusSpace;
+
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
@@ -123,19 +126,21 @@ public abstract class Service extends Application implements Stoppable
 
 		Date aNow = new Date();
 
+		aStatusSpace = new RelationSpace<>();
+
 		ObjectSpace<Object> aApi     = new RelationSpace<>();
-		ObjectSpace<Object> aStatus  = new RelationSpace<>();
 		ObjectSpace<Object> aControl = new RelationSpace<>(true);
 
 		aRoot.set(API, new MappedSpace<>(aApi, JsonBuilder.convertJson()));
 		aRoot.set(WEBAPI, new HtmlSpace(aApi).with(NAME, getServiceName()));
-		aApi.set(STATUS, aStatus);
+		aApi.set(STATUS, aStatusSpace);
 		aApi.set(CONTROL, aControl);
 
 		aControl.set(RUN).onChange(bRun -> stopRequest(null));
 
-		aStatus.init(UPTIME);
-		aStatus.set(START_DATE, aNow).viewAs(INFO, aRoot, this::getServiceInfo);
+		aStatusSpace.init(UPTIME);
+		aStatusSpace.set(START_DATE, aNow)
+					.viewAs(INFO, aRoot, this::getServiceInfo);
 
 		return aRoot;
 	}
@@ -352,11 +357,13 @@ public abstract class Service extends Application implements Stoppable
 	{
 		Server aServer = createControlServer();
 
-		aControlServerThread = new Thread(aServer);
+		aServer.getRelation(REQUEST_HISTORY)
+			   .viewAs(REQUEST_HISTORY, aStatusSpace);
 
-		// this will stop the server on shutdown
+		// this will stop the server on service shutdown
 		manageResource(aServer);
 
+		aControlServerThread = new Thread(aServer);
 		aControlServerThread.setUncaughtExceptionHandler((t, e) ->
 														 stopRequest(e));
 		aControlServerThread.start();

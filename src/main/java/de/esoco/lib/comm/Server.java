@@ -16,7 +16,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
-import de.esoco.lib.comm.http.HttpStatusException.EmptyRequestException;
 import de.esoco.lib.io.LimitedInputStream;
 import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
@@ -58,6 +57,7 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HANDLING_TIME;
+import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HISTORY;
 import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE;
 import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
 import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
@@ -160,6 +160,7 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 	public Server(RequestHandlerFactory rRequestHandlerFactory)
 	{
 		set(REQUEST_HANDLER_FACTORY, rRequestHandlerFactory);
+		init(REQUEST_HISTORY);
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -416,15 +417,8 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 			{
 				Log.debugf("Request: %s", sRequest);
 				set(LAST_REQUEST, sRequest);
-				set(REQUEST_HANDLING_TIME, rRequestHandler.get(TIMER));
-
-				if (rRequestHandler.get(StandardTypes.EXCEPTION) instanceof
-					EmptyRequestException)
-				{
-					System.out.printf("Conn: %s, Closed: %s\n",
-									  rClientSocket.isConnected(),
-									  rClientSocket.isClosed());
-				}
+				set(REQUEST_HANDLING_TIME,
+					rRequestHandler.get(TIMER).intValue());
 			}
 
 			if (!bRunning)

@@ -146,7 +146,11 @@ public class HttpHeaderTypes
 	 */
 	public static final RelationType<Collection<RelationType<?>>> HTTP_HEADER_TYPES =
 		CollectorType.newDistinctCollector(RelationType.class,
-										   HttpHeaderTypes::collectHeaderTypes,
+										   (r, o) ->
+										   r.getType()
+										   .getName()
+										   .startsWith(HTTP_HEADER_TYPES_NAMESPACE)
+										   ? r.getType() : null,
 										   READONLY);
 
 	static
@@ -170,29 +174,5 @@ public class HttpHeaderTypes
 
 		return RelationType.valueOf(HttpHeaderTypes.HTTP_HEADER_TYPES_NAMESPACE +
 									"." + sHeaderName);
-	}
-
-	/***************************************
-	 * Implementation of the collector function for the collector type {@link
-	 * #HTTP_HEADER_TYPES}. Returns all relation types that have the {@link
-	 * #HTTP_HEADER_TYPES_NAMESPACE}.
-	 *
-	 * @param  rRelationType The relation to check the relation type of
-	 * @param  rIgnored      Relation value, not used here
-	 *
-	 * @return The relation type to collect or NULL for none
-	 */
-	private static RelationType<?> collectHeaderTypes(
-		RelationType<?> rRelationType,
-		Object			rIgnored)
-	{
-		if (rRelationType.getName().startsWith(HTTP_HEADER_TYPES_NAMESPACE))
-		{
-			return rRelationType;
-		}
-		else
-		{
-			return null;
-		}
 	}
 }

@@ -24,13 +24,17 @@ import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
+import org.obrel.type.CollectorType;
+import org.obrel.type.StandardTypes;
 
 import static org.obrel.core.RelationTypeModifier.FINAL;
+import static org.obrel.core.RelationTypeModifier.READONLY;
 import static org.obrel.core.RelationTypes.newFlagType;
 import static org.obrel.core.RelationTypes.newInitialValueType;
 import static org.obrel.core.RelationTypes.newMapType;
@@ -82,14 +86,26 @@ public class CommunicationRelationTypes
 	public static final RelationType<String> LAST_REQUEST = newType();
 
 	/**
+	 * An automatic relation that collects the values of {@link #LAST_REQUEST}.
+	 * Should be annotated with {@link StandardTypes#MAXIMUM} to limit the
+	 * history size.
+	 */
+	public static final RelationType<Collection<String>> REQUEST_HISTORY =
+		CollectorType.newCollector(String.class,
+								   (r, o) ->
+								   r.getType() == LAST_REQUEST ? o.toString()
+															   : null,
+								   READONLY);
+
+	/**
 	 * Contains the time (in milliseconds) that the handling of a request has
 	 * consumed.
 	 */
-	public static final RelationType<Long> REQUEST_HANDLING_TIME = newType();
+	public static final RelationType<Integer> REQUEST_HANDLING_TIME = newType();
 
 	/**
-	 * The timeout in milliseconds after which an attempt of a connection to an
-	 * {@link Endpoint} will be interrupted. Defaults to 60 seconds (i.e. 60,000
+	 * The timeout in milliseconds after which an attempt of a network
+	 * connection will be interrupted. Defaults to 60 seconds (i.e. 60,000
 	 * milliseconds).
 	 */
 	@SuppressWarnings("boxing")
