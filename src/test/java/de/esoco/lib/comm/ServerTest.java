@@ -20,11 +20,11 @@ import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
+import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.StreamUtil;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 
-import java.io.File;
 import java.io.FileReader;
 
 import org.obrel.space.FileSystemSpace;
@@ -53,7 +53,12 @@ public class ServerTest
 		Log.setGlobalMinimumLogLevel(LogLevel.INFO);
 
 		ObjectSpace<String> aFileSpace =
-			new FileSystemSpace<>("src/test/html/testsite", f -> readFile(f));
+			new FileSystemSpace<>("src/test/html/testsite",
+								  "index.html",
+								  Functions.tryWith(f -> new FileReader(f),
+													r -> StreamUtil.readAll(r,
+																			8192,
+																			Short.MAX_VALUE)));
 
 		HttpRequestMethodHandler aMethodHandler =
 			new ObjectSpaceHttpMethodHandler(aFileSpace, "");
@@ -65,33 +70,5 @@ public class ServerTest
 			new Server(aFactory).with(NAME, "TestServer").with(PORT, 8008);
 
 		aServer.run();
-//		new Thread(aServer).start();
-
-//		@SuppressWarnings("boxing")
-//		Function<String, String> fGet =
-//			HttpEndpoint.httpGet("index.html")
-//						.from(Endpoint.at("http://localhost:8008"));
-//
-//		System.out.printf("SERVER RESPONSE: %s\n", fGet.result());
-//		aServer.stop();
-	}
-
-	/***************************************
-	 * Reads a file into a string.
-	 *
-	 * @param  rFile The file
-	 *
-	 * @return The file contents as a string
-	 */
-	private static String readFile(File rFile)
-	{
-		try (FileReader aIn = new FileReader(rFile))
-		{
-			return StreamUtil.readAll(aIn, 8 * 1024, Short.MAX_VALUE);
-		}
-		catch (Exception e)
-		{
-			throw new IllegalStateException(e);
-		}
 	}
 }
