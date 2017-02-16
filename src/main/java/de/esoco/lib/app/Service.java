@@ -132,7 +132,8 @@ public abstract class Service extends Application implements Stoppable
 		ObjectSpace<Object> aControl = new RelationSpace<>(true);
 
 		aRoot.set(API, new MappedSpace<>(aApi, JsonBuilder.convertJson()));
-		aRoot.set(WEBAPI, new HtmlSpace(aApi).with(NAME, getServiceName()));
+		aRoot.set(WEBAPI,
+				  new HtmlSpace(aApi, "webapi").with(NAME, getServiceName()));
 		aApi.set(STATUS, aStatusSpace);
 		aApi.set(CONTROL, aControl);
 
