@@ -25,8 +25,10 @@ import java.io.OutputStream;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.obrel.core.ObjectRelations;
+import org.obrel.core.Params;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
@@ -86,7 +88,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 * endpoints. Must be initialized by invoking {@link
 	 * #setGlobalConfiguration(Relatable)}.
 	 */
-	private static Relatable rGlobalConfig = null;
+	private static Relatable rGlobalConfig = new Params();
 
 	static
 	{
@@ -160,6 +162,19 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	}
 
 	/***************************************
+	 * Returns the global endpoint configuration which is a {@link Relatable}
+	 * object containing the configuration relations. An application-specific
+	 * configuration can been set with {@link
+	 * #setGlobalConfiguration(Relatable)}.
+	 *
+	 * @return The global endpoint configuration
+	 */
+	public static Relatable getGlobalConfiguration()
+	{
+		return rGlobalConfig;
+	}
+
+	/***************************************
 	 * Registers a new endpoint type for one or more URI schemes. Additional
 	 * schemes typically are SSL/TLS-encrypted variants of the base scheme or
 	 * vice versa.
@@ -186,16 +201,17 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	/***************************************
 	 * Sets the global endpoint configuration. The configuration is an arbitrary
 	 * {@link Relatable} object that must contain the relations with the
-	 * configuration values for the endpoints needed by an application.
+	 * configuration values for the endpoints needed by an application. NULL
+	 * values will cause an exception. To clear the configuration an empty
+	 * relatable should be set.
 	 *
-	 * @param rConfiguration The global configuration object
+	 * @param rConfiguration The global configuration object (must not be NULL)
 	 */
 	public static void setGlobalConfiguration(Relatable rConfiguration)
 	{
-		if (rGlobalConfig != null)
-		{
-			rGlobalConfig = rConfiguration;
-		}
+		Objects.nonNull(rConfiguration);
+
+		rGlobalConfig = rConfiguration;
 	}
 
 	/***************************************
@@ -213,7 +229,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	{
 		T rConfigValue = rDefaultValue;
 
-		if (rGlobalConfig != null && rGlobalConfig.hasRelation(rConfigType))
+		if (rGlobalConfig.hasRelation(rConfigType))
 		{
 			rConfigValue = rGlobalConfig.get(rConfigType);
 		}
@@ -281,7 +297,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	}
 
 	/***************************************
-	 * Returns a connection that is initialized for communicating with this
+	 * Returns a connection that is initialized for communication with this
 	 * endpoint. It is also the implementation of and a synonym for the standard
 	 * {@link Function} method {@link #evaluate(Relatable)}.
 	 *

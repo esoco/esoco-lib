@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.function.AbstractBinaryFunction;
+import de.esoco.lib.logging.Log;
+import de.esoco.lib.logging.LogExtent;
+
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_LOG_EXTENT;
 
 
 /********************************************************************
@@ -69,7 +73,29 @@ public abstract class CommunicationMethod<I, O>
 	@Override
 	public final O evaluate(I rInput, Connection rConnection)
 	{
-		return doOn(rConnection, rInput != null ? rInput : rDefaultInput);
+		LogExtent eLogExtent = rConnection.get(ENDPOINT_LOG_EXTENT);
+
+		try
+		{
+			O rResult =
+				doOn(rConnection, rInput != null ? rInput : rDefaultInput);
+
+			if (eLogExtent.logs(LogExtent.SUCCESS))
+			{
+				Log.info(getLogMessage(rConnection, rInput, null));
+			}
+
+			return rResult;
+		}
+		catch (RuntimeException e)
+		{
+			if (eLogExtent.logs(LogExtent.ERRORS))
+			{
+				Log.error(getLogMessage(rConnection, rInput, e), e);
+			}
+
+			throw e;
+		}
 	}
 
 	/***************************************
@@ -128,5 +154,60 @@ public abstract class CommunicationMethod<I, O>
 	public <T> CommunicationMethod<I, T> then(Function<? super O, T> fOther)
 	{
 		return new CommunicationChain<>(this, fOther);
+	}
+
+	/***************************************
+	 * Generates a message for this method that will be used if logging is
+	 * enabled for the connection that this method is invoked upon. Subclasses
+	 * can override this method to generate more specific log messages.
+	 * Alternatively they may override {@link #getMethodDescription(Connection,
+	 * Object)} which will be invoked to get a description of this method for
+	 * the log message.
+	 *
+	 * @param  rConnection The current connection
+	 * @param  rInput      The input value for the method invocation
+	 * @param  rException  In the case of an error logging the exception that
+	 *                     occurred or NULL for the (info) logging of a
+	 *                     successful request
+	 *
+	 * @return The log message
+	 */
+	protected String getLogMessage(Connection rConnection,
+								   I		  rInput,
+								   Exception  rException)
+	{
+		String sMethodDescription = getMethodDescription(rConnection, rInput);
+		String sMessage;
+
+		if (rException != null)
+		{
+			sMessage =
+				String.format("%s failed: %s",
+							  sMethodDescription,
+							  rException.getMessage());
+		}
+		else
+		{
+			sMessage =
+				String.format("%s executed successfully", sMethodDescription);
+		}
+
+		return sMessage;
+	}
+
+	/***************************************
+	 * Returns a description of this instance. this method be invoked by {@link
+	 * #getLogMessage(Connection, Object, Exception)} to get a description for
+	 * log messages. It may be overridden to provide a more specific
+	 * description.
+	 *
+	 * @param  rConnection The current connection
+	 * @param  rInput      The input value for the method invocation
+	 *
+	 * @return The method description
+	 */
+	protected String getMethodDescription(Connection rConnection, I rInput)
+	{
+		return String.format("%s(%s)", getToken(), rInput);
 	}
 }

@@ -47,6 +47,7 @@ import javax.net.ServerSocketFactory;
 import org.obrel.core.ObjectRelations;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
+import org.obrel.core.RelationBuilder;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 import org.obrel.type.StandardTypes;
@@ -125,7 +126,8 @@ import static org.obrel.type.StandardTypes.TIMER;
  *
  * @author eso
  */
-public class Server extends RelatedObject implements Runnable, RunCheck,
+public class Server extends RelatedObject implements RelationBuilder<Server>,
+													 Runnable, RunCheck,
 													 Stoppable
 {
 	//~ Static fields/initializers ---------------------------------------------
@@ -226,47 +228,6 @@ public class Server extends RelatedObject implements Runnable, RunCheck,
 
 			Log.infof("%s stopped", getServerName());
 		}
-	}
-
-	/***************************************
-	 * A builder-style method to set a certain boolean relation.
-	 *
-	 * @see #with(RelationType, Object)
-	 */
-	public <T> Server with(RelationType<Boolean> rFlagType)
-	{
-		return with(rFlagType, Boolean.TRUE);
-	}
-
-	/***************************************
-	 * A builder-style method to set a certain relation and then return this
-	 * instance for concatenation.
-	 *
-	 * @param  rType  The type of the relation to set
-	 * @param  rValue The relation value
-	 *
-	 * @return This instance for method concatenation
-	 */
-	public <T> Server with(RelationType<T> rType, T rValue)
-	{
-		set(rType, rValue);
-
-		return this;
-	}
-
-	/***************************************
-	 * A variant of {@link #with(RelationType, Object)} that performs the boxing
-	 * of integer values.
-	 *
-	 * @param  rType  The integer relation type to set
-	 * @param  nValue The integer value
-	 *
-	 * @return This instance for method concatenation
-	 */
-	@SuppressWarnings("boxing")
-	public Server with(RelationType<Integer> rType, int nValue)
-	{
-		return with(rType, (Integer) nValue);
 	}
 
 	/***************************************

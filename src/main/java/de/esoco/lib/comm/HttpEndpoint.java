@@ -204,15 +204,13 @@ public class HttpEndpoint extends Endpoint
 				HttpURLConnection aUrlConnection =
 					setupUrlConnection(rConnection, rInput);
 
-				Charset rEncoding = rConnection.get(RESPONSE_ENCODING);
-				int     nMax	  = rConnection.get(MAX_RESPONSE_SIZE);
-
 				try (InputStream rInputStream =
 					 new LimitedInputStream(aUrlConnection.getInputStream(),
-											nMax))
+											rConnection.get(MAX_RESPONSE_SIZE)))
 				{
 					Reader aInputReader =
-						new InputStreamReader(rInputStream, rEncoding);
+						new InputStreamReader(rInputStream,
+											  rConnection.get(RESPONSE_ENCODING));
 
 					O rResponse = readResponse(rConnection, aInputReader);
 
@@ -310,6 +308,17 @@ public class HttpEndpoint extends Endpoint
 		}
 
 		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		protected String getMethodDescription(Connection rConnection, I rInput)
+		{
+			return String.format("HTTP %s %s",
+								 eRequestMethod,
+								 getTargetUrl(rConnection, rInput));
+		}
+
+		/***************************************
 		 * Retrieves the request data from the request data provider function.
 		 * If the function is an instance of {@link CommunicationMethod} it will
 		 * be invoked with the connection as it's second parameter.
@@ -349,11 +358,8 @@ public class HttpEndpoint extends Endpoint
 		 * @param  rInput      The input value to derive the URL from
 		 *
 		 * @return The target URL for this instance
-		 *
-		 * @throws IOException
 		 */
 		protected String getTargetUrl(Connection rConnection, I rInput)
-			throws IOException
 		{
 			String sEndpointAddress =
 				rConnection.getEndpoint().get(ENDPOINT_ADDRESS);
