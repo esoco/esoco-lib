@@ -313,16 +313,30 @@ public class HttpEndpoint extends Endpoint
 		@Override
 		protected String getMethodDescription(Connection rConnection, I rInput)
 		{
-			return String.format("HTTP %s %s\nHeaders: %s",
-								 eRequestMethod,
-								 getTargetUrl(rConnection, rInput),
-								 getRequestHeaders(rConnection));
+			StringBuilder aDescription =
+				new StringBuilder(String.format("HTTP "));
+
+			aDescription.append(eRequestMethod).append(' ');
+			aDescription.append(getTargetUrl(rConnection, rInput));
+
+			Map<String, String> rHeaders = getRequestHeaders(rConnection);
+
+			if (eRequestMethod.doesOutput())
+			{
+				aDescription.append("\nData: ");
+				aDescription.append(getRequestData(rConnection, rInput));
+			}
+
+			if (!rHeaders.isEmpty())
+			{
+				aDescription.append("\nHeaders: ").append(rHeaders);
+			}
+
+			return aDescription.toString();
 		}
 
 		/***************************************
 		 * Retrieves the request data from the request data provider function.
-		 * If the function is an instance of {@link CommunicationMethod} it will
-		 * be invoked with the connection as it's second parameter.
 		 *
 		 * @param  rConnection The current connection
 		 * @param  rInput      The method input to process with the request data
@@ -332,20 +346,7 @@ public class HttpEndpoint extends Endpoint
 		 */
 		protected String getRequestData(Connection rConnection, I rInput)
 		{
-			String sRequestData;
-
-			if (fProvideRequestData instanceof CommunicationMethod)
-			{
-				sRequestData =
-					((CommunicationMethod<I, String>) fProvideRequestData).doOn(rConnection,
-																				rInput);
-			}
-			else
-			{
-				sRequestData = fProvideRequestData.evaluate(rInput);
-			}
-
-			return sRequestData;
+			return fProvideRequestData.evaluate(rInput);
 		}
 
 		/***************************************
