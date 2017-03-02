@@ -18,6 +18,7 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.function.AbstractFunction;
+import de.esoco.lib.logging.LogExtent;
 import de.esoco.lib.text.TextConvert;
 
 import java.io.InputStream;
@@ -29,12 +30,14 @@ import java.util.Objects;
 
 import org.obrel.core.ObjectRelations;
 import org.obrel.core.Params;
+import org.obrel.core.ProvidesConfiguration;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_LOG_EXTENT;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
 import static org.obrel.core.RelationTypes.newType;
@@ -88,7 +91,10 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 * endpoints. Must be initialized by invoking {@link
 	 * #setGlobalConfiguration(Relatable)}.
 	 */
-	private static Relatable rGlobalConfig = new Params();
+	private static ProvidesConfiguration rGlobalConfig = new Params();
+
+	/** The default parameters for all endpoint instances. */
+	private static Relatable aDefaultParams = new Params();
 
 	static
 	{
@@ -162,6 +168,19 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	}
 
 	/***************************************
+	 * Returns the default parameters for all endpoints. These parameters will
+	 * only be used if they are not overridden by any endpoint-specific
+	 * parameters.
+	 *
+	 * @return A relatable containing the default parameters for all endpoint
+	 *         instances
+	 */
+	public static final Relatable getDefaultParams()
+	{
+		return aDefaultParams;
+	}
+
+	/***************************************
 	 * Returns the global endpoint configuration which is a {@link Relatable}
 	 * object containing the configuration relations. An application-specific
 	 * configuration can been set with {@link
@@ -169,7 +188,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 *
 	 * @return The global endpoint configuration
 	 */
-	public static Relatable getGlobalConfiguration()
+	public static ProvidesConfiguration getGlobalConfiguration()
 	{
 		return rGlobalConfig;
 	}
@@ -199,6 +218,21 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	}
 
 	/***************************************
+	 * Sets (and replaces) the default parameters for all endpoints. These
+	 * parameters will only be used if they are not overridden by any
+	 * endpoint-specific parameters.
+	 *
+	 * @param rDefaultParams A relatable containing the default parameters for
+	 *                       all endpoint instances (must not be NULL)
+	 */
+	public static final void setDefaultParams(Relatable rDefaultParams)
+	{
+		Objects.nonNull(rDefaultParams);
+
+		aDefaultParams = rDefaultParams;
+	}
+
+	/***************************************
 	 * Sets the global endpoint configuration. The configuration is an arbitrary
 	 * {@link Relatable} object that must contain the relations with the
 	 * configuration values for the endpoints needed by an application. NULL
@@ -207,11 +241,18 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 *
 	 * @param rConfiguration The global configuration object (must not be NULL)
 	 */
-	public static void setGlobalConfiguration(Relatable rConfiguration)
+	public static void setGlobalConfiguration(
+		ProvidesConfiguration rConfiguration)
 	{
 		Objects.nonNull(rConfiguration);
 
 		rGlobalConfig = rConfiguration;
+
+		LogExtent eLogExtent =
+			rGlobalConfig.getConfigValue(ENDPOINT_LOG_EXTENT,
+										 aDefaultParams.get(ENDPOINT_LOG_EXTENT));
+
+		aDefaultParams.set(ENDPOINT_LOG_EXTENT, eLogExtent);
 	}
 
 	/***************************************
@@ -227,14 +268,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 		RelationType<T> rConfigType,
 		T				rDefaultValue)
 	{
-		T rConfigValue = rDefaultValue;
-
-		if (rGlobalConfig.hasRelation(rConfigType))
-		{
-			rConfigValue = rGlobalConfig.get(rConfigType);
-		}
-
-		return rConfigValue;
+		return rGlobalConfig.getConfigValue(rConfigType, rDefaultValue);
 	}
 
 	/***************************************
@@ -309,6 +343,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	{
 		Connection aConnection = new Connection(this);
 
+		ObjectRelations.copyRelations(aDefaultParams, aConnection, true);
 		ObjectRelations.copyRelations(this, aConnection, true);
 
 		if (rParams != null)
