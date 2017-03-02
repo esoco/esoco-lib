@@ -77,8 +77,12 @@ public abstract class CommunicationMethod<I, O>
 
 		try
 		{
-			O rResult =
-				doOn(rConnection, rInput != null ? rInput : rDefaultInput);
+			if (rInput == null)
+			{
+				rInput = rDefaultInput;
+			}
+
+			O rResult = doOn(rConnection, rInput);
 
 			if (eLogExtent.logs(LogExtent.SUCCESS))
 			{
@@ -182,14 +186,13 @@ public abstract class CommunicationMethod<I, O>
 		if (rException != null)
 		{
 			sMessage =
-				String.format("%s failed: %s",
+				String.format("Failure: %s [%s]",
 							  sMethodDescription,
 							  rException.getMessage());
 		}
 		else
 		{
-			sMessage =
-				String.format("%s executed successfully", sMethodDescription);
+			sMessage = String.format("Success: %s", sMethodDescription);
 		}
 
 		return sMessage;
