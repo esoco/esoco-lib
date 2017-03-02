@@ -94,7 +94,8 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	private static ProvidesConfiguration rGlobalConfig = new Params();
 
 	/** The default parameters for all endpoint instances. */
-	private static Relatable aDefaultParams = new Params();
+	private static Relatable aDefaultParams =
+		new Params().with(ENDPOINT_LOG_EXTENT, LogExtent.ERRORS);
 
 	static
 	{
