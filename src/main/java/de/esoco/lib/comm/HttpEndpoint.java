@@ -313,9 +313,10 @@ public class HttpEndpoint extends Endpoint
 		@Override
 		protected String getMethodDescription(Connection rConnection, I rInput)
 		{
-			return String.format("HTTP %s %s",
+			return String.format("HTTP %s %s\nHeaders: %s",
 								 eRequestMethod,
-								 getTargetUrl(rConnection, rInput));
+								 getTargetUrl(rConnection, rInput),
+								 getRequestHeaders(rConnection));
 		}
 
 		/***************************************
@@ -345,6 +346,36 @@ public class HttpEndpoint extends Endpoint
 			}
 
 			return sRequestData;
+		}
+
+		/***************************************
+		 * Returns an ordered map with all request headers of this instance and
+		 * the given connection.
+		 *
+		 * @param  rConnection The current connection
+		 *
+		 * @return The request header map
+		 */
+		protected Map<String, String> getRequestHeaders(Connection rConnection)
+		{
+			Map<String, String> aHeaders = new LinkedHashMap<>(aRequestHeaders);
+
+			if (rConnection.hasRelation(HTTP_REQUEST_HEADERS))
+			{
+				for (Entry<String, List<String>> rHeader :
+					 rConnection.get(HTTP_REQUEST_HEADERS).entrySet())
+				{
+					String		 sHeaderName   = rHeader.getKey();
+					List<String> rHeaderValues = rHeader.getValue();
+
+					aHeaders.put(sHeaderName,
+								 rHeaderValues.size() == 1
+								 ? rHeaderValues.get(0)
+								 : rHeaderValues.toString());
+				}
+			}
+
+			return aHeaders;
 		}
 
 		/***************************************
