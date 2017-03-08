@@ -110,6 +110,7 @@ public class FtpEndpoint extends Endpoint
 	 *
 	 * @param rArgs
 	 */
+	@SuppressWarnings("boxing")
 	public static void main(String[] rArgs)
 	{
 		Endpoint aTestFtpServer = Endpoint.at("ftp://speedtest.tele2.net/");
