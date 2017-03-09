@@ -205,6 +205,18 @@ public class CommunicationRelationTypes
 	public static final RelationType<Map<String, List<String>>> HTTP_RESPONSE_HEADERS =
 		newMapType(true);
 
+	/** The host name of a proxy server. */
+	public static final RelationType<String> PROXY_HOST = newType();
+
+	/** The port of a proxy server. */
+	public static final RelationType<Integer> PROXY_PORT = newType();
+
+	/** The optional user name for the connection to a proxy server. */
+	public static final RelationType<String> PROXY_USER = newType();
+
+	/** The optional password for the connection to a proxy server. */
+	public static final RelationType<String> PROXY_PASSWORD = newType();
+
 	static
 	{
 		RelationTypes.init(CommunicationRelationTypes.class);
