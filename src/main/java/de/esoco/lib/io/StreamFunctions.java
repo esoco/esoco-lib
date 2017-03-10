@@ -22,6 +22,7 @@ import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.FunctionException;
 import de.esoco.lib.expression.function.AbstractFunction;
 import de.esoco.lib.expression.function.ExceptionMappingBinaryFunction;
+import de.esoco.lib.expression.function.ExceptionMappingFunction;
 import de.esoco.lib.expression.predicate.ExceptionMappingBinaryPredicate;
 
 import java.io.IOException;
@@ -134,6 +135,31 @@ public class StreamFunctions
 	}
 
 	/***************************************
+	 * Returns a new function that invokes reads all available data from an
+	 * input stream by invoking {@link StreamUtil#readAll(InputStream, int,
+	 * int))}.
+	 *
+	 * @param  nBufferSize The buffer size to use
+	 * @param  nMaxLength  The maximum length to read
+	 *
+	 * @return A new function instance
+	 */
+	public static Function<InputStream, byte[]> readAll(
+		int nBufferSize,
+		int nMaxLength)
+	{
+		return new ExceptionMappingFunction<InputStream, byte[]>("ReadAll")
+		{
+			@Override
+			public byte[] evaluateWithException(InputStream rInput)
+				throws IOException
+			{
+				return StreamUtil.readAll(rInput, nBufferSize, nMaxLength);
+			}
+		};
+	}
+
+	/***************************************
 	 * Returns a new binary function that invokes the method {@link
 	 * StreamUtil#readUntil(Reader, StringBuilder, String, int, boolean)} and
 	 * returns either the string found or NULL if the given token didn't occur
@@ -154,9 +180,8 @@ public class StreamFunctions
 																		  "ReadUntil")
 		{
 			@Override
-			protected String evaluateWithException(
-				Reader rReader,
-				String sToken) throws Exception
+			public String evaluateWithException(Reader rReader, String sToken)
+				throws Exception
 			{
 				Writer aOutput = new StringWriter();
 				String sResult = null;
