@@ -278,25 +278,6 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	}
 
 	/***************************************
-	 * A variant of {@link #get(RelationType)} that returns a default value if a
-	 * relation value is NULL. This method will always resolve the relation with
-	 * the given type, therefore initializing it if the relation type has an
-	 * initial value function or using it's default value if available. Only if
-	 * the resolved relation value is NULL will the default value be returned.
-	 *
-	 * @param  rType    The type of relation to retrieve
-	 * @param  rDefault The default value to return for a NULL relation value
-	 *
-	 * @return The relation value or if NULL, the default value
-	 */
-	protected <T> T get(RelationType<T> rType, T rDefault)
-	{
-		T rValue = get(rType);
-
-		return rValue != null ? rValue : rDefault;
-	}
-
-	/***************************************
 	 * Returns the server certificate from the parameters stored in this
 	 * server's relations. If no explicit certificate has been provided a new
 	 * one will be generated based on the parameters.
@@ -306,7 +287,6 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	 *
 	 * @return A key store containing the server certificate and it's key
 	 */
-	@SuppressWarnings("boxing")
 	protected KeyStore getServerCertificate(String sKeyPassword)
 	{
 		KeyStore aCertKeyStore = get(CERTIFICATE);

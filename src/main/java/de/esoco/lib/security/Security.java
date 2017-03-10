@@ -16,8 +16,13 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.security;
 
+import de.esoco.lib.logging.Log;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import java.nio.charset.StandardCharsets;
 
@@ -389,6 +394,44 @@ public class Security
 		catch (Exception e)
 		{
 			throw new IllegalArgumentException(e);
+		}
+	}
+
+	/***************************************
+	 * This method will enable java cryptographic extensions on the application
+	 * level if possible.
+	 *
+	 * <p><b>Attention</b>: this performs a rather dirty hack by using
+	 * reflection to set a field in the class {@link JceSecurity} to FALSE. That
+	 * is necessary because otherwise some JCE security algorithms are not
+	 * availabe. Whether or not this actually works depends on the platform that
+	 * the application is deployed to and its JRE. Keep an eye out for logged
+	 * errors that might occur at application startup/initialization of this
+	 * endpoint.</p>
+	 */
+	public static void enableJavaCryptographicExtensions()
+	{
+		try
+		{
+			Field rField =
+				Class.forName("javax.crypto.JceSecurity")
+					 .getDeclaredField("isRestricted");
+
+			rField.setAccessible(true);
+
+			Field rModifiersField = Field.class.getDeclaredField("modifiers");
+
+			rModifiersField.setAccessible(true);
+			rModifiersField.setInt(rField,
+								   rField.getModifiers() & ~Modifier.FINAL);
+
+			rField.set(null, Boolean.FALSE);
+		}
+		catch (Exception e)
+		{
+			Log.error("Unable to enable Java Cryptographic Extensions. " +
+					  "Some ciphers may be unavailable in the current JRE.",
+					  e);
 		}
 	}
 
