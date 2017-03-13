@@ -37,6 +37,32 @@ public final class StreamUtil
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
+	 * Invokes {@link #find(InputStream, byte[], int, ReadHandler)} with no read
+	 * handler.
+	 *
+	 * @see #find(InputStream, byte[], int, ReadHandler)
+	 */
+	public static boolean find(InputStream rIn, byte[] rToken, int nMax)
+		throws IOException
+	{
+		return find(rIn, rToken, nMax, null);
+	}
+
+	/***************************************
+	 * Invokes {@link #find(Reader, String, int, boolean, ReadHandler)} with no
+	 * read handler.
+	 *
+	 * @see #find(Reader, String, int, boolean, ReadHandler)
+	 */
+	public static boolean find(Reader  rReader,
+							   String  sToken,
+							   int	   nMax,
+							   boolean bIgnoreCase) throws IOException
+	{
+		return find(rReader, sToken, nMax, bIgnoreCase, null);
+	}
+
+	/***************************************
 	 * Seeks to the position after the next occurrence of a certain token in an
 	 * input stream. This method does no extra buffering, so if necessary a
 	 * buffered stream should be used for optimal performance. If this method
@@ -378,7 +404,7 @@ public final class StreamUtil
 
 	/***************************************
 	 * Sends the data from an input stream to an output stream. This method uses
-	 * a buffer of 4K for the transfer so it is not necessary to wrap the
+	 * a buffer of 8K for the transfer so it is not necessary to wrap the
 	 * streams in buffered streams.
 	 *
 	 * @param  rInput  The input stream to read the data to send from
@@ -391,7 +417,7 @@ public final class StreamUtil
 	public static long send(InputStream rInput, OutputStream rOutput)
 		throws IOException
 	{
-		byte[] aBuffer = new byte[1024 * 4];
+		byte[] aBuffer = new byte[1024 * 8];
 		long   nCount  = 0;
 		int    nRead   = 0;
 
@@ -405,7 +431,7 @@ public final class StreamUtil
 	}
 
 	/***************************************
-	 * Sends the data from a reader to a writer. This method uses a buffer of 4K
+	 * Sends the data from a reader to a writer. This method uses a buffer of 8K
 	 * for the transfer so it is not necessary to wrap the streams in buffered
 	 * streams.
 	 *
@@ -418,7 +444,7 @@ public final class StreamUtil
 	 */
 	public static long send(Reader rInput, Writer rOutput) throws IOException
 	{
-		char[] aBuffer = new char[1024 * 4];
+		char[] aBuffer = new char[1024 * 8];
 		long   nCount  = 0;
 		int    nRead   = 0;
 
