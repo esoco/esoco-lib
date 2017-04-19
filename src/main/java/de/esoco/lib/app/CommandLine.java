@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +20,18 @@ import de.esoco.lib.expression.Predicate;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.text.TextUtil;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,6 +67,23 @@ public class CommandLine
 	Map<String, Object> aCommandLineOptions;
 
 	//~ Constructors -----------------------------------------------------------
+
+	/***************************************
+	 * Creates a new command line from an input stream in Java properties file
+	 * format. Boolean values will be converted to {@link Boolean} objects, all
+	 * other argument values will be stored as strings.
+	 *
+	 * @param  rArgsStream sFileName The file name (including path) of the
+	 *                     properties file
+	 *
+	 * @return The arguments as read from the file
+	 *
+	 * @throws IllegalArgumentException If accessing the stream fails
+	 */
+	public CommandLine(InputStream rArgsStream)
+	{
+		aCommandLineOptions = readArguments(rArgsStream);
+	}
 
 	/***************************************
 	 * Creates a new CommandLine object with a standard argument pattern that
@@ -298,7 +323,23 @@ public class CommandLine
 						sOption = sOption.toLowerCase();
 					}
 
-					aResult.put(sOption, rValue);
+					if (sOption.equals("-args"))
+					{
+						if (rValue instanceof String)
+						{
+							aResult.putAll(readArguments(rValue.toString()));
+						}
+						else
+						{
+							throw new IllegalArgumentException("--args must point " +
+															   "to an argument " +
+															   "properties file");
+						}
+					}
+					else
+					{
+						aResult.put(sOption, rValue);
+					}
 				}
 				else if (aArgMatcher.groupCount() == 0)
 				{
@@ -322,6 +363,74 @@ public class CommandLine
 		aResult.put(ARGUMENTS, aArguments);
 
 		return aResult;
+	}
+
+	/***************************************
+	 * Tries to read the command line arguments from a Java properties file.
+	 *
+	 * @param  sFileName The file name (including path) of the properties file
+	 *
+	 * @return A map containing the arguments as read from the file
+	 *
+	 * @throws IllegalArgumentException If the file doesn't exist or could not
+	 *                                  be read
+	 */
+	public static Map<String, Object> readArguments(String sFileName)
+	{
+		try
+		{
+			return readArguments(new FileInputStream(sFileName));
+		}
+		catch (FileNotFoundException e)
+		{
+			throw new IllegalArgumentException("Arguments file not found: " +
+											   sFileName);
+		}
+	}
+
+	/***************************************
+	 * Reads the command line arguments from an input stream in Java properties
+	 * file format. Boolean values will be converted to {@link Boolean} objects,
+	 * all other argument values will be stored as strings.
+	 *
+	 * @param  rArgsStream The input stream to read the arguments from
+	 *
+	 * @return A map containing the arguments as read from the stream
+	 *
+	 * @throws IllegalArgumentException If accessing the stream fails
+	 */
+	public static Map<String, Object> readArguments(InputStream rArgsStream)
+	{
+		Properties aProperties = new Properties();
+
+		try
+		{
+			aProperties.load(rArgsStream);
+		}
+		catch (IOException e)
+		{
+			throw new IllegalArgumentException("Could not read arguments", e);
+		}
+
+		Map<String, Object> aFileArguments = new HashMap<>(aProperties.size());
+
+		for (Entry<Object, Object> rProperty : aProperties.entrySet())
+		{
+			Object rValue = rProperty.getValue();
+
+			if ("true".equalsIgnoreCase(rValue.toString()))
+			{
+				rValue = Boolean.TRUE;
+			}
+			else if ("false".equalsIgnoreCase(rValue.toString()))
+			{
+				rValue = Boolean.FALSE;
+			}
+
+			aFileArguments.put(rProperty.getKey().toString(), rValue);
+		}
+
+		return aFileArguments;
 	}
 
 	//~ Methods ----------------------------------------------------------------
