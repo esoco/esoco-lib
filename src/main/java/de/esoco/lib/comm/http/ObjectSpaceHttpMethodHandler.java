@@ -89,7 +89,30 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	 * {@inheritDoc}
 	 */
 	@Override
+	public HttpResponse doPost(HttpRequest rRequest) throws HttpStatusException
+	{
+		return update(rRequest);
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
 	public HttpResponse doPut(HttpRequest rRequest) throws HttpStatusException
+	{
+		return update(rRequest);
+	}
+
+	/***************************************
+	 * Performs an update due to a POST or PUT request.
+	 *
+	 * @param  rRequest The update request
+	 *
+	 * @return The response
+	 *
+	 * @throws HttpStatusException If the update is not allowed
+	 */
+	private HttpResponse update(HttpRequest rRequest) throws HttpStatusException
 	{
 		String sPath = rRequest.getPath();
 
@@ -106,7 +129,8 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 		catch (Exception e)
 		{
 			throw new HttpStatusException(HttpStatusCode.METHOD_NOT_ALLOWED,
-										  "Put not allowed at " + sPath);
+										  rRequest.getMethod() +
+										  " not allowed at " + sPath);
 		}
 	}
 }
