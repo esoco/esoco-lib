@@ -19,6 +19,7 @@ package de.esoco.lib.comm.http;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
 
 import org.obrel.space.ObjectSpace;
+import org.obrel.space.SynchronizedObjectSpace;
 
 
 /********************************************************************
@@ -47,7 +48,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 		ObjectSpace<? super String> rObjectSpace,
 		String						sDefaultPath)
 	{
-		this.rObjectSpace = rObjectSpace;
+		this.rObjectSpace = new SynchronizedObjectSpace<>(rObjectSpace);
 		this.sDefaultPath = sDefaultPath;
 	}
 

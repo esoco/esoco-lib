@@ -18,7 +18,6 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.comm.http.HttpRequestMethod;
 import de.esoco.lib.comm.http.HttpStatusCode;
-import de.esoco.lib.logging.LogExtent;
 
 import java.net.HttpURLConnection;
 
@@ -59,12 +58,6 @@ public class CommunicationRelationTypes
 	 * This type is final so that it cannot be changed after it has been set.
 	 */
 	public static final RelationType<String> ENDPOINT_ADDRESS = newType(FINAL);
-
-	/**
-	 * Defines the extent to which requests on an endpoint connection should be
-	 * logged.
-	 */
-	public static final RelationType<LogExtent> ENDPOINT_LOG_EXTENT = newType();
 
 	/**
 	 * Defines the character encoding of a request. Has a default value of
@@ -121,11 +114,9 @@ public class CommunicationRelationTypes
 
 	/**
 	 * The maximum number of (concurrent) connections to or from a communication
-	 * component. Defaults to 1.
+	 * component.
 	 */
-	@SuppressWarnings("boxing")
-	public static final RelationType<Integer> MAX_CONNECTIONS =
-		newInitialValueType(1);
+	public static final RelationType<Integer> MAX_CONNECTIONS = newType();
 
 	/**
 	 * The maximum size that a request to a server allowed to have. Has a

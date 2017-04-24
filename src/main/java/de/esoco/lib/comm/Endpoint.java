@@ -18,6 +18,7 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.function.AbstractFunction;
+import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogExtent;
 import de.esoco.lib.text.TextConvert;
 
@@ -37,7 +38,6 @@ import org.obrel.core.RelationTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_LOG_EXTENT;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
 import static org.obrel.core.RelationTypes.newType;
@@ -94,8 +94,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	private static ProvidesConfiguration rGlobalConfig = new Params();
 
 	/** The default parameters for all endpoint instances. */
-	private static Relatable aDefaultParams =
-		new Params().with(ENDPOINT_LOG_EXTENT, LogExtent.ERRORS);
+	private static Relatable aDefaultParams = new Params();
 
 	static
 	{
@@ -250,10 +249,10 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 		rGlobalConfig = rConfiguration;
 
 		LogExtent eLogExtent =
-			rGlobalConfig.getConfigValue(ENDPOINT_LOG_EXTENT,
-										 aDefaultParams.get(ENDPOINT_LOG_EXTENT));
+			rGlobalConfig.getConfigValue(Log.LOG_EXTENT,
+										 aDefaultParams.get(Log.LOG_EXTENT));
 
-		aDefaultParams.set(ENDPOINT_LOG_EXTENT, eLogExtent);
+		aDefaultParams.set(Log.LOG_EXTENT, eLogExtent);
 	}
 
 	/***************************************

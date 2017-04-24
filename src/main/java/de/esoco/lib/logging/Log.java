@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-gwt' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// This file is a part of the 'esoco-lib' project.
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
-// Licensed under the Apache License, Version 3.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-3.0
+//	  http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypes;
+
 import static de.esoco.lib.expression.Functions.doIf;
 import static de.esoco.lib.expression.Functions.doIfElse;
 import static de.esoco.lib.expression.Functions.println;
@@ -41,6 +44,8 @@ import static de.esoco.lib.logging.LogLevel.INFO;
 import static de.esoco.lib.logging.LogLevel.TRACE;
 import static de.esoco.lib.logging.LogLevel.WARN;
 import static de.esoco.lib.logging.LogLevelFilter.isLevel;
+
+import static org.obrel.core.RelationTypes.newInitialValueType;
 
 
 /********************************************************************
@@ -81,6 +86,20 @@ public final class Log
 {
 	//~ Static fields/initializers ---------------------------------------------
 
+	/**
+	 * A relation type that contains a {@link LogExtent}. Defaults to {@link
+	 * LogExtent#ERRORS}.
+	 */
+	public static final RelationType<LogExtent> LOG_EXTENT =
+		newInitialValueType(LogExtent.ERRORS);
+
+	/**
+	 * A relation type that contains a {@link LogLevel}. Defaults to {@link
+	 * LogLevel#ERROR}.
+	 */
+	public static final RelationType<LogLevel> LOG_LEVEL =
+		newInitialValueType(LogLevel.ERROR);
+
 	/** The default log string transformation for log output */
 	public static final LogRecordFormat DEFAULT_FORMAT =
 		new LogRecordFormat("[{level:F%-5s}]{t:Dyyyy.MM.dd-HH:mm:ss}: {message}  [{package}.{class}.{method}() [{line}]]");
@@ -111,6 +130,7 @@ public final class Log
 
 	static
 	{
+		RelationTypes.init(Log.class);
 		setupDefaultLogHandler();
 		setupPackageLogHandlers();
 	}

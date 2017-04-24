@@ -21,8 +21,6 @@ import de.esoco.lib.expression.function.AbstractBinaryFunction;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogExtent;
 
-import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_LOG_EXTENT;
-
 
 /********************************************************************
  * Describes a method to communicate with an endpoint in the communication
@@ -73,7 +71,7 @@ public abstract class CommunicationMethod<I, O>
 	@Override
 	public final O evaluate(I rInput, Connection rConnection)
 	{
-		LogExtent eLogExtent = rConnection.get(ENDPOINT_LOG_EXTENT);
+		LogExtent eLogExtent = rConnection.get(Log.LOG_EXTENT);
 
 		try
 		{

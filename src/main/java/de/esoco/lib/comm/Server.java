@@ -36,9 +36,12 @@ import java.net.SocketException;
 
 import java.security.KeyStore;
 
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -391,21 +394,16 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	@SuppressWarnings("boxing")
 	protected void runServerLoop() throws IOException
 	{
-		aServerSocket = createServerSocket(get(PORT));
-
-		Integer nMaxConnections = get(MAX_CONNECTIONS);
-
-		aThreadPool =
-			new ThreadPoolExecutor(0,
-								   nMaxConnections,
-								   60L,
-								   TimeUnit.SECONDS,
-								   new ArrayBlockingQueue<>(nMaxConnections *
-															10));
-
-		bRunning = true;
-
 		Relatable aRequestContext = createRequestContext();
+
+		int nMaxConnections =
+			get(MAX_CONNECTIONS, ForkJoinPool.commonPool().getParallelism());
+
+		Queue<CompletableFuture<Void>> aRequestHandlers =
+			new ArrayDeque<>(nMaxConnections);
+
+		aServerSocket = createServerSocket(get(PORT));
+		bRunning	  = true;
 
 		while (bRunning)
 		{
@@ -413,9 +411,41 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 			{
 				Socket rClientSocket = aServerSocket.accept();
 
-				aThreadPool.execute(() ->
-									handleClientRequest(rClientSocket,
-														aRequestContext));
+				Iterator<CompletableFuture<Void>> rHandlers =
+					aRequestHandlers.iterator();
+
+				// remove finished request handlers
+				while (rHandlers.hasNext())
+				{
+					if (rHandlers.next().isDone())
+					{
+						rHandlers.remove();
+					}
+				}
+
+				if (aRequestHandlers.size() < nMaxConnections)
+				{
+					CompletableFuture<Void> aRequestHandler =
+						CompletableFuture.runAsync(() ->
+												   handleClientRequest(rClientSocket,
+																	   aRequestContext));
+
+					aRequestHandlers.add(aRequestHandler);
+				}
+				else
+				{
+					Log.warn("Maximum connections reached, rejecting connection from " +
+							 rClientSocket.getInetAddress());
+
+					try
+					{
+						rClientSocket.close();
+					}
+					catch (IOException e)
+					{
+						Log.error("Closing rejected connection failed, continuing");
+					}
+				}
 			}
 			catch (SocketException e)
 			{

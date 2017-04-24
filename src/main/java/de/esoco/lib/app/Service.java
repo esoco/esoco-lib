@@ -38,9 +38,9 @@ import org.obrel.space.HtmlSpace;
 import org.obrel.space.MappedSpace;
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.RelationSpace;
+import org.obrel.space.SynchronizedObjectSpace;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
-import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_CONNECTIONS;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 
 import static org.obrel.core.RelationTypes.newFlagType;
@@ -54,8 +54,41 @@ import static org.obrel.type.StandardTypes.UPTIME;
 
 /********************************************************************
  * An application subclass that is the abstract base for the implementation of
- * services that can be controlled via a network connection. The network
- * interface is implemented by means of the {@link Server} class.
+ * services that can be controlled via REST interface over a network connection.
+ * The network interface is implemented by means of the {@link Server} class. If
+ * the service implements the {@link AuthenticationService} interface it will be
+ * used to authenticate all requests to the REST interface and reject all
+ * unauthenticated requests.
+ *
+ * <p>There are two ways to run a service, controlled by the boolean parameter
+ * of the constructor. Either as a REST service implemented by the HTTP control
+ * server or as an explicit service functionality that must be implemented in
+ * the {@link #runService()} method.</p>
+ *
+ * <p>If used as a REST service or to extend the control server functionality a
+ * subclass can modify the {@link ObjectSpace} that provides the REST server
+ * functionality in the method {@link #buildRestServerSpace()}. By default the
+ * REST server contains several sub-spaces under the following relation
+ * types:</p>
+ *
+ * <ul>
+ *   <li>{@link #API}: the server API which maps all values from and to JSON.
+ *     This contains the following sub-spaces:
+ *
+ *     <ul>
+ *       <li>{@link #STATUS}: a read-only space that provides informations about
+ *         the current service status.</li>
+ *       <li>{@link #CONTROL}: a writable space that allows to control the
+ *         server at runtime. The most notable element in that space is the
+ *         {@link #RUN} flag which can be set to FALSE to stop the service.</li>
+ *     </ul>
+ *   </li>
+ *   <li>{@link #WEBAPI}: a HTML representation of {@link #API}.</li>
+ * </ul>
+ *
+ * <p>The REST server of a service by default always runs with TLS encryption.
+ * By setting the {@link #OPTION_NO_ENCRYPTION no encryption option} on the
+ * command line this can be disabled for testing purposes.</p>
  *
  * @author eso
  */
@@ -64,8 +97,12 @@ public abstract class Service extends Application implements Stoppable
 	//~ Static fields/initializers ---------------------------------------------
 
 	/**
-	 * The run flag in the control server that controls the service execution.
+	 * The command line option to disable TLS encryption for the REST server
+	 * (which is active by default).
 	 */
+	public static final String OPTION_NO_ENCRYPTION = "no-encryption";
+
+	/** The run flag in the REST server that controls the service execution. */
 	public static final RelationType<Boolean> RUN = newFlagType();
 
 	/** The {@link ObjectSpace} containing the server API. */
@@ -87,57 +124,58 @@ public abstract class Service extends Application implements Stoppable
 
 	//~ Instance fields --------------------------------------------------------
 
-	private Thread			    aControlServerThread;
-	private Server			    aControlServer;
-	private ObjectSpace<Object> aControlSpace;
+	private boolean bIsRestService;
+
+	private Thread			    aRestServerThread;
+	private Server			    aRestServer;
+	private ObjectSpace<Object> aRestServerSpace;
 
 	private HttpRequestMethodHandler rRequestMethodHandler;
-
-	private RelationSpace<Object> aStatusSpace;
 
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
 	 * Creates a new instance.
+	 *
+	 * @param bIsRestService TRUE if this instance should be run as a single
+	 *                       REST service implemented by the REST server; FALSE
+	 *                       to have separate service functionality in the main
+	 *                       thread (by implementing {@link #runService()} and
+	 *                       the REST server in a separate thread
 	 */
-	public Service()
+	public Service(boolean bIsRestService)
 	{
+		this.bIsRestService = bIsRestService;
 	}
 
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Will be invoked to run the actual service after the application has been
-	 * initialized and configured.
+	 * Builds the {@link ObjectSpace} for the REST server. The REST server uses
+	 * this to perform control requests and to lookup status responses.
 	 *
-	 * @throws Exception If an error occurs during execution
+	 * @return The new REST object space
 	 */
-	protected abstract void runService() throws Exception;
-
-	/***************************************
-	 * Builds the {@link ObjectSpace} for the control server. The control server
-	 * uses this to perform control requests and to lookup status responses.
-	 *
-	 * @return The new control object space
-	 */
-	protected ObjectSpace<Object> buildControlSpace()
+	protected ObjectSpace<Object> buildRestServerSpace()
 	{
 		RelationSpace<Object> aRoot = new RelationSpace<>(true);
 
 		Date aNow = new Date();
 
-		aStatusSpace = new RelationSpace<>();
+		ObjectSpace<Object> aStatusSpace  = new RelationSpace<>();
+		ObjectSpace<Object> aApiSpace     = new RelationSpace<>();
+		ObjectSpace<Object> aControlSpace = new RelationSpace<>(true);
 
-		ObjectSpace<Object> aApi     = new RelationSpace<>();
-		ObjectSpace<Object> aControl = new RelationSpace<>(true);
+		aControlSpace = new SynchronizedObjectSpace<>(aControlSpace);
 
-		aRoot.set(API, new MappedSpace<>(aApi, JsonBuilder.convertJson()));
+		aRoot.set(API, new MappedSpace<>(aApiSpace, JsonBuilder.convertJson()));
 		aRoot.set(WEBAPI,
-				  new HtmlSpace(aApi, "webapi").with(NAME, getServiceName()));
-		aApi.set(STATUS, aStatusSpace);
-		aApi.set(CONTROL, aControl);
+				  new HtmlSpace(aApiSpace, "webapi").with(NAME,
+														  getServiceName()));
+		aApiSpace.set(STATUS, aStatusSpace);
+		aApiSpace.set(CONTROL, aControlSpace);
 
-		aControl.set(RUN).onChange(bRun -> stopRequest(null));
+		aControlSpace.set(RUN).onChange(bRun -> stopRequest(null));
 
 		aStatusSpace.init(UPTIME);
 		aStatusSpace.set(START_DATE, aNow)
@@ -147,34 +185,8 @@ public abstract class Service extends Application implements Stoppable
 	}
 
 	/***************************************
-	 * Creates a new REST server that returns status information and allows to
-	 * control this service.
-	 *
-	 * @return The new server instance, initialized but not started
-	 */
-	protected Server createControlServer()
-	{
-		RequestHandlerFactory rRequestHandlerFactory =
-			getControlRequestHandlerFactory();
-
-		Server aServer =
-			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
-											  .with(PORT,
-													getControlServerPort())
-											  .with(MAX_CONNECTIONS, 2)
-											  .with(ENCRYPTION);
-
-		if (this instanceof AuthenticationService)
-		{
-			aServer.set(AUTHENTICATION_SERVICE, (AuthenticationService) this);
-		}
-
-		return aServer;
-	}
-
-	/***************************************
 	 * Must be implemented to create new instances of {@link RequestHandler} for
-	 * the control server of this service. If the subclass implements the {@link
+	 * the REST server of this service. If the subclass implements the {@link
 	 * AuthenticationService} interface it will be set on the request handler
 	 * with the {@link SecurityRelationTypes#AUTHENTICATION_SERVICE} relation
 	 * type to perform request authentications. If authentication is required
@@ -203,52 +215,35 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected HttpRequestMethodHandler createRequestMethodHandler()
 	{
-		return new ObjectSpaceHttpMethodHandler(aControlSpace, "info");
+		return new ObjectSpaceHttpMethodHandler(aRestServerSpace, "info");
 	}
 
 	/***************************************
-	 * Will be invoked to query the {@link RequestHandlerFactory} to be used for
-	 * the control server of this service. The default implementation creates a
-	 * factory that invokes {@link #createRequestHandler(Relatable)}.
+	 * Creates a new REST server that returns status information and allows to
+	 * control this service.
 	 *
-	 * @return The control request handler factory
+	 * @return The new server instance, initialized but not started
 	 */
-	protected RequestHandlerFactory getControlRequestHandlerFactory()
+	protected Server createRestServer()
 	{
-		return rContext -> createRequestHandler(rContext);
-	}
+		RequestHandlerFactory rRequestHandlerFactory =
+			getRestRequestHandlerFactory();
 
-	/***************************************
-	 * Will be invoked to query the control server port. The default
-	 * implementation looks for the command line option 'port' and tries to
-	 * convert it to a integer value. If this is not possible or the option is
-	 * missing an exception will be thrown.
-	 *
-	 * @return The control server port
-	 */
-	protected int getControlServerPort()
-	{
-		Object rPort = getCommandLine().getOption("port");
+		Server aServer =
+			new Server(rRequestHandlerFactory).with(NAME, getServiceName())
+											  .with(PORT, getRestServerPort());
 
-		if (rPort instanceof Number)
+		if (!getCommandLine().hasOption(OPTION_NO_ENCRYPTION))
 		{
-			return ((Number) rPort).intValue();
+			aServer.set(ENCRYPTION);
 		}
-		else
-		{
-			throw new IllegalArgumentException("Control server port not set " +
-											   "(Option 'port'): " + rPort);
-		}
-	}
 
-	/***************************************
-	 * Returns the control object space of this service.
-	 *
-	 * @return The control object space
-	 */
-	protected final ObjectSpace<Object> getControlSpace()
-	{
-		return aControlSpace;
+		if (this instanceof AuthenticationService)
+		{
+			aServer.set(AUTHENTICATION_SERVICE, (AuthenticationService) this);
+		}
+
+		return aServer;
 	}
 
 	/***************************************
@@ -269,6 +264,51 @@ public abstract class Service extends Application implements Stoppable
 		}
 
 		return rRequestMethodHandler;
+	}
+
+	/***************************************
+	 * Will be invoked to query the {@link RequestHandlerFactory} to be used for
+	 * the REST server of this service. The default implementation creates a
+	 * factory that invokes {@link #createRequestHandler(Relatable)}.
+	 *
+	 * @return The REST request handler factory
+	 */
+	protected RequestHandlerFactory getRestRequestHandlerFactory()
+	{
+		return rContext -> createRequestHandler(rContext);
+	}
+
+	/***************************************
+	 * Will be invoked to query the REST server port. The default implementation
+	 * looks for the command line option 'port' and tries to convert it to a
+	 * integer value. If this is not possible or the option is missing an
+	 * exception will be thrown.
+	 *
+	 * @return The REST server port
+	 */
+	protected int getRestServerPort()
+	{
+		Object rPort = getCommandLine().getOption("port");
+
+		if (rPort instanceof Number)
+		{
+			return ((Number) rPort).intValue();
+		}
+		else
+		{
+			throw new IllegalArgumentException("REST server port not set " +
+											   "(Option 'port'): " + rPort);
+		}
+	}
+
+	/***************************************
+	 * Returns the REST object space of this service.
+	 *
+	 * @return The REST object space
+	 */
+	protected final ObjectSpace<Object> getRestSpace()
+	{
+		return aRestServerSpace;
 	}
 
 	/***************************************
@@ -301,42 +341,57 @@ public abstract class Service extends Application implements Stoppable
 	}
 
 	/***************************************
-	 * Overridden to stop the control server.
+	 * Overridden to stop the REST server.
 	 *
 	 * @see Application#handleApplicationError(Exception)
 	 */
 	@Override
 	protected void handleApplicationError(Exception e)
 	{
-		if (aControlServer != null)
+		if (aRestServer != null)
 		{
-			aControlServer.stop();
+			aRestServer.stop();
 		}
 
 		super.handleApplicationError(e);
 	}
 
 	/***************************************
-	 * Overridden to run the service and the associated control server.
+	 * Overridden to run the service and the associated REST server.
 	 *
 	 * @see Application#runApp()
 	 */
 	@Override
-	@SuppressWarnings("boxing")
 	protected final void runApp() throws Exception
 	{
-		aControlSpace  = buildControlSpace();
-		aControlServer = startControlServer();
-
-		Log.infof("%s running, control server listening on TLS port %d",
-				  getServiceName(),
-				  getControlServerPort());
+		aRestServerSpace = buildRestServerSpace();
+		aRestServer		 = startRestServer();
 
 		runService();
+
+		if (!bIsRestService)
+		{
+			// stop the REST server if this is not a REST service (where the
+			// REST server is the actual service)
+			aRestServer.stop();
+		}
 	}
 
 	/***************************************
-	 * Sets a status value in the status section of the control server object
+	 * Will be invoked to run the actual service after the application has been
+	 * initialized and configured. This method needs to be implemented if the
+	 * service has it's own functionality to be run on the main thread. If the
+	 * service is only using the REST server as a REST service implementation
+	 * this method can remain empty.
+	 *
+	 * @throws Exception If an error occurs during execution
+	 */
+	protected void runService() throws Exception
+	{
+	}
+
+	/***************************************
+	 * Sets a status value in the status section of the REST server object
 	 * space.
 	 *
 	 * @param rType  The status relation type
@@ -344,47 +399,53 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected <T> void setStatus(RelationType<T> rType, T rValue)
 	{
-		aControlSpace.get(STATUS).set(rType, rValue);
+		aRestServerSpace.get(STATUS).set(rType, rValue);
 	}
 
 	/***************************************
-	 * Creates and starts the control server for this service.
+	 * Creates and starts the REST server for this service.
 	 *
-	 * @return The control server instance
+	 * @return The REST server instance
 	 *
-	 * @throws Exception If starting the control server fails
+	 * @throws Exception If starting the REST server fails
 	 */
-	protected Server startControlServer() throws Exception
+	@SuppressWarnings("boxing")
+	protected Server startRestServer() throws Exception
 	{
-		Server aServer = createControlServer();
+		Server aServer = createRestServer();
 
 		// this will stop the server on service shutdown
 		manageResource(aServer);
 
-		aControlServerThread = new Thread(aServer);
-		aControlServerThread.setUncaughtExceptionHandler((t, e) ->
-														 stopRequest(e));
-		aControlServerThread.start();
+		aRestServerThread = new Thread(aServer);
+		aRestServerThread.setUncaughtExceptionHandler((t, e) -> stopRequest(e));
+		aRestServerThread.start();
+
+		Log.infof("%s running, listening on TLS port %d",
+				  getServiceName(),
+				  getRestServerPort());
 
 		return aServer;
 	}
 
 	/***************************************
-	 * Internal method to handle a request from the control server to stop the
+	 * Internal method to handle a request from the REST server to stop the
 	 * service.
 	 *
-	 * @param e An optional exception to indicate a control server error or NULL
+	 * @param e An optional exception to indicate a REST server error or NULL
 	 *          for a regular request to shutdown this service
 	 */
 	private void stopRequest(Throwable e)
 	{
 		if (e != null)
 		{
-			Log.error("Control server error, shutting down", e);
+			Log.errorf(e,
+					   "%s error, shutting down",
+					   bIsRestService ? "Server" : "Control server");
 		}
 		else
 		{
-			Log.info("Stop requested from control server, shutting down");
+			Log.infof("Stop requested, shutting down");
 		}
 
 		stop();
