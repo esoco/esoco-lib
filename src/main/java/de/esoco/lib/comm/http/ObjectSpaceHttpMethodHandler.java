@@ -79,7 +79,7 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 
 			return new HttpResponse(rData.toString());
 		}
-		catch (Exception e)
+		catch (RuntimeException e)
 		{
 			throw new HttpStatusException(HttpStatusCode.NOT_FOUND,
 										  "No data at " + sPath);

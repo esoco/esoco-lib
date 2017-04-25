@@ -35,7 +35,6 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -147,10 +146,10 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		{
 			rRequestStream = new EchoInputStream(rRequestStream, aRequestCopy);
 
-			HttpRequest aRequest = readRequest(rRequestStream);
+			HttpRequest rRequest = readRequest(rRequestStream);
 
-			checkAuthentication(aRequest);
-			sendResponse(aRequest, rResponseStream);
+			checkAuthentication(rRequest);
+			sendResponse(createResponse(rRequest), rResponseStream);
 		}
 		catch (Exception e)
 		{
@@ -158,8 +157,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			boolean		   bEmptyRequest = (e instanceof EmptyRequestException);
 			String		   sMessage		 = "";
 
-			Map<HttpHeaderField, String> rResponseHeaders =
-				Collections.emptyMap();
+			Map<HttpHeaderField, String> rResponseHeaders = null;
 
 			set(EXCEPTION, e);
 
@@ -189,11 +187,14 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				HttpResponse aErrorResponse =
 					new HttpResponse(eStatus, sMessage);
 
-				for (Entry<HttpHeaderField, String> rHeader :
-					 rResponseHeaders.entrySet())
+				if (rResponseHeaders != null)
 				{
-					aErrorResponse.setHeader(rHeader.getKey(),
-											 rHeader.getValue());
+					for (Entry<HttpHeaderField, String> rHeader :
+						 rResponseHeaders.entrySet())
+					{
+						aErrorResponse.setHeader(rHeader.getKey(),
+												 rHeader.getValue());
+					}
 				}
 
 				try
@@ -278,6 +279,24 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	}
 
 	/***************************************
+	 * Creates the HTTP response for a certain HTTP request. The default
+	 * implementation invokes the method {@link
+	 * HttpRequestMethodHandler#handleMethod(HttpRequest)} of the request method
+	 * handler.
+	 *
+	 * @param  rRequest The request to create the response for
+	 *
+	 * @return The response
+	 *
+	 * @throws IOException If handling the request method fails
+	 */
+	protected HttpResponse createResponse(HttpRequest rRequest)
+		throws IOException
+	{
+		return rRequestMethodHandler.handleMethod(rRequest);
+	}
+
+	/***************************************
 	 * Returns a pair of header field name and value for an authentication
 	 * error.
 	 *
@@ -314,16 +333,14 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * Sends the HTTP response for an HTTP request through the given output
 	 * stream.
 	 *
-	 * @param  rRequest The HTTP request to send the response for
-	 * @param  rOutput  The output stream to write the response to
+	 * @param  rResponse The HTTP response to send
+	 * @param  rOutput   The output stream to write the response to
 	 *
 	 * @throws IOException If writing the output fails
 	 */
-	protected void sendResponse(HttpRequest rRequest, OutputStream rOutput)
+	protected void sendResponse(HttpResponse rResponse, OutputStream rOutput)
 		throws IOException
 	{
-		HttpResponse rResponse = rRequestMethodHandler.handleMethod(rRequest);
-
 		Map<String, List<String>> rDefaultResponseHeaders =
 			rContext.get(HTTP_RESPONSE_HEADERS);
 

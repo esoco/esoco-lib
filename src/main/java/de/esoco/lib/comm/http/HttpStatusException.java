@@ -20,18 +20,16 @@ import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.http.HttpHeaderTypes.HttpHeaderField;
 import de.esoco.lib.datatype.Pair;
 
-import java.io.IOException;
-
 import java.util.Collections;
 import java.util.Map;
 
 
 /********************************************************************
- * An IO exception to report HTTP status codes.
+ * An unchecked exception to report exceptional HTTP responses.
  *
  * @author eso
  */
-public class HttpStatusException extends IOException
+public class HttpStatusException extends RuntimeException
 {
 	//~ Static fields/initializers ---------------------------------------------
 
