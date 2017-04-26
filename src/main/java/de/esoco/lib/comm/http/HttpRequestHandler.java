@@ -52,6 +52,7 @@ import static de.esoco.lib.security.SecurityRelationTypes.LOGIN_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.PASSWORD;
 
 import static org.obrel.type.StandardTypes.EXCEPTION;
+import static org.obrel.type.StandardTypes.IP_ADDRESS;
 import static org.obrel.type.StandardTypes.NAME;
 
 
@@ -66,6 +67,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 	private static final Set<String> SUPPORTED_AUTH_METHODS =
 		CollectionUtil.setOf("Basic", "BCrypt");
+
+	private static final ThreadLocal<HttpRequest> aThreadLocalRequest =
+		new ThreadLocal<>();
 
 	//~ Instance fields --------------------------------------------------------
 
@@ -105,6 +109,19 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		{
 			rRequestMethodHandler = (HttpRequestMethodHandler) this;
 		}
+	}
+
+	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Returns the active HTTP request for the current thread.
+	 *
+	 * @return The current thread's HTTP request or NULL if no request is
+	 *         handled by the thread
+	 */
+	public static final HttpRequest getThreadLocalRequest()
+	{
+		return aThreadLocalRequest.get();
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -148,7 +165,11 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 			HttpRequest rRequest = readRequest(rRequestStream);
 
+			rRequest.set(IP_ADDRESS, get(IP_ADDRESS));
+			aThreadLocalRequest.set(rRequest);
+
 			checkAuthentication(rRequest);
+
 			sendResponse(createResponse(rRequest), rResponseStream);
 		}
 		catch (Exception e)

@@ -72,6 +72,7 @@ import static de.esoco.lib.security.SecurityRelationTypes.SIGNING_CERTIFICATE;
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
 import static org.obrel.type.StandardTypes.HOST;
+import static org.obrel.type.StandardTypes.IP_ADDRESS;
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 import static org.obrel.type.StandardTypes.TIMER;
@@ -332,19 +333,20 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 
 		try
 		{
-			InputStream rClientIn	   = rClientSocket.getInputStream();
-			InetAddress rClientAddress = rClientSocket.getInetAddress();
+			InputStream  rClientIn	    = rClientSocket.getInputStream();
+			OutputStream rClientOut     = rClientSocket.getOutputStream();
+			InetAddress  rClientAddress = rClientSocket.getInetAddress();
 
-			Log.infof("%s: handling request from %s [%s]",
+			Log.infof("%s: handling request from %s",
 					  getServerName(),
-					  rClientAddress.getHostName(),
 					  rClientAddress.getHostAddress());
+
+			rRequestHandler.set(IP_ADDRESS, rClientAddress);
 
 			InputStream  rInput  =
 				new LimitedInputStream(rClientIn, get(MAX_REQUEST_SIZE));
 			OutputStream rOutput =
-				new LimitedOutputStream(rClientSocket.getOutputStream(),
-										get(MAX_RESPONSE_SIZE));
+				new LimitedOutputStream(rClientOut, get(MAX_RESPONSE_SIZE));
 
 			String sRequest = rRequestHandler.handleRequest(rInput, rOutput);
 
