@@ -50,6 +50,7 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_REQUEST_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_ENCODING;
 import static de.esoco.lib.comm.CommunicationRelationTypes.RESPONSE_ENCODING;
+import static de.esoco.lib.net.NetUtil.appendUrlPath;
 
 
 /********************************************************************
@@ -204,6 +205,17 @@ public class HttpEndpoint extends Endpoint
 				HttpURLConnection aUrlConnection =
 					setupUrlConnection(rConnection, rInput);
 
+				if (eRequestMethod.doesOutput())
+				{
+					try (OutputStream rOutStream =
+						 new LimitedOutputStream(aUrlConnection
+												 .getOutputStream(),
+												 rConnection.get(MAX_REQUEST_SIZE)))
+					{
+						writeRequest(rConnection, rOutStream, rInput);
+					}
+				}
+
 				try (InputStream rInputStream =
 					 new LimitedInputStream(aUrlConnection.getInputStream(),
 											rConnection.get(MAX_RESPONSE_SIZE)))
@@ -212,13 +224,13 @@ public class HttpEndpoint extends Endpoint
 						new InputStreamReader(rInputStream,
 											  rConnection.get(RESPONSE_ENCODING));
 
-					O rResponse = readResponse(rConnection, aInputReader);
-
 					rConnection.set(HTTP_STATUS_CODE,
 									HttpStatusCode.valueOf(aUrlConnection
 														   .getResponseCode()));
 					rConnection.set(HTTP_RESPONSE_HEADERS,
 									aUrlConnection.getHeaderFields());
+
+					O rResponse = readResponse(rConnection, aInputReader);
 
 					return rResponse;
 				}
@@ -398,17 +410,13 @@ public class HttpEndpoint extends Endpoint
 
 			StringBuilder aUrlBuilder = new StringBuilder(sEndpointAddress);
 
-			if (aUrlBuilder.charAt(aUrlBuilder.length() - 1) != '/' &&
-				!sBaseUrl.startsWith("/"))
-			{
-				aUrlBuilder.append('/');
-			}
-
-			aUrlBuilder.append(sBaseUrl);
+			appendUrlPath(aUrlBuilder, sBaseUrl);
 
 			if (!eRequestMethod.doesOutput())
 			{
-				aUrlBuilder.append(getRequestData(rConnection, rInput));
+				String sRequestData = getRequestData(rConnection, rInput);
+
+				appendUrlPath(aUrlBuilder, sRequestData);
 			}
 
 			return aUrlBuilder.toString();
@@ -418,11 +426,12 @@ public class HttpEndpoint extends Endpoint
 		 * Invokes the response processing function. Can be overridden by
 		 * subclasses to extend or modify the processing.
 		 *
+		 * @param  rConnection  The connection the response has been send over
 		 * @param  sRawResponse The original response received from the endpoint
 		 *
 		 * @return The processed response
 		 */
-		protected O processResponse(String sRawResponse)
+		protected O processResponse(Connection rConnection, String sRawResponse)
 		{
 			return fProcessResponse.evaluate(sRawResponse);
 		}
@@ -438,7 +447,7 @@ public class HttpEndpoint extends Endpoint
 		 *
 		 * <p>The {@link Reader} argument must not be closed by this method.</p>
 		 *
-		 * @param  rConnection  The connection
+		 * @param  rConnection  The connection the response has been send over
 		 * @param  rInputReader The input reader
 		 *
 		 * @return The processed response
@@ -455,7 +464,7 @@ public class HttpEndpoint extends Endpoint
 								   rConnection.get(BUFFER_SIZE),
 								   Integer.MAX_VALUE);
 
-			return processResponse(sRawResponse);
+			return processResponse(rConnection, sRawResponse);
 		}
 
 		/***************************************
@@ -469,7 +478,6 @@ public class HttpEndpoint extends Endpoint
 		 *
 		 * @throws IOException If the setup fails
 		 */
-		@SuppressWarnings("boxing")
 		protected HttpURLConnection setupUrlConnection(
 			Connection rConnection,
 			I		   rInput) throws IOException
@@ -489,16 +497,6 @@ public class HttpEndpoint extends Endpoint
 				NetUtil.enableHttpBasicAuth(aUrlConnection,
 											sUserName,
 											rConnection.getPassword());
-			}
-
-			if (eRequestMethod.doesOutput())
-			{
-				try (OutputStream rOutStream =
-					 new LimitedOutputStream(aUrlConnection.getOutputStream(),
-											 rConnection.get(MAX_REQUEST_SIZE)))
-				{
-					writeRequest(rConnection, rOutStream, rInput);
-				}
 			}
 
 			return aUrlConnection;

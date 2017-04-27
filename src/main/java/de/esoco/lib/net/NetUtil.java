@@ -101,6 +101,48 @@ public class NetUtil
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
+	 * Appends a path element to an URL string and adds a separating '/' if
+	 * necessary.
+	 *
+	 * @param  sBaseUrl rUrlBuilder The string build containing the base URL
+	 * @param  sPath    The URL path to append
+	 *
+	 * @return The resulting URL string
+	 */
+	public static String appendUrlPath(String sBaseUrl, String sPath)
+	{
+		return appendUrlPath(new StringBuilder(sBaseUrl), sPath).toString();
+	}
+
+	/***************************************
+	 * Appends a path element to an URL string builder and adds a separating '/'
+	 * if necessary.
+	 *
+	 * @param  rUrlBuilder The string build containing the base URL
+	 * @param  sPath       The URL path to append
+	 *
+	 * @return The input URL builder to allow concatenation
+	 */
+	public static StringBuilder appendUrlPath(
+		StringBuilder rUrlBuilder,
+		String		  sPath)
+	{
+		if (rUrlBuilder.charAt(rUrlBuilder.length() - 1) != '/')
+		{
+			if (sPath.charAt(0) != '/')
+			{
+				rUrlBuilder.append('/');
+			}
+		}
+		else if (sPath.charAt(0) == '/')
+		{
+			sPath = sPath.substring(1);
+		}
+
+		return rUrlBuilder.append(sPath);
+	}
+
+	/***************************************
 	 * Creates a new socket for the connection to a certain host and port. This
 	 * method takes into account any system properties for a connection proxy.
 	 *
