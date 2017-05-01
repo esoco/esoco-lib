@@ -174,6 +174,7 @@ public class HttpResponse extends RelatedObject
 			new BufferedWriter(new OutputStreamWriter(rOutput,
 													  StandardCharsets.US_ASCII));
 
+		// no buffer needed because StreamUtil.send() performs buffering
 		Writer aResponseBodyWriter =
 			new OutputStreamWriter(rOutput, get(RESPONSE_ENCODING));
 
