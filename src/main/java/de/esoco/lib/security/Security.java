@@ -26,10 +26,12 @@ import java.lang.reflect.Modifier;
 
 import java.nio.charset.StandardCharsets;
 
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -37,9 +39,13 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -398,6 +404,67 @@ public class Security
 	}
 
 	/***************************************
+	 * Decrypts a string value with the given passphrase by using the AES
+	 * algorithm. The passphrase will be converted into a 128 bit AES key by
+	 * applying the method {@link #deriveKey(String, String, int)}.
+	 *
+	 * @param  rData       The data to decrypt
+	 * @param  sPassphrase The passphrase
+	 *
+	 * @return The decrypted data
+	 */
+	public static String decrypt(byte[] rData, String sPassphrase)
+	{
+		try
+		{
+			Cipher aCipher = Cipher.getInstance("AES");
+			Key    aKey    = deriveKey(sPassphrase, "AES", 128);
+
+			aCipher.init(Cipher.DECRYPT_MODE, aKey);
+
+			return new String(aCipher.doFinal(rData),
+							  StandardCharsets.UTF_8.name());
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+
+	/***************************************
+	 * Derives an cryptographic key with a certain length from a passphrase. The
+	 * key will be generated as a SHA-256 hash of the passphrase which will then
+	 * be reduced to the requested bit length.
+	 *
+	 * @param  sPassphrase The passphrase
+	 * @param  sAlgorithm  The algorithm of the returned key
+	 * @param  nBitLength  The bit length of the returned key
+	 *
+	 * @return The resulting key
+	 *
+	 * @throws SecurityException If deriving the key fails
+	 */
+	public static Key deriveKey(String sPassphrase,
+								String sAlgorithm,
+								int    nBitLength)
+	{
+		try
+		{
+			byte[] aKeyHash =
+				Arrays.copyOf(MessageDigest.getInstance("SHA-256")
+							  .digest(sPassphrase.getBytes(StandardCharsets
+														   .UTF_8.name())),
+							  nBitLength / 8);
+
+			return new SecretKeySpec(aKeyHash, sAlgorithm);
+		}
+		catch (Exception e)
+		{
+			throw new SecurityException(e);
+		}
+	}
+
+	/***************************************
 	 * This method will enable java cryptographic extensions on the application
 	 * level if possible.
 	 *
@@ -465,6 +532,33 @@ public class Security
 		aEncoded.append("-----END ").append(sToken).append("-----\n");
 
 		return aEncoded.toString();
+	}
+
+	/***************************************
+	 * Encrypts a string value with the given passphrase by using the AES
+	 * algorithm. The passphrase will be converted into a 128 bit AES key by
+	 * applying the method {@link #deriveKey(String, String, int)}.
+	 *
+	 * @param  sValue      The value to encrypt
+	 * @param  sPassphrase The passphrase
+	 *
+	 * @return The encrypted data
+	 */
+	public static byte[] encrypt(String sValue, String sPassphrase)
+	{
+		try
+		{
+			Cipher aCipher = Cipher.getInstance("AES");
+			Key    aKey    = deriveKey(sPassphrase, "AES", 128);
+
+			aCipher.init(Cipher.ENCRYPT_MODE, aKey);
+
+			return aCipher.doFinal(sValue.getBytes());
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/***************************************
