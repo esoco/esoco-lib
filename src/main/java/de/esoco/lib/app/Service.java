@@ -163,7 +163,7 @@ public abstract class Service extends Application implements Stoppable
 		Date aNow = new Date();
 
 		ObjectSpace<Object> aStatusSpace  = new RelationSpace<>();
-		ObjectSpace<Object> aApiSpace     = new RelationSpace<>();
+		ObjectSpace<Object> aApiSpace     = new RelationSpace<>(true);
 		ObjectSpace<Object> aControlSpace = new RelationSpace<>(true);
 
 		aControlSpace = new SynchronizedObjectSpace<>(aControlSpace);
@@ -236,11 +236,12 @@ public abstract class Service extends Application implements Stoppable
 		if (!getCommandLine().hasOption(OPTION_NO_ENCRYPTION))
 		{
 			aServer.set(ENCRYPTION);
-		}
 
-		if (this instanceof AuthenticationService)
-		{
-			aServer.set(AUTHENTICATION_SERVICE, (AuthenticationService) this);
+			if (this instanceof AuthenticationService)
+			{
+				aServer.set(AUTHENTICATION_SERVICE,
+							(AuthenticationService) this);
+			}
 		}
 
 		return aServer;

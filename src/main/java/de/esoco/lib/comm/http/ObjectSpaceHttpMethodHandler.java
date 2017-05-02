@@ -17,6 +17,7 @@
 package de.esoco.lib.comm.http;
 
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
+import de.esoco.lib.logging.Log;
 
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.SynchronizedObjectSpace;
@@ -116,10 +117,13 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	private HttpResponse update(HttpRequest rRequest) throws HttpStatusException
 	{
 		String sPath = rRequest.getPath();
+		String sData = null;
 
 		try
 		{
-			rObjectSpace.put(sPath, rRequest.getBody());
+			sData = rRequest.getBody();
+
+			rObjectSpace.put(sPath, sData);
 
 			return new HttpResponse("");
 		}
@@ -129,9 +133,20 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 		}
 		catch (Exception e)
 		{
-			throw new HttpStatusException(HttpStatusCode.METHOD_NOT_ALLOWED,
-										  rRequest.getMethod() +
-										  " not allowed at " + sPath);
+			Log.errorf(e, "ObjectSpace update failed: %s - %s", sPath, sData);
+
+			if (sData == null)
+			{
+				throw new HttpStatusException(HttpStatusCode.BAD_REQUEST,
+											  "Could not access request data: " +
+											  e.getMessage());
+			}
+			else
+			{
+				throw new HttpStatusException(HttpStatusCode.NOT_ACCEPTABLE,
+											  "Invalid data '" + sData + "': " +
+											  e.getMessage());
+			}
 		}
 	}
 }

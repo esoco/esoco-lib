@@ -87,8 +87,6 @@ public class HttpRequest extends RelatedObject
 
 		String sRequestLine = readLine(aRequestReader);
 
-		Log.debugf("Request: ", sRequestLine);
-
 		if (sRequestLine == null)
 		{
 			badRequest("Unterminated request");
@@ -118,6 +116,8 @@ public class HttpRequest extends RelatedObject
 		eRequestMethod  = eMethod;
 		sRequestPath    = aRequestParts[1];
 		aRequestHeaders = readHeaders(aRequestReader);
+
+		Log.debugf("Request: %s %s", sRequestLine, aRequestHeaders);
 	}
 
 	/***************************************
@@ -281,7 +281,6 @@ public class HttpRequest extends RelatedObject
 		do
 		{
 			sHeader = readLine(rInputReader);
-			Log.debugf("%s\n", sHeader);
 
 			if (sHeader == null)
 			{
