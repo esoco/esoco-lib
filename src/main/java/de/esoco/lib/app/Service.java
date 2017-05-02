@@ -421,8 +421,9 @@ public abstract class Service extends Application implements Stoppable
 		aRestServerThread.setUncaughtExceptionHandler((t, e) -> stopRequest(e));
 		aRestServerThread.start();
 
-		Log.infof("%s running, listening on TLS port %d",
+		Log.infof("%s running, listening on %sport %d",
 				  getServiceName(),
+				  aServer.get(ENCRYPTION) ? "TLS " : "",
 				  getRestServerPort());
 
 		return aServer;

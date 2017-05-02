@@ -60,7 +60,7 @@ public class CommandLine
 	 * (the prefix '/' can be used instead of of '-').
 	 */
 	public static final String DEFAULT_OPTION_PATTERN =
-		"(?i)[-/]((?:\\w|\\?)+)(?:=(.+))?";
+		"(?i)[-/]([\\w-_]+)(?:=(.+))?";
 
 	//~ Instance fields --------------------------------------------------------
 
@@ -288,14 +288,15 @@ public class CommandLine
 		Map<String, Object> aResult =
 			new LinkedHashMap<String, Object>(rArgs.length);
 
-		List<String> aArguments = new ArrayList<>();
+		List<String> aArguments  = new ArrayList<>();
+		String		 sPrevOption = null;
 
 		for (String sArg : rArgs)
 		{
 			Matcher aArgMatcher = rArgPattern.matcher(sArg);
-			boolean bMatch	    = aArgMatcher.matches();
+			boolean bIsArg	    = aArgMatcher.matches();
 
-			if (bMatch)
+			if (bIsArg)
 			{
 				if (aArgMatcher.groupCount() > 0)
 				{
@@ -339,9 +340,10 @@ public class CommandLine
 					else
 					{
 						aResult.put(sOption, rValue);
+						sPrevOption = sOption;
 					}
 				}
-				else if (aArgMatcher.groupCount() == 0)
+				else
 				{
 					String sErr = "Invalid option format: " + sArg;
 
@@ -349,14 +351,13 @@ public class CommandLine
 					throw new IllegalArgumentException(sErr);
 				}
 			}
-			else if (!sArg.matches("[-/].*"))
+			else if (sPrevOption != null)
 			{
-				aArguments.add(sArg);
+				aResult.put(sPrevOption, TextUtil.parseObject(sArg));
 			}
 			else
 			{
-				throw new IllegalArgumentException("Missing value for option " +
-												   sArg);
+				aArguments.add(sArg);
 			}
 		}
 
