@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
-
-import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -35,31 +33,6 @@ public class CommandLineTest
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Test assignment only CommandLine(String[], String...)
-	 */
-	@Test
-	public void testAssignmentCommandLine()
-	{
-		String[]    args    = new String[] { "-val=test" };
-		String[]    options = new String[] { "val=" };
-		CommandLine cl	    = new CommandLine(args, options);
-
-		assertEquals("test", cl.getOption("val"));
-
-		try
-		{
-			args = new String[] { "-val" };
-			cl   = new CommandLine(args, options);
-
-			assertTrue("Mandatory option value missing", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-	}
-
-	/***************************************
 	 * Test CommandLine(String[])
 	 */
 	@Test
@@ -72,77 +45,26 @@ public class CommandLineTest
 	}
 
 	/***************************************
-	 * Test CommandLine(String[], String...)
+	 * Test assignment only CommandLine(String[], String...)
 	 */
 	@Test
-	public void testCommandLineWithOptions()
+	public void testRequireOption()
 	{
-		String[]    args    =
-			"-a_/b_/t1=replaced_-t1=123_-t2='ok ok'_-T2=xy".split("_");
-		String[]    options = new String[] { "a", "b", "t1=", "t2=", "T2=" };
+		String[]    args    = new String[] { "-val=test" };
+		String[]    options = new String[] { "val=" };
 		CommandLine cl	    = new CommandLine(args, options);
 
-		assertOptions(cl);
-		assertEquals("xy", cl.getOption("T2"));
+		assertEquals("test", cl.getOption("val"));
 
 		try
 		{
-			args = "-a_-b_-c".split("_");
+			args = new String[] { "-val" };
 			cl   = new CommandLine(args, options);
 
-			assertTrue("Command line contains illegal argument c", false);
+			cl.requireOption("val");
+			assertTrue("Mandatory option value missing", false);
 		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-
-		try
-		{
-			args = "-t1=".split("_");
-			cl   = new CommandLine(args, options);
-
-			assertTrue("missing option value", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-
-		try
-		{
-			args = "-t2".split("_");
-			cl   = new CommandLine(args, options);
-
-			assertTrue("missing option value", false);
-		}
-		catch (IllegalArgumentException e)
-		{
-			// expected
-		}
-	}
-
-	/***************************************
-	 * Test CommandLine(String[], Pattern)
-	 */
-	@Test
-	public void testCommandLineWithPattern()
-	{
-		String[]    args = "--a_-b_-t1:=123_--t2:='ok ok'".split("_");
-		Pattern     p    =
-			CommandLine.createPattern("-{1,2}", ":=", "a", "b", "t1:=", "t2:=");
-		CommandLine cl   = new CommandLine(args, p);
-
-		assertOptions(cl);
-
-		try
-		{
-			args = "--a_-b_-c".split("_");
-			cl   = new CommandLine(args, p);
-
-			assertTrue("Command line contains illegal argument c", false);
-		}
-		catch (IllegalArgumentException e)
+		catch (CommandLineException e)
 		{
 			// expected
 		}
