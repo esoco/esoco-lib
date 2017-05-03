@@ -158,9 +158,9 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected ObjectSpace<Object> buildRestServerSpace()
 	{
-		RelationSpace<Object> aRoot = new RelationSpace<>(true);
-
-		Date aNow = new Date();
+		RelationSpace<Object> aRoot		   = new RelationSpace<>(true);
+		String				  sServiceName = getServiceName();
+		Date				  aNow		   = new Date();
 
 		ObjectSpace<Object> aStatusSpace  = new RelationSpace<>();
 		ObjectSpace<Object> aApiSpace     = new RelationSpace<>(true);
@@ -170,13 +170,14 @@ public abstract class Service extends Application implements Stoppable
 
 		aRoot.set(API, new MappedSpace<>(aApiSpace, new ConvertApiValue()));
 		aRoot.set(WEBAPI,
-				  new HtmlSpace(aApiSpace, "webapi").with(NAME,
-														  getServiceName()));
+				  new HtmlSpace(aApiSpace, "webapi").with(NAME, sServiceName));
 		aApiSpace.set(STATUS, aStatusSpace);
 		aApiSpace.set(CONTROL, aControlSpace);
 
+		aControlSpace.set(NAME, sServiceName + " Control");
 		aControlSpace.set(RUN).onChange(bRun -> stopRequest(null));
 
+		aStatusSpace.set(NAME, sServiceName + " Status");
 		aStatusSpace.init(UPTIME);
 		aStatusSpace.set(START_DATE, aNow)
 					.viewAs(INFO, aRoot, this::getServiceInfo);
