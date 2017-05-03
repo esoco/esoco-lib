@@ -19,6 +19,7 @@ package de.esoco.lib.comm;
 import de.esoco.lib.io.LimitedInputStream;
 import de.esoco.lib.io.LimitedOutputStream;
 import de.esoco.lib.logging.Log;
+import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.manage.Releasable;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
@@ -41,7 +42,6 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -147,9 +147,8 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 
 	//~ Instance fields --------------------------------------------------------
 
-	private ServerSocket	   aServerSocket;
-	private ThreadPoolExecutor aThreadPool;
-	private boolean			   bRunning;
+	private ServerSocket aServerSocket;
+	private boolean		 bRunning;
 
 	private Lock aServerLock = new ReentrantLock();
 
@@ -198,7 +197,7 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	{
 		ObjectRelations.require(this, PORT);
 
-		if (aThreadPool != null)
+		if (bRunning)
 		{
 			throw new IllegalStateException(getServerName() +
 											" already started");
@@ -224,12 +223,9 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	@Override
 	public void stop()
 	{
-		if (aThreadPool != null)
+		if (bRunning)
 		{
-			aThreadPool.shutdown();
-			aThreadPool = null;
-			bRunning    = false;
-
+			bRunning = false;
 			Log.infof("%s stopped", getServerName());
 		}
 	}
@@ -352,17 +348,27 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 
 			sRequest = sRequest.replaceAll("(\r\n|\r|\n)", "¶");
 
-			if (aServerLock.tryLock())
+			if (Log.isLevelEnabled(LogLevel.DEBUG))
 			{
 				Log.debugf("Request: %s", sRequest);
+			}
+
+			aServerLock.lock();
+
+			try
+			{
 				set(LAST_REQUEST, sRequest);
 				set(REQUEST_HANDLING_TIME,
 					rRequestHandler.get(TIMER).intValue());
-			}
 
-			if (!bRunning)
+				if (!bRunning)
+				{
+					aServerSocket.close();
+				}
+			}
+			finally
 			{
-				aServerSocket.close();
+				aServerLock.unlock();
 			}
 		}
 		catch (Exception e)

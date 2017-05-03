@@ -22,7 +22,7 @@ import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
-import de.esoco.lib.json.JsonBuilder;
+import de.esoco.lib.json.JsonBuilder.ConvertJson;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.security.AuthenticationService;
@@ -168,7 +168,7 @@ public abstract class Service extends Application implements Stoppable
 
 		aControlSpace = new SynchronizedObjectSpace<>(aControlSpace);
 
-		aRoot.set(API, new MappedSpace<>(aApiSpace, JsonBuilder.convertJson()));
+		aRoot.set(API, new MappedSpace<>(aApiSpace, new ConvertApiValue()));
 		aRoot.set(WEBAPI,
 				  new HtmlSpace(aApiSpace, "webapi").with(NAME,
 														  getServiceName()));
@@ -370,7 +370,11 @@ public abstract class Service extends Application implements Stoppable
 
 		runService();
 
-		if (!bIsRestService)
+		if (bIsRestService)
+		{
+			aRestServerThread.join();
+		}
+		else
 		{
 			// stop the REST server if this is not a REST service (where the
 			// REST server is the actual service)
@@ -450,6 +454,34 @@ public abstract class Service extends Application implements Stoppable
 			Log.infof("Stop requested, shutting down");
 		}
 
+		aRestServer.stop();
 		stop();
+	}
+
+	//~ Inner Classes ----------------------------------------------------------
+
+	/********************************************************************
+	 * An JSON conversion for the service API that prevents the conversion of
+	 * {@link ObjectSpace} nodes.
+	 *
+	 * @author eso
+	 */
+	protected static class ConvertApiValue extends ConvertJson
+	{
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String evaluate(Object rValue)
+		{
+			if (rValue instanceof ObjectSpace)
+			{
+				throw new IllegalArgumentException("Not an API endpoint");
+			}
+
+			return super.evaluate(rValue);
+		}
 	}
 }
