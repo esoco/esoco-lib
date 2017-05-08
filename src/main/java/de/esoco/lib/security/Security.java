@@ -469,12 +469,12 @@ public class Security
 	 * level if possible.
 	 *
 	 * <p><b>Attention</b>: this performs a rather dirty hack by using
-	 * reflection to set a field in the class {@link JceSecurity} to FALSE. That
-	 * is necessary because otherwise some JCE security algorithms are not
-	 * availabe. Whether or not this actually works depends on the platform that
-	 * the application is deployed to and its JRE. Keep an eye out for logged
-	 * errors that might occur at application startup/initialization of this
-	 * endpoint.</p>
+	 * reflection to set a field in the class 'javax.crypto.JceSecurity' to
+	 * FALSE. That is necessary because otherwise some JCE security algorithms
+	 * are not availabe. Whether or not this actually works depends on the
+	 * platform that the application is deployed to and its JRE. Keep an eye out
+	 * for logged errors that might occur at application startup/initialization
+	 * of this endpoint.</p>
 	 */
 	public static void enableJavaCryptographicExtensions()
 	{

@@ -196,7 +196,7 @@ public class FtpEndpoint extends Endpoint
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
-		 * {@inheritDoc}
+		 * @see CommunicationMethod#CommunicationMethod(String, Object)
 		 */
 		public FtpRequest(String sMethodName, I rDefaultInput)
 		{

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -93,9 +93,10 @@ public class Connection extends RelatedObject implements Closeable
 	}
 
 	/***************************************
-	 * Returns the user data.
+	 * Returns the current password for this connection, either from the
+	 * relations or from the URI.
 	 *
-	 * @return
+	 * @return The password
 	 */
 	public String getPassword()
 	{
@@ -137,9 +138,10 @@ public class Connection extends RelatedObject implements Closeable
 	}
 
 	/***************************************
-	 * Returns the user data.
+	 * Returns the current user name for this connection, either from the
+	 * relations or from the URI.
 	 *
-	 * @return
+	 * @return The user name
 	 */
 	public String getUserName()
 	{

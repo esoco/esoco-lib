@@ -96,8 +96,8 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 * Subclass constructor. If the subclass implements the HTTP request method
 	 * handler interface {@link HttpRequestHandler} it will be set as the
 	 * request method handler directly. Otherwise the handler must be set with
-	 * {@link #setRequestMethodHandler(HttpRequestHandler)} before any requests
-	 * are accepted or else a {@link NullPointerException} will occur.
+	 * {@link #setRequestMethodHandler(HttpRequestMethodHandler)} before any
+	 * requests are accepted or else a {@link NullPointerException} will occur.
 	 *
 	 * @param rContext The context of this request handler
 	 */
@@ -397,15 +397,15 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 	/********************************************************************
 	 * An interface for the handling of the distinct HTTP request methods. It is
-	 * a functional interface so only the method {@link #doGet(String)} needs to
-	 * be implemented for basic GET request functionality. But implementors can
-	 * also implement support for other requests methods like POST, PUT, and
-	 * DELETE if necessary. The default implementations for this methods always
-	 * throw an {@link UnsupportedOperationException}. If other request methods
-	 * need to be supported the implementation may also override the method
-	 * {@link #handleMethod(HttpRequestMethod, String, Reader)} which switches
-	 * over the {@link HttpRequestMethod} and throws a HTTP status code
-	 * exception on unsupported request methods.
+	 * a functional interface so only the method {@link #doGet(HttpRequest)}
+	 * needs to be implemented for basic GET request functionality. But
+	 * implementors can also implement support for other requests methods like
+	 * POST, PUT, and DELETE if necessary. The default implementations for this
+	 * methods always throw an {@link UnsupportedOperationException}. If other
+	 * request methods need to be supported the implementation may also override
+	 * the method {@link #handleMethod(HttpRequest)} which switches over the
+	 * {@link HttpRequestMethod} and throws a HTTP status code exception on
+	 * unsupported request methods.
 	 *
 	 * <p>The handling of request methods is intended to be stateless so that a
 	 * single instance should be able to handle multiple requests. The state

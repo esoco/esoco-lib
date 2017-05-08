@@ -21,7 +21,7 @@ import de.esoco.lib.net.NetUtil;
 
 /********************************************************************
  * An enumeration of the standard HTTP 1.1 status codes as defined in the HTTP
- * RFC 2616 {@link https://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html}.
+ * RFC 2616 {@link "https://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html"}.
  */
 public enum HttpStatusCode
 {

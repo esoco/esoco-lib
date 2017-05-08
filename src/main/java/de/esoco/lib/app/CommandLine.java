@@ -76,8 +76,6 @@ public class CommandLine
 	 * @param  rArgsStream sFileName The file name (including path) of the
 	 *                     properties file
 	 *
-	 * @return The arguments as read from the file
-	 *
 	 * @throws IllegalArgumentException If accessing the stream fails
 	 */
 	public CommandLine(InputStream rArgsStream)

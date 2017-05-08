@@ -166,7 +166,7 @@ public class HttpHeaderTypes
 	 *
 	 * @param  sHeaderName The HTTP request header field name
 	 *
-	 * @return
+	 * @return The header relation type
 	 */
 	public static RelationType<?> get(String sHeaderName)
 	{

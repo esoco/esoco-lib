@@ -328,8 +328,8 @@ public class NetUtil
 
 	/***************************************
 	 * Creates a concatenated string of multiple HTTP URL parameters that have
-	 * been encoded with {@link #encodeUrlParameter(String, String, String)}.
-	 * The concatenation character is '&', the encoding UTF-8.
+	 * been encoded with {@link #encodeUrlParameter(String, String)}. The
+	 * concatenation character is '&', the encoding UTF-8.
 	 *
 	 * @param  rParams A mapping from HTTP URL parameter names to values
 	 *

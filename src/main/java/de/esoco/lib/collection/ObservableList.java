@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -207,8 +207,8 @@ public class ObservableList<E>
 	}
 
 	/***************************************
-	 * @see AbstractObservableCollection#createEvent(ElementEvent.EventType,Object,
-	 *      Object, int)
+	 * @see AbstractObservableCollection#createEvent(EventType, Object, Object,
+	 *      int)
 	 */
 	@Override
 	protected ListEvent<E> createEvent(EventType rType,
@@ -238,7 +238,10 @@ public class ObservableList<E>
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
-		 * @see ObservableCollectionIterator#ObservableCollectionIterator(Iterator)
+		 * Creates a new instance that wraps an iterator of the observed
+		 * collection.
+		 *
+		 * @param rIterator The iterator to wrap
 		 */
 		ObservableListIterator(ListIterator<E> rIterator)
 		{
@@ -276,7 +279,7 @@ public class ObservableList<E>
 		/***************************************
 		 * Overridden to increment the current index.
 		 *
-		 * @see ObservableCollectionIterator#next()
+		 * @return The next element
 		 */
 		@Override
 		public E next()

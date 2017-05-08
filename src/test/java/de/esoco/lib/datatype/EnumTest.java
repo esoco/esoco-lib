@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -285,7 +285,7 @@ public class EnumTest extends TestCase
 		protected abstract int func();
 
 		/***************************************
-		 * @see de.esoco.lib.datatype.GenericEnum#getGenericEnumClass()
+		 * {@inheritDoc}
 		 */
 		@Override
 		protected Class<FuncEnum> getEnumBaseClass()

@@ -1,5 +1,5 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'objectrelations' project.
+// This file is a part of the 'esoco-lib' project.
 // Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,6 @@
 package de.esoco.lib.security;
 
 import org.obrel.core.Relatable;
-import org.obrel.type.StandardTypes;
 
 
 /********************************************************************
@@ -36,10 +35,11 @@ public interface AuthenticationService
 	 * necessary to perform the authentication. What exactly these parameters
 	 * are depends on the service implementation. For the most basic type of a
 	 * password authentication the argument should contain of the relations
-	 * {@link StandardTypes#LOGIN_NAME} and {@link StandardTypes#PASSWORD}.
-	 * Alternatively the types {@link StandardTypes#CREDENTIAL} or {@link
-	 * StandardTypes#BINARY_CREDENTIAL} may be used (either with or without a
-	 * login name).
+	 * {@link SecurityRelationTypes#LOGIN_NAME} and {@link
+	 * SecurityRelationTypes#PASSWORD}. Alternatively the types {@link
+	 * SecurityRelationTypes#CREDENTIAL} or {@link
+	 * SecurityRelationTypes#BINARY_CREDENTIAL} may be used (either with or
+	 * without a login name).
 	 *
 	 * <p>Implementations may also choose to use different data for the
 	 * authentication in which case the required parameters must be documented

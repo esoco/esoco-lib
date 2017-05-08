@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,9 +104,9 @@ public class ReferenceCacheMap<K, V> extends CacheMap<K, MappedReference<K, V>>
 
 	/***************************************
 	 * Overridden to throw an exception. Applications must use the method {@link
-	 * #put(Object, Object)} instead.
+	 * #put(Object, MappedReference)} instead.
 	 *
-	 * @see #put(Object, Object)
+	 * @see #put(Object, MappedReference)
 	 */
 	@Override
 	public MappedReference<K, V> put(K rKey, MappedReference<K, V> rReference)

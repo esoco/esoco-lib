@@ -190,7 +190,7 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	 * to stop it through the {@link #stop()} method) an application must start
 	 * the server in a separate thread.
 	 *
-	 * @throws IOException If a communication error occurs
+	 * @throws CommunicationException If a communication error occurs
 	 */
 	@Override
 	public void run()
@@ -316,7 +316,7 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	 * @param  rClientSocket The socket for the communication with the client
 	 * @param  rContext      A relatable containing context data for the request
 	 *
-	 * @throws IOException If a communication error occurs
+	 * @throws CommunicationException If a communication error occurs
 	 */
 	@SuppressWarnings("boxing")
 	protected void handleClientRequest(Socket    rClientSocket,

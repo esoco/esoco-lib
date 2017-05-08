@@ -256,7 +256,7 @@ public abstract class Service extends Application implements Stoppable
 	 * application needs stateful method handlers it must override this method
 	 * and return a new handler instance on each invocation.
 	 *
-	 * @return
+	 * @return The request method handler
 	 */
 	protected HttpRequestMethodHandler getRequestMethodHandler()
 	{

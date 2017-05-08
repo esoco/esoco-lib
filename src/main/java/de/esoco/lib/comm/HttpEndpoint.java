@@ -393,10 +393,11 @@ public class HttpEndpoint extends Endpoint
 
 		/***************************************
 		 * Derives the target URL for a certain connection from an input value.
-		 * The default implementation invokes rInput.toString() and forwards the
-		 * result and the other parameters to {@link
-		 * #createEndpointUrl(Connection, String, boolean)}. Subclasses can
-		 * override this method to process the input value in different ways.
+		 * For non-output requests (i.e. GET requests) the default
+		 * implementation invokes {@link #getRequestData(Connection, Object)}
+		 * with the input value and appends the result to the base URL.
+		 * Subclasses can override this method to process the input value in
+		 * different ways.
 		 *
 		 * @param  rConnection The connection to return the target URL for
 		 * @param  rInput      The input value to derive the URL from

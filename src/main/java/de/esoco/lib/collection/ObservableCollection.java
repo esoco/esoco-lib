@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,8 +55,8 @@ public class ObservableCollection<E>
 	/***************************************
 	 * Returns a new instance of {@link CollectionEvent}.
 	 *
-	 * @see AbstractObservableCollection#createEvent(ElementEvent.EventType,Object,
-	 *      Object, int)
+	 * @see AbstractObservableCollection#createEvent(EventType, Object, Object,
+	 *      int)
 	 */
 	@Override
 	protected CollectionEvent<E, Collection<E>> createEvent(

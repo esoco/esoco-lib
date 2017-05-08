@@ -71,8 +71,6 @@ public class HttpRequest extends RelatedObject
 	 * @param  nMaxLineLength The maximum length a request header line
 	 *                        (terminated with CRLF) is allowed to have
 	 *
-	 * @return A pair containing the HTTP request method and the
-	 *
 	 * @throws IOException         If reading from the input fails
 	 * @throws HttpStatusException The corresponding HTTP status if the request
 	 *                             violates requirements

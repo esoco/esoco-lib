@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class ListEvent<E> extends CollectionEvent<E, List<E>>
 	 * Creates a new instance.
 	 *
 	 * @see CollectionEvent#CollectionEvent(de.esoco.lib.event.ElementEvent.EventType,
-	 *      Collection, Object, Object)
+	 *      java.util.Collection, Object, Object)
 	 */
 	public ListEvent(EventType rType,
 					 List<E>   rSource,

@@ -137,7 +137,7 @@ public class StreamFunctions
 	/***************************************
 	 * Returns a new function that invokes reads all available data from an
 	 * input stream by invoking {@link StreamUtil#readAll(InputStream, int,
-	 * int))}.
+	 * int)}.
 	 *
 	 * @param  nBufferSize The buffer size to use
 	 * @param  nMaxLength  The maximum length to read
@@ -161,9 +161,9 @@ public class StreamFunctions
 
 	/***************************************
 	 * Returns a new binary function that invokes the method {@link
-	 * StreamUtil#readUntil(Reader, StringBuilder, String, int, boolean)} and
-	 * returns either the string found or NULL if the given token didn't occur
-	 * in the data that has been read up to the maximum..
+	 * StreamUtil#readUntil(Reader, Writer, String, int, boolean)} and returns
+	 * either the string found or NULL if the given token didn't occur in the
+	 * data that has been read up to the maximum..
 	 *
 	 * @param  sToken      The token to search
 	 * @param  nMax        The maximum number of characters to read

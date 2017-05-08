@@ -52,8 +52,9 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * <p>Some endpoint implementations may need access to global configuration
  * values. These can be injected by invoking the static method {@link
- * #setGlobalConfiguration(Relatable)}. The provided {@link Relatable} instance
- * must then contain relations with the respective configuration values.</p>
+ * #setGlobalConfiguration(ProvidesConfiguration)}. The provided {@link
+ * Relatable} instance must then contain relations with the respective
+ * configuration values.</p>
  *
  * @author eso
  */
@@ -184,7 +185,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 * Returns the global endpoint configuration which is a {@link Relatable}
 	 * object containing the configuration relations. An application-specific
 	 * configuration can been set with {@link
-	 * #setGlobalConfiguration(Relatable)}.
+	 * #setGlobalConfiguration(ProvidesConfiguration)}.
 	 *
 	 * @return The global endpoint configuration
 	 */

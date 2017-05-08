@@ -68,7 +68,7 @@ public class HttpResponse extends RelatedObject
 	 *
 	 * @param sResponseData The response data string
 	 *
-	 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader)
+	 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader, int)
 	 */
 	public HttpResponse(String sResponseData)
 	{
@@ -83,7 +83,7 @@ public class HttpResponse extends RelatedObject
 	 *                        of the response body
 	 * @param nResponseLength The length of the response data stream
 	 *
-	 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader)
+	 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader, int)
 	 */
 	public HttpResponse(Reader rResponseData, int nResponseLength)
 	{
@@ -96,10 +96,9 @@ public class HttpResponse extends RelatedObject
 	 * constructor with a {@link Reader} argument.
 	 *
 	 * @param eStatus       The response status code
-	 * @param rResponseData A reader that provides access to the data of the
-	 *                      response body
+	 * @param sResponseData The data of the response body
 	 *
-	 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader)
+	 * @see   HttpResponse#HttpResponse(HttpStatusCode, Reader, int)
 	 */
 	public HttpResponse(HttpStatusCode eStatus, String sResponseData)
 	{
@@ -136,7 +135,7 @@ public class HttpResponse extends RelatedObject
 	 * @param  eField The header field to set
 	 * @param  sValue The field value
 	 *
-	 * @return
+	 * @return The previous header value or NULL for none
 	 */
 	public List<String> setHeader(HttpHeaderField eField, String sValue)
 	{

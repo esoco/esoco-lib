@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import java.util.Map.Entry;
  * A subclass of linked hash map that implements a cache of a fixed size. It
  * uses the constructor {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
  * to create an access-ordered map. The maximum capacity of the cache is
- * enforced by overriding the method {@link #removeEldestEntry(Map.Entry)}. If
- * the capacity is exceeded while adding a new entry the eldest (i.e. least
- * recently accessed) entry will be removed from the cache.
+ * enforced by overriding the method {@link #removeEldestEntry(Entry)}. If the
+ * capacity is exceeded while adding a new entry the eldest (i.e. least recently
+ * accessed) entry will be removed from the cache.
  *
  * @author eso
  */
@@ -106,7 +106,7 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V>
 	/***************************************
 	 * Ensures that the cache does not exceeds it's capacity.
 	 *
-	 * @see LinkedHashMap#removeEldestEntry(Map.Entry)
+	 * @see LinkedHashMap#removeEldestEntry(Entry)
 	 */
 	@Override
 	protected boolean removeEldestEntry(Entry<K, V> rEldest)

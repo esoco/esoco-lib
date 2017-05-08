@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -221,7 +221,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		}
 
 		/***************************************
-		 * @see Entry#getKey()
+		 * @see java.util.Map.Entry#getKey()
 		 */
 		@Override
 		public K getKey()
@@ -230,7 +230,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		}
 
 		/***************************************
-		 * @see Entry#getValue()
+		 * @see java.util.Map.Entry#getValue()
 		 */
 		@Override
 		public V getValue()
@@ -250,7 +250,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		}
 
 		/***************************************
-		 * @see Entry#setValue(Object)
+		 * @see java.util.Map.Entry#setValue(Object)
 		 */
 		@Override
 		public V setValue(V rNewValue)
