@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
+import de.esoco.lib.comm.CommunicationMethod;
+import de.esoco.lib.comm.HttpEndpoint;
 import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.Server.RequestHandler;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
@@ -116,6 +118,21 @@ public abstract class Service extends Application implements Stoppable
 
 	/** The {@link HtmlSpace} providing web access to the server API. */
 	public static final RelationType<HtmlSpace> WEBAPI = newType();
+
+	/**
+	 * A pre-defined communication method that can be invoked on service HTTP
+	 * endpoints to check the current run state of a service.
+	 */
+	public static final CommunicationMethod<Void, String> CHECK_RUNNING =
+		CommunicationMethod.doReceive(HttpEndpoint.httpGet("/api/control/run"));
+
+	/**
+	 * A pre-defined communication method that can be invoked on service HTTP
+	 * endpoints to stop the service.
+	 */
+	public static final CommunicationMethod<Void, Void> REQUEST_STOP =
+		CommunicationMethod.doExecute(HttpEndpoint.httpPost("/api/control/run",
+															"false"));
 
 	static
 	{

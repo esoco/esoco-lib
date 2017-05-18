@@ -21,6 +21,9 @@ import de.esoco.lib.expression.function.AbstractBinaryFunction;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogExtent;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 
 /********************************************************************
  * Describes a method to communicate with an endpoint in the communication
@@ -48,6 +51,87 @@ public abstract class CommunicationMethod<I, O>
 		super(null, sMethodName);
 
 		this.rDefaultInput = rDefaultInput;
+	}
+
+	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Converts a communication method with argument and return value into a
+	 * method that ignores return values and only transfers input values to a
+	 * remote service (analog to the {@link Consumer} interface). This can be
+	 * used to wrap communication methods that don't have a meaningful return
+	 * value and should only be invoked to send values to an endpoint.
+	 *
+	 * @param  fRequest The communication method that performs the actual
+	 *                  request to be executed on the remote endpoint
+	 *
+	 * @return A new communication method with a void return value
+	 */
+	public static CommunicationMethod<Void, Void> doExecute(
+		CommunicationMethod<?, ?> fRequest)
+	{
+		return new CommunicationMethod<Void, Void>(fRequest.getToken(), null)
+		{
+			@Override
+			public Void doOn(Connection rConnection, Void rInput)
+			{
+				fRequest.evaluate(null, rConnection);
+
+				return null;
+			}
+		};
+	}
+
+	/***************************************
+	 * Converts a communication method with argument and return value into a
+	 * method that ignores input values and only returns a remote value (analog
+	 * to the {@link Supplier} interface). This can be used to wrap
+	 * communication methods that don't have different input values but should
+	 * always be invoked with their default input.
+	 *
+	 * @param  fRequest The communication method that performs the actual
+	 *                  request to receive data from the remote endpoint
+	 *
+	 * @return A new communication method with a void input
+	 */
+	public static <T> CommunicationMethod<Void, T> doReceive(
+		CommunicationMethod<?, T> fRequest)
+	{
+		return new CommunicationMethod<Void, T>(fRequest.getToken(), null)
+		{
+			@Override
+			public T doOn(Connection rConnection, Void rInput)
+			{
+				return fRequest.evaluate(null, rConnection);
+			}
+		};
+	}
+
+	/***************************************
+	 * Converts a communication method with argument and return value into a
+	 * method that ignores return values and only transfers input values to a
+	 * remote service (analog to the {@link Consumer} interface). This can be
+	 * used to wrap communication methods that don't have a meaningful return
+	 * value and should only be invoked to send values to an endpoint.
+	 *
+	 * @param  fRequest The communication method that performs the actual
+	 *                  request to send data to the remote endpoint
+	 *
+	 * @return A new communication method with a void return value
+	 */
+	public static <T> CommunicationMethod<T, Void> doSend(
+		CommunicationMethod<T, ?> fRequest)
+	{
+		return new CommunicationMethod<T, Void>(fRequest.getToken(), null)
+		{
+			@Override
+			public Void doOn(Connection rConnection, T rInput)
+			{
+				fRequest.evaluate(rInput, rConnection);
+
+				return null;
+			}
+		};
 	}
 
 	//~ Methods ----------------------------------------------------------------

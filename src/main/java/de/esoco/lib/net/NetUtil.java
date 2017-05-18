@@ -127,19 +127,24 @@ public class NetUtil
 		StringBuilder rUrlBuilder,
 		String		  sPath)
 	{
-		if (rUrlBuilder.charAt(rUrlBuilder.length() - 1) != '/')
+		if (sPath != null && sPath.length() > 0)
 		{
-			if (sPath.charAt(0) != '/')
+			if (rUrlBuilder.charAt(rUrlBuilder.length() - 1) != '/')
 			{
-				rUrlBuilder.append('/');
+				if (sPath.charAt(0) != '/')
+				{
+					rUrlBuilder.append('/');
+				}
 			}
-		}
-		else if (sPath.charAt(0) == '/')
-		{
-			sPath = sPath.substring(1);
+			else if (sPath.charAt(0) == '/')
+			{
+				sPath = sPath.substring(1);
+			}
+
+			rUrlBuilder.append(sPath);
 		}
 
-		return rUrlBuilder.append(sPath);
+		return rUrlBuilder;
 	}
 
 	/***************************************
