@@ -26,9 +26,9 @@ import java.util.Map.Entry;
  * uses the constructor {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
  * to create an access-ordered map. The maximum capacity of the cache is
  * enforced by overriding the method {@link
- * LinkedHashMap#removeEldestEntry(Entry)}. If the capacity is exceeded while
- * adding a new entry the eldest (i.e. least recently accessed) entry will be
- * removed from the cache.
+ * LinkedHashMap#removeEldestEntry(java.util.Map.Entry)}. If the capacity is
+ * exceeded while adding a new entry the eldest (i.e. least recently accessed)
+ * entry will be removed from the cache.
  *
  * @author eso
  */
@@ -107,7 +107,7 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V>
 	/***************************************
 	 * Ensures that the cache does not exceeds it's capacity.
 	 *
-	 * @see LinkedHashMap#removeEldestEntry(Entry)
+	 * @see LinkedHashMap#removeEldestEntry(java.util.Map.Entry)
 	 */
 	@Override
 	protected boolean removeEldestEntry(Entry<K, V> rEldest)

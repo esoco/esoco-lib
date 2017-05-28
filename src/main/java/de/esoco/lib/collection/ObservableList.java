@@ -207,8 +207,7 @@ public class ObservableList<E>
 	}
 
 	/***************************************
-	 * @see AbstractObservableCollection#createEvent(EventType, Object, Object,
-	 *      int)
+	 * {@inheritDoc}
 	 */
 	@Override
 	protected ListEvent<E> createEvent(EventType rType,

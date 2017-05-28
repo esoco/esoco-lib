@@ -53,10 +53,7 @@ public class ObservableCollection<E>
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Returns a new instance of {@link CollectionEvent}.
-	 *
-	 * @see AbstractObservableCollection#createEvent(EventType, Object, Object,
-	 *      int)
+	 * {@inheritDoc}
 	 */
 	@Override
 	protected CollectionEvent<E, Collection<E>> createEvent(
