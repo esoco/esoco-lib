@@ -20,11 +20,11 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 import javax.naming.spi.InitialContextFactoryBuilder;
+import javax.naming.spi.NamingManager;
 
 
 /********************************************************************
@@ -42,10 +42,9 @@ public class LocalInitialContext extends InitialContext
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
-	 * @see InitialContext#InitialContext(Hashtable)
+	 * {@inheritDoc}
 	 */
-	public LocalInitialContext(Hashtable<?, ?> rEnvironment)
-		throws NamingException
+	LocalInitialContext(Hashtable<?, ?> rEnvironment) throws NamingException
 	{
 		super(rEnvironment);
 	}
@@ -64,10 +63,29 @@ public class LocalInitialContext extends InitialContext
 		aContextRegistry.put(sName, rObject);
 	}
 
+	/***************************************
+	 * Registers this class with the {@link NamingManager} as the default
+	 * initial context for JNDI lookups.
+	 */
+	public static void setupForJndiLookups()
+	{
+		try
+		{
+			LocalInitialContextFactoryBuilder aFactoryBuilder =
+				new LocalInitialContextFactoryBuilder();
+
+			NamingManager.setInitialContextFactoryBuilder(aFactoryBuilder);
+		}
+		catch (NamingException e)
+		{
+			throw new IllegalStateException(e);
+		}
+	}
+
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * @see InitialContext#lookup(String)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Object lookup(String sName) throws NamingException
@@ -100,15 +118,7 @@ public class LocalInitialContext extends InitialContext
 		public InitialContextFactory createInitialContextFactory(
 			Hashtable<?, ?> rEnvironment) throws NamingException
 		{
-			return new InitialContextFactory()
-			{
-				@Override
-				public Context getInitialContext(Hashtable<?, ?> rEnvironment)
-					throws NamingException
-				{
-					return new LocalInitialContext(rEnvironment);
-				}
-			};
+			return env -> new LocalInitialContext(env);
 		}
 	}
 }
