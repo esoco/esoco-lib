@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class CacheMapTest
 	public void testAutoRemove()
 	{
 		aTestMap.put(6, "Test6");
-		assertFalse(aTestMap.containsKey("1"));
+		assertFalse(aTestMap.containsKey(1));
 		assertOrder(2, 3, 4, 5, 6);
 	}
 
@@ -95,7 +95,7 @@ public class CacheMapTest
 	public void testPut()
 	{
 		aTestMap.put(6, "Test6");
-		assertFalse(aTestMap.containsKey("1"));
+		assertFalse(aTestMap.containsKey(1));
 	}
 
 	/***************************************
