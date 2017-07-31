@@ -168,6 +168,43 @@ public abstract class Service extends Application implements Stoppable
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
+	 * Builds the object space that provides the REST API of this service.
+	 *
+	 * @param  aStatusSpace  The status space to be queried through the API
+	 * @param  aControlSpace The control space to be accessed through the API
+	 *
+	 * @return The control object space
+	 */
+	protected ObjectSpace<Object> buildApiSpace(
+		ObjectSpace<Object> aStatusSpace,
+		ObjectSpace<Object> aControlSpace)
+	{
+		ObjectSpace<Object> aApiSpace = new RelationSpace<>(true);
+
+		aApiSpace.set(STATUS, aStatusSpace);
+		aApiSpace.set(CONTROL, aControlSpace);
+
+		return aApiSpace;
+	}
+
+	/***************************************
+	 * Builds the object space that allows to control this service. The control
+	 *
+	 * @param  sServiceName The service name
+	 *
+	 * @return The control object space
+	 */
+	protected ObjectSpace<Object> buildControlSpace(String sServiceName)
+	{
+		ObjectSpace<Object> aControlSpace = new RelationSpace<>(true);
+
+		aControlSpace.set(NAME, sServiceName + " Control");
+		aControlSpace.set(RUN).onChange(bRun -> stopRequest(null));
+
+		return aControlSpace;
+	}
+
+	/***************************************
 	 * Builds the {@link ObjectSpace} for the REST server. The REST server uses
 	 * this to perform control requests and to lookup status responses.
 	 *
@@ -177,29 +214,58 @@ public abstract class Service extends Application implements Stoppable
 	{
 		RelationSpace<Object> aRoot		   = new RelationSpace<>(true);
 		String				  sServiceName = getServiceName();
-		Date				  aNow		   = new Date();
 
-		ObjectSpace<Object> aStatusSpace  = new RelationSpace<>();
-		ObjectSpace<Object> aApiSpace     = new RelationSpace<>(true);
-		ObjectSpace<Object> aControlSpace = new RelationSpace<>(true);
+		ObjectSpace<Object> aStatusSpace  = buildStatusSpace(sServiceName);
+		ObjectSpace<Object> aControlSpace = buildControlSpace(sServiceName);
+		ObjectSpace<Object> aApiSpace     =
+			buildApiSpace(aStatusSpace, aControlSpace);
 
+		// synchronize access from multiple server threads
 		aControlSpace = new SynchronizedObjectSpace<>(aControlSpace);
 
 		aRoot.set(API, new MappedSpace<>(aApiSpace, new ConvertApiValue()));
-		aRoot.set(WEBAPI,
-				  new HtmlSpace(aApiSpace, "webapi").with(NAME, sServiceName));
-		aApiSpace.set(STATUS, aStatusSpace);
-		aApiSpace.set(CONTROL, aControlSpace);
+		aRoot.set(WEBAPI, buildWebApiSpace(sServiceName, aApiSpace));
 
-		aControlSpace.set(NAME, sServiceName + " Control");
-		aControlSpace.set(RUN).onChange(bRun -> stopRequest(null));
+		if (aStatusSpace != null)
+		{
+			aStatusSpace.set(START_DATE, new Date())
+						.viewAs(INFO, aRoot, this::getServiceInfo);
+		}
+
+		return aRoot;
+	}
+
+	/***************************************
+	 * Builds the object space that provides information about the current
+	 * status of this service.
+	 *
+	 * @param  sServiceName The service name
+	 *
+	 * @return The status space
+	 */
+	protected ObjectSpace<Object> buildStatusSpace(String sServiceName)
+	{
+		ObjectSpace<Object> aStatusSpace = new RelationSpace<>();
 
 		aStatusSpace.set(NAME, sServiceName + " Status");
 		aStatusSpace.init(UPTIME);
-		aStatusSpace.set(START_DATE, aNow)
-					.viewAs(INFO, aRoot, this::getServiceInfo);
 
-		return aRoot;
+		return aStatusSpace;
+	}
+
+	/***************************************
+	 * Builds the object space that provides the web API of this service.
+	 *
+	 * @param  sServiceName The service name
+	 * @param  aApiSpace    The API object space to map to the web API
+	 *
+	 * @return The web API object space
+	 */
+	protected HtmlSpace buildWebApiSpace(
+		String				sServiceName,
+		ObjectSpace<Object> aApiSpace)
+	{
+		return new HtmlSpace(aApiSpace, "webapi").with(NAME, sServiceName);
 	}
 
 	/***************************************
