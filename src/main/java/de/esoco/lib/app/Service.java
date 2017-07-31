@@ -23,9 +23,12 @@ import de.esoco.lib.comm.Server.RequestHandler;
 import de.esoco.lib.comm.Server.RequestHandlerFactory;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
+import de.esoco.lib.comm.http.HttpStatusCode;
+import de.esoco.lib.comm.http.HttpStatusException;
 import de.esoco.lib.comm.http.ObjectSpaceHttpMethodHandler;
 import de.esoco.lib.json.JsonBuilder.ConvertJson;
 import de.esoco.lib.logging.Log;
+import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.security.AuthenticationService;
 import de.esoco.lib.security.SecurityRelationTypes;
@@ -107,6 +110,12 @@ public abstract class Service extends Application implements Stoppable
 	/** The run flag in the REST server that controls the service execution. */
 	public static final RelationType<Boolean> RUN = newFlagType();
 
+	/**
+	 * The control space attribute to query and set the log level of a running
+	 * service.
+	 */
+	public static final RelationType<String> LOG_LEVEL = newType();
+
 	/** The {@link ObjectSpace} containing the server API. */
 	public static final RelationType<ObjectSpace<String>> API = newType();
 
@@ -121,7 +130,8 @@ public abstract class Service extends Application implements Stoppable
 
 	/**
 	 * A pre-defined communication method that can be invoked on service HTTP
-	 * endpoints to check the current run state of a service.
+	 * endpoints to check the current run state of a service. The result value
+	 * will be the string 'true' if the service is running.
 	 */
 	public static final CommunicationMethod<Void, String> CHECK_RUNNING =
 		CommunicationMethod.doReceive(HttpEndpoint.httpGet("/api/control/run"));
@@ -130,9 +140,17 @@ public abstract class Service extends Application implements Stoppable
 	 * A pre-defined communication method that can be invoked on service HTTP
 	 * endpoints to stop the service.
 	 */
-	public static final CommunicationMethod<Void, Void> REQUEST_STOP =
-		CommunicationMethod.doExecute(HttpEndpoint.httpPost("/api/control/run",
-															"false"));
+	public static final CommunicationMethod<String, Void> REQUEST_STOP =
+		CommunicationMethod.doSend(HttpEndpoint.httpPost("/api/control/run",
+														 "false"));
+
+	/**
+	 * A pre-defined communication method that can be invoked on service HTTP
+	 * endpoints to stop the service.
+	 */
+	public static final CommunicationMethod<String, Void> SET_LOG_LEVEL =
+		CommunicationMethod.doSend(HttpEndpoint.httpPost("/api/control/log_level",
+														 "ERROR"));
 
 	static
 	{
@@ -200,6 +218,8 @@ public abstract class Service extends Application implements Stoppable
 
 		aControlSpace.set(NAME, sServiceName + " Control");
 		aControlSpace.set(RUN).onChange(bRun -> stopRequest(null));
+		aControlSpace.set(LOG_LEVEL, Log.getGlobalMinimumLogLevel().name())
+					 .onChange(this::setLogLevel);
 
 		return aControlSpace;
 	}
@@ -516,6 +536,24 @@ public abstract class Service extends Application implements Stoppable
 				  getRestServerPort());
 
 		return aServer;
+	}
+
+	/***************************************
+	 * Service method to set the log level.
+	 *
+	 * @param sLevel The new log level
+	 */
+	private void setLogLevel(String sLevel)
+	{
+		try
+		{
+			Log.setGlobalMinimumLogLevel(LogLevel.valueOf(sLevel.toUpperCase()));
+		}
+		catch (Exception e)
+		{
+			throw new HttpStatusException(HttpStatusCode.BAD_REQUEST,
+										  "Undefined log level: " + sLevel);
+		}
 	}
 
 	/***************************************

@@ -57,33 +57,6 @@ public abstract class CommunicationMethod<I, O>
 
 	/***************************************
 	 * Converts a communication method with argument and return value into a
-	 * method that ignores return values and only transfers input values to a
-	 * remote service (analog to the {@link Consumer} interface). This can be
-	 * used to wrap communication methods that don't have a meaningful return
-	 * value and should only be invoked to send values to an endpoint.
-	 *
-	 * @param  fRequest The communication method that performs the actual
-	 *                  request to be executed on the remote endpoint
-	 *
-	 * @return A new communication method with a void return value
-	 */
-	public static CommunicationMethod<Void, Void> doExecute(
-		CommunicationMethod<?, ?> fRequest)
-	{
-		return new CommunicationMethod<Void, Void>(fRequest.getToken(), null)
-		{
-			@Override
-			public Void doOn(Connection rConnection, Void rInput)
-			{
-				fRequest.evaluate(null, rConnection);
-
-				return null;
-			}
-		};
-	}
-
-	/***************************************
-	 * Converts a communication method with argument and return value into a
 	 * method that ignores input values and only returns a remote value (analog
 	 * to the {@link Supplier} interface). This can be used to wrap
 	 * communication methods that don't have different input values but should
@@ -150,6 +123,19 @@ public abstract class CommunicationMethod<I, O>
 	public abstract O doOn(Connection rConnection, I rInput);
 
 	/***************************************
+	 * Semantic variant of {@link #from(Endpoint)} that indicates that a
+	 * communication method is executed at a certain endpoint.
+	 *
+	 * @param  rEndpoint The endpoint
+	 *
+	 * @return The endpoint chain of this method with the given endpoint
+	 */
+	public EndpointChain<I, O> at(Endpoint rEndpoint)
+	{
+		return from(rEndpoint);
+	}
+
+	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -188,9 +174,9 @@ public abstract class CommunicationMethod<I, O>
 	 * Overloaded variant of {@link Function#from(Function)} that returns an
 	 * instance of {@link EndpointChain}.
 	 *
-	 * @param  rEndpoint The endpoint to evaluat e for the connection
+	 * @param  rEndpoint The endpoint to return the chain for
 	 *
-	 * @return A new function chain that evaluates this method at the given
+	 * @return A new endpoint chain that evaluates this method at the given
 	 *         endpoint
 	 */
 	public EndpointChain<I, O> from(Endpoint rEndpoint)
