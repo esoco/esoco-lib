@@ -91,6 +91,11 @@ import static org.obrel.type.StandardTypes.UPTIME;
  *   <li>{@link #WEBAPI}: a HTML representation of {@link #API}.</li>
  * </ul>
  *
+ * <p>Furthermore the URLs /ping and /healthcheck can be queried for the
+ * availability and healthiness of the service. By default both return a boolean
+ * with the value TRUE but subclasses may replace the {@link #HEALTHCHECK}
+ * relation with their own variant that contains additional JSON data.</p>
+ *
  * <p>The REST server of a service by default always runs with TLS encryption.
  * By setting the {@link #OPTION_NO_ENCRYPTION no encryption option} on the
  * command line this can be disabled for testing purposes.</p>
@@ -127,6 +132,12 @@ public abstract class Service extends Application implements Stoppable
 
 	/** The {@link HtmlSpace} providing web access to the server API. */
 	public static final RelationType<HtmlSpace> WEBAPI = newType();
+
+	/** Defines the URL endpoint to check whether the service is alive. */
+	public static final RelationType<Boolean> PING = newType();
+
+	/** Defines the URL endpoint to check whether the service is healthy. */
+	public static final RelationType<Boolean> HEALTHCHECK = newType();
 
 	/**
 	 * A pre-defined communication method that can be invoked on service HTTP
@@ -245,6 +256,8 @@ public abstract class Service extends Application implements Stoppable
 
 		aRoot.set(API, new MappedSpace<>(aApiSpace, new ConvertApiValue()));
 		aRoot.set(WEBAPI, buildWebApiSpace(sServiceName, aApiSpace));
+		aRoot.set(PING);
+		aRoot.set(HEALTHCHECK);
 
 		if (aStatusSpace != null)
 		{
