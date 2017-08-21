@@ -247,7 +247,7 @@ public class HttpRequest extends RelatedObject
 			{
 				Object rValue =
 					Conversions.parseValue(sHeaderValue,
-										   rHeaderType.getTargetType());
+										   rHeaderType.getValueType());
 
 				set((RelationType<Object>) rHeaderType, rValue);
 			}
