@@ -38,10 +38,16 @@ public class CommandLineTest
 	@Test
 	public void testCommandLine()
 	{
-		String[]    args = "-a_/b_-t1=123_-t2='ok ok'".split("_");
+		String[]    args = "-a_/b_-t1=123_-t2='ok ok'_-t3_'a value'".split("_");
 		CommandLine cl   = new CommandLine(args);
 
-		assertOptions(cl);
+		assertTrue(cl.hasOption("a"));
+		assertTrue(cl.hasOption("b"));
+		assertFalse(cl.hasOption("c"));
+		assertEquals(Boolean.TRUE, cl.getOption("a"));
+		assertEquals(Integer.valueOf(123), cl.getOption("t1"));
+		assertEquals("ok ok", cl.getOption("t2"));
+		assertEquals("a value", cl.getOption("t3"));
 	}
 
 	/***************************************
@@ -68,21 +74,5 @@ public class CommandLineTest
 		{
 			// expected
 		}
-	}
-
-	/***************************************
-	 * Asserts the contents of a command line.
-	 *
-	 * @param cl The command line
-	 */
-	@SuppressWarnings("boxing")
-	private void assertOptions(CommandLine cl)
-	{
-		assertTrue(cl.hasOption("a"));
-		assertTrue(cl.hasOption("b"));
-		assertFalse(cl.hasOption("c"));
-		assertEquals(true, cl.getOption("a"));
-		assertEquals(123, cl.getOption("t1"));
-		assertEquals("ok ok", cl.getOption("t2"));
 	}
 }
