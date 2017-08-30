@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
@@ -96,6 +97,27 @@ public class LocalInitialContext extends InitialContext
 		}
 
 		throw new NamingException("Unable to find object " + sName);
+	}
+
+	/***************************************
+	 * @see javax.naming.InitialContext#getDefaultInitCtx()
+	 */
+	@Override
+	protected Context getDefaultInitCtx()
+	{
+		// return NULL because otherwise endless recursion may occur
+		// (e.g. Eclipse injects a Jetty context into the environment)
+		return null;
+	}
+
+	/***************************************
+	 * @see javax.naming.InitialContext#init(java.util.Hashtable)
+	 */
+	@Override
+	protected void init(Hashtable<?, ?> rEnvironment) throws NamingException
+	{
+		rEnvironment.remove(Context.INITIAL_CONTEXT_FACTORY);
+		super.init(rEnvironment);
 	}
 
 	//~ Inner Classes ----------------------------------------------------------

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import de.esoco.lib.manage.Disposable;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.thread.ThreadManager;
+
+import java.io.PrintStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,7 +147,7 @@ public abstract class Application extends RelatedObject
 		}
 		catch (CommandLineException e)
 		{
-			displayUsage(e);
+			displayUsageError(e);
 		}
 		catch (Exception e)
 		{
@@ -284,22 +286,21 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
-	 * Displays usage information for this application. The default
-	 * implementation just display a simplified usage string. Subclasses can
-	 * override this method to display detailed usage information.
+	 * Displays information about a usage error of this application. The default
+	 * implementation displays an error message if a command line exception is
+	 * provided and then invokes {@link #printUsage(PrintStream)}.
 	 *
 	 * @param e An optional command line exception that indicates a usage error
 	 *          or NULL for none
 	 */
-	protected void displayUsage(CommandLineException e)
+	protected void displayUsageError(CommandLineException e)
 	{
 		if (e != null)
 		{
 			System.out.printf("Error: %s\n", e.getMessage());
 		}
 
-		System.out.printf("Usage: %s <arguments>\n",
-						  getClass().getSimpleName());
+		printUsage(System.out);
 	}
 
 	/***************************************
@@ -340,6 +341,17 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void initialize(CommandLine rCommandLine) throws Exception
 	{
+	}
+
+	/***************************************
+	 * Prints information about how to use this application. Should be
+	 * overridden by subclasses that need complex arguments to work.
+	 *
+	 * @param rOutput The output stream
+	 */
+	protected void printUsage(PrintStream rOutput)
+	{
+		rOutput.printf("Usage: %s <arguments>\n", getClass().getSimpleName());
 	}
 
 	/***************************************

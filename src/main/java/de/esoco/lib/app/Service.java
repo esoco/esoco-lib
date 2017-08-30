@@ -181,7 +181,15 @@ public abstract class Service extends Application implements Stoppable
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
-	 * Creates a new instance.
+	 * Creates a new instance for a service with a #runApp.
+	 */
+	public Service()
+	{
+		this(false);
+	}
+
+	/***************************************
+	 * Creates a new instance or a sub-class.
 	 *
 	 * @param bIsRestService TRUE if this instance should be run as a single
 	 *                       REST service implemented by the REST server; FALSE
@@ -189,12 +197,23 @@ public abstract class Service extends Application implements Stoppable
 	 *                       thread (by implementing {@link #runService()} and
 	 *                       the REST server in a separate thread
 	 */
-	public Service(boolean bIsRestService)
+	protected Service(boolean bIsRestService)
 	{
 		this.bIsRestService = bIsRestService;
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Will be invoked to run the actual service after the application has been
+	 * initialized and configured. This method needs to be implemented if the
+	 * service has it's own functionality to be run on the main thread. If the
+	 * service is only using the REST server as a REST service implementation
+	 * this method can remain empty.
+	 *
+	 * @throws Exception If an error occurs during execution
+	 */
+	protected abstract void runService() throws Exception;
 
 	/***************************************
 	 * Builds the object space that provides the REST API of this service.
@@ -497,19 +516,6 @@ public abstract class Service extends Application implements Stoppable
 			// REST server is the actual service)
 			aRestServer.stop();
 		}
-	}
-
-	/***************************************
-	 * Will be invoked to run the actual service after the application has been
-	 * initialized and configured. This method needs to be implemented if the
-	 * service has it's own functionality to be run on the main thread. If the
-	 * service is only using the REST server as a REST service implementation
-	 * this method can remain empty.
-	 *
-	 * @throws Exception If an error occurs during execution
-	 */
-	protected void runService() throws Exception
-	{
 	}
 
 	/***************************************
