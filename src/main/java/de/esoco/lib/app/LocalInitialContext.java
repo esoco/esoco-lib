@@ -17,14 +17,12 @@
 package de.esoco.lib.app;
 
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
-import javax.naming.spi.InitialContextFactoryBuilder;
 import javax.naming.spi.NamingManager;
 
 
@@ -43,14 +41,34 @@ public class LocalInitialContext extends InitialContext
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
-	 * {@inheritDoc}
+	 * Creates a new instance.
+	 *
+	 * @throws NamingException
 	 */
-	LocalInitialContext(Hashtable<?, ?> rEnvironment) throws NamingException
+	public LocalInitialContext() throws NamingException
 	{
-		super(rEnvironment);
 	}
 
 	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Registers this class with the {@link NamingManager} as the default
+	 * initial context for JNDI lookups.
+	 *
+	 * @param rContextFactory The factory for local initial contexts
+	 */
+	public static void registerLocalContext(
+		InitialContextFactory rContextFactory)
+	{
+		try
+		{
+			NamingManager.setInitialContextFactoryBuilder(env -> rContextFactory);
+		}
+		catch (NamingException e)
+		{
+			throw new IllegalStateException(e);
+		}
+	}
 
 	/***************************************
 	 * Registers an object under a certain JDNI name in the global registry for
@@ -62,25 +80,6 @@ public class LocalInitialContext extends InitialContext
 	public static void registerResource(String sName, Object rObject)
 	{
 		aContextRegistry.put(sName, rObject);
-	}
-
-	/***************************************
-	 * Registers this class with the {@link NamingManager} as the default
-	 * initial context for JNDI lookups.
-	 */
-	public static void setupForJndiLookups()
-	{
-		try
-		{
-			LocalInitialContextFactoryBuilder aFactoryBuilder =
-				new LocalInitialContextFactoryBuilder();
-
-			NamingManager.setInitialContextFactoryBuilder(aFactoryBuilder);
-		}
-		catch (NamingException e)
-		{
-			throw new IllegalStateException(e);
-		}
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -100,47 +99,14 @@ public class LocalInitialContext extends InitialContext
 	}
 
 	/***************************************
-	 * @see javax.naming.InitialContext#getDefaultInitCtx()
+	 * {@inheritDoc}
 	 */
 	@Override
 	protected Context getDefaultInitCtx()
 	{
-		// return NULL because otherwise endless recursion may occur
-		// (e.g. Eclipse injects a Jetty context into the environment)
+		// return THIS to prevent endless recursion with a default initial
+		// context injected by the environment (e.g. Eclipse injects a Jetty
+		// context into the environment)
 		return null;
-	}
-
-	/***************************************
-	 * @see javax.naming.InitialContext#init(java.util.Hashtable)
-	 */
-	@Override
-	protected void init(Hashtable<?, ?> rEnvironment) throws NamingException
-	{
-		rEnvironment.remove(Context.INITIAL_CONTEXT_FACTORY);
-		super.init(rEnvironment);
-	}
-
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
-	 * A builder for factories that create instances of {@link
-	 * LocalInitialContext}.
-	 *
-	 * @author eso
-	 */
-	public static class LocalInitialContextFactoryBuilder
-		implements InitialContextFactoryBuilder
-	{
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		public InitialContextFactory createInitialContextFactory(
-			Hashtable<?, ?> rEnvironment) throws NamingException
-		{
-			return env -> new LocalInitialContext(env);
-		}
 	}
 }
