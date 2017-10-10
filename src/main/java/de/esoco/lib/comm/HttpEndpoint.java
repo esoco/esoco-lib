@@ -18,6 +18,7 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.comm.http.HttpRequestMethod;
 import de.esoco.lib.comm.http.HttpStatusCode;
+import de.esoco.lib.comm.http.HttpStatusException;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.Functions;
 import de.esoco.lib.io.LimitedInputStream;
@@ -200,11 +201,11 @@ public class HttpEndpoint extends Endpoint
 		@SuppressWarnings("boxing")
 		public O doOn(Connection rConnection, I rInput)
 		{
+			HttpURLConnection aUrlConnection =
+				setupUrlConnection(rConnection, rInput);
+
 			try
 			{
-				HttpURLConnection aUrlConnection =
-					setupUrlConnection(rConnection, rInput);
-
 				if (eRequestMethod.doesOutput())
 				{
 					try (OutputStream rOutStream =
@@ -230,14 +231,33 @@ public class HttpEndpoint extends Endpoint
 					rConnection.set(HTTP_RESPONSE_HEADERS,
 									aUrlConnection.getHeaderFields());
 
-					O rResponse = readResponse(rConnection, aInputReader);
-
-					return rResponse;
+					return readResponse(rConnection, aInputReader);
 				}
 			}
 			catch (Exception e)
 			{
-				throw new CommunicationException(e);
+				int nResponseCode;
+
+				try
+				{
+					nResponseCode = aUrlConnection.getResponseCode();
+				}
+				catch (IOException e2)
+				{
+					// continue with original exception
+					throw new CommunicationException(e);
+				}
+
+				if (nResponseCode != -1)
+				{
+					return handleHttpError(aUrlConnection,
+										   e,
+										   HttpStatusCode.valueOf(nResponseCode));
+				}
+				else
+				{
+					throw new CommunicationException(e);
+				}
 			}
 		}
 
@@ -424,6 +444,28 @@ public class HttpEndpoint extends Endpoint
 		}
 
 		/***************************************
+		 * Handles an HTTP error response that has been signaled by the URL
+		 * connection with an exception. The default implementation always
+		 * throws an {@link HttpStatusException} but subclasses can override
+		 * this method for different error handling. If the method returns a
+		 * value instead of throwing an exception the value will be returned as
+		 * the regular response message of this request.
+		 *
+		 * @param  rUrlConnection The URL connection that caused the error
+		 * @param  eHttpException The exception that occurred
+		 * @param  eStatusCode    nResponseThe response status code
+		 *
+		 * @return The request response if the error should be mapped to a
+		 *         regular response; else a runtime exception should be thrown
+		 */
+		protected O handleHttpError(HttpURLConnection rUrlConnection,
+									Exception		  eHttpException,
+									HttpStatusCode    eStatusCode)
+		{
+			throw new HttpStatusException(eStatusCode, eHttpException);
+		}
+
+		/***************************************
 		 * Invokes the response processing function. Can be overridden by
 		 * subclasses to extend or modify the processing.
 		 *
@@ -477,30 +519,37 @@ public class HttpEndpoint extends Endpoint
 		 *
 		 * @return The URL connection
 		 *
-		 * @throws IOException If the setup fails
+		 * @throws CommunicationException If the setup fails
 		 */
 		protected HttpURLConnection setupUrlConnection(
 			Connection rConnection,
-			I		   rInput) throws IOException
+			I		   rInput)
 		{
-			String sTargetUrl = getTargetUrl(rConnection, rInput);
-
-			HttpURLConnection aUrlConnection =
-				(HttpURLConnection) new URL(sTargetUrl).openConnection();
-
-			eRequestMethod.applyTo(aUrlConnection);
-			applyRequestHeaders(rConnection, aUrlConnection);
-
-			String sUserName = rConnection.getUserName();
-
-			if (sUserName != null)
+			try
 			{
-				NetUtil.enableHttpBasicAuth(aUrlConnection,
-											sUserName,
-											rConnection.getPassword());
-			}
+				String sTargetUrl = getTargetUrl(rConnection, rInput);
 
-			return aUrlConnection;
+				HttpURLConnection aUrlConnection =
+					(HttpURLConnection) new URL(sTargetUrl).openConnection();
+
+				eRequestMethod.applyTo(aUrlConnection);
+				applyRequestHeaders(rConnection, aUrlConnection);
+
+				String sUserName = rConnection.getUserName();
+
+				if (sUserName != null)
+				{
+					NetUtil.enableHttpBasicAuth(aUrlConnection,
+												sUserName,
+												rConnection.getPassword());
+				}
+
+				return aUrlConnection;
+			}
+			catch (Exception e)
+			{
+				throw new CommunicationException(e);
+			}
 		}
 
 		/***************************************
