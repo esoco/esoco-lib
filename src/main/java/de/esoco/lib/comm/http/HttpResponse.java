@@ -221,5 +221,6 @@ public class HttpResponse extends RelatedObject
 
 		// terminate with empty line
 		rOut.write(NetUtil.CRLF);
+		rOut.flush();
 	}
 }
