@@ -225,6 +225,18 @@ public class HttpRequest extends RelatedObject
 	}
 
 	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String toString()
+	{
+		return String.format("%s[%s %s]",
+							 getClass().getSimpleName(),
+							 eRequestMethod,
+							 sRequestPath);
+	}
+
+	/***************************************
 	 * Tries to set an HTTP request header field as a relation on this instance.
 	 * Invokes {@link HttpHeaderTypes#get(String)} with the given header name
 	 * and if successfull tries to parse the value with {@link

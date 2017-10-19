@@ -1,5 +1,5 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-business' project.
+// This file is a part of the 'esoco-lib' project.
 // Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,6 @@ package de.esoco.lib.service;
 import de.esoco.lib.app.Service;
 import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.comm.EndpointChain;
-import de.esoco.lib.service.ModificationSyncEndpoint;
 import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
 
 import static de.esoco.lib.service.ModificationSyncEndpoint.getCurrentLocks;
@@ -37,7 +36,10 @@ public class ModificationSyncEndpointTest
 {
 	//~ Static fields/initializers ---------------------------------------------
 
-	private static final int TEST_COUNT = 500;
+	private static final String  TEST_CLIENT     = "TESTCLIENT";
+	private static final int     TEST_CONTEXTS   = 1;
+	private static final int     TEST_LOOP_COUNT = 500;
+	private static final boolean PRINT_INFO		 = false;
 
 	//~ Static methods ---------------------------------------------------------
 
@@ -46,11 +48,12 @@ public class ModificationSyncEndpointTest
 	 *
 	 * @param rArgs
 	 */
+	@SuppressWarnings("boxing")
 	public static void main(String[] rArgs)
 	{
 		Endpoint aSyncService = Endpoint.at("http://localhost:7962");
 
-//		Service.SET_LOG_LEVEL.at(aSyncService).send("\"DEBUG\"");
+		Service.SET_LOG_LEVEL.at(aSyncService).send("\"WARN\"");
 
 		EndpointChain<SyncData, String> fLock =
 			requestLock().from(aSyncService);
@@ -64,18 +67,33 @@ public class ModificationSyncEndpointTest
 		System.out.printf("RUNNING: %s\n",
 						  Service.CHECK_RUNNING.from(aSyncService).result());
 
-		lockEntities("test1", fLock);
-		lockEntities("test2", fLock);
-//		System.out.printf("LOCKS: %s\n", fGetLocks.result());
-		releaseEntities("test1", fRelease);
-		releaseEntities("test2", fRelease);
+		long t = System.currentTimeMillis();
+
+		for (int i = 1; i <= TEST_CONTEXTS; i++)
+		{
+			lockEntities("test" + i, fLock);
+		}
+
+		System.out.printf("LOCKS: %s\n", fGetLocks.result());
+
+		for (int i = 1; i <= TEST_CONTEXTS; i++)
+		{
+			releaseEntities("test" + i, fRelease);
+		}
+
+		t = System.currentTimeMillis() - t;
+		System.out.printf("TIME for %d locks: %d.%03d (:= %d locks/s)\n",
+						  TEST_CONTEXTS * TEST_LOOP_COUNT,
+						  t / 1000,
+						  t % 1000,
+						  TEST_CONTEXTS * TEST_LOOP_COUNT * 1000 / t);
 
 //		System.out.printf("LOCK	  : '%s'\n",
-//						  fLock.send(syncRequest("TESTCLIENT",
+//						  fLock.send(syncRequest(TEST_CLIENT,
 //												 "test1",
 //												 "E-1000")));
 //		System.out.printf("LOCK	  : '%s'\n",
-//						  fLock.send(syncRequest("TESTCLIENT",
+//						  fLock.send(syncRequest(TEST_CLIENT,
 //												 "test2",
 //												 "E-1005")));
 //		System.out.printf("LOCKS: %s\n", fGetLocks.result());
@@ -93,16 +111,21 @@ public class ModificationSyncEndpointTest
 		String							sContext,
 		EndpointChain<SyncData, String> fLock)
 	{
-		for (int i = 0; i < TEST_COUNT; i++)
+		System.out.printf("Locking context %s\n", sContext);
+
+		for (int i = 0; i < TEST_LOOP_COUNT; i++)
 		{
 			String sGlobalId = "E-100" + i;
+			String sLock     =
+				fLock.send(syncRequest(TEST_CLIENT, sContext, sGlobalId));
 
-			System.out.printf("LOCK %s:%s: '%s'\n",
-							  sContext,
-							  sGlobalId,
-							  fLock.send(syncRequest("TESTCLIENT",
-													 sContext,
-													 sGlobalId)));
+			if (PRINT_INFO)
+			{
+				System.out.printf("LOCK %s:%s: '%s'\n",
+								  sContext,
+								  sGlobalId,
+								  sLock);
+			}
 		}
 	}
 
@@ -116,16 +139,21 @@ public class ModificationSyncEndpointTest
 		String							sContext,
 		EndpointChain<SyncData, String> fRelease)
 	{
-		for (int i = TEST_COUNT - 1; i >= 0; i--)
+		System.out.printf("Releasing context %s\n", sContext);
+
+		for (int i = TEST_LOOP_COUNT - 1; i >= 0; i--)
 		{
 			String sGlobalId = "E-100" + i;
+			String sLock     =
+				fRelease.send(syncRequest(TEST_CLIENT, sContext, sGlobalId));
 
-			System.out.printf("RELEASE %s:%s: '%s'\n",
-							  sContext,
-							  sGlobalId,
-							  fRelease.send(syncRequest("TESTCLIENT",
-														sContext,
-														sGlobalId)));
+			if (PRINT_INFO)
+			{
+				System.out.printf("RELEASE %s:%s: '%s'\n",
+								  sContext,
+								  sGlobalId,
+								  sLock);
+			}
 		}
 	}
 }
