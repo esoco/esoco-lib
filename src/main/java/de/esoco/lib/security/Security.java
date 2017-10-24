@@ -17,6 +17,7 @@
 package de.esoco.lib.security;
 
 import de.esoco.lib.logging.Log;
+import de.esoco.lib.text.TextUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -562,6 +564,35 @@ public class Security
 	}
 
 	/***************************************
+	 * Generates a random ID based by applying a certain hash algorithm. This is
+	 * done by hashing a random UUID (see {@link UUID#randomUUID()}) and
+	 * returning the resulting hash as a hexadecimal string with the length of
+	 * the algorithms hash size (e.g. 32 bytes for the SHA-256 algorithm).
+	 *
+	 * @param  sAlgorithm The name of the hash algorithm to apply
+	 *
+	 * @return The random hash ID
+	 *
+	 * @throws IllegalArgumentException If the hash algorithm cannot be found
+	 */
+	public static String generateHashId(String sAlgorithm)
+	{
+		try
+		{
+			MessageDigest rDigest     = MessageDigest.getInstance(sAlgorithm);
+			byte[]		  aRandomData = UUID.randomUUID().toString().getBytes();
+
+			return TextUtil.hexString(rDigest.digest(aRandomData), "");
+		}
+		catch (NoSuchAlgorithmException e)
+		{
+			throw new IllegalArgumentException("Unkown hash algorithm: " +
+											   sAlgorithm,
+											   e);
+		}
+	}
+
+	/***************************************
 	 * Generates a key pair with the given algorithm and key size.
 	 *
 	 * @param  sAlgorithm The algorithm name as defined in the Java cryptography
@@ -590,6 +621,19 @@ public class Security
 		{
 			throw new IllegalArgumentException(e);
 		}
+	}
+
+	/***************************************
+	 * Generates a random ID based on the SHA-256 hash algorithm. This is done
+	 * by hashing a random UUID (see {@link UUID#randomUUID()}) and returning
+	 * the resulting hash as a hexadecimal string with 32 characters (= 256
+	 * bits).
+	 *
+	 * @return The random SHA-256 ID
+	 */
+	public static String generateSha256Id()
+	{
+		return generateHashId("SHA-256");
 	}
 
 	/***************************************
