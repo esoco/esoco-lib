@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.thread;
 
+import de.esoco.lib.expression.Functions;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -25,7 +27,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 /********************************************************************
  * A class that runs queued jobs (implemented in {@link Runnable} instances) in
- * one or more separate threads.
+ * one or more separate threads. The queue can be {@link #pause() paused} and
+ * {@link #resume() resumed} to avoid concurrent processing of non-synchronized
+ * resources.
  *
  * @author eso
  */
@@ -38,7 +42,7 @@ public class JobQueue
 	private CountDownLatch		    aPauseSignal;
 
 	private int     nMaxJobs;
-	private boolean bRun = true;
+	private boolean bRun = false;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -117,51 +121,70 @@ public class JobQueue
 	 */
 	public void pause()
 	{
-		bRun = false;
+		if (bRun)
+		{
+			bRun = false;
 
-		try
-		{
-			aPauseSignal.await();
-		}
-		catch (InterruptedException e)
-		{
-			// forward to invoking thread
-			Thread.currentThread().interrupt();
+			for (int i = 0; i < aPauseSignal.getCount(); i++)
+			{
+				// offer empty jobs so that the runners awake and detect the pause
+				aJobQueue.offer(Functions.NO_OPERATION);
+			}
+
+			try
+			{
+				aPauseSignal.await();
+			}
+			catch (InterruptedException e)
+			{
+				// forward to invoking thread
+				Thread.currentThread().interrupt();
+			}
 		}
 	}
 
 	/***************************************
-	 * Resumes the processing of jobs after it has been {@link #pause() paused}.
+	 * Resumes the processing of jobs after it has been {@link #pause() paused}
+	 * or {@link #stop() stopped}.
 	 */
 	public void resume()
 	{
-		if (aJobService == null)
+		if (!bRun)
 		{
-			aJobService  = Executors.newFixedThreadPool(nMaxJobs);
+			bRun		 = true;
 			aPauseSignal = new CountDownLatch(nMaxJobs);
-		}
 
-		for (int i = 0; i < nMaxJobs; i++)
-		{
-			aJobService.submit(new JobRunner());
+			if (aJobService == null)
+			{
+				aJobService = Executors.newFixedThreadPool(nMaxJobs);
+			}
+
+			for (int i = 0; i < nMaxJobs; i++)
+			{
+				aJobService.submit(new JobRunner(aPauseSignal));
+			}
 		}
 	}
 
 	/***************************************
-	 * Stops the processing of jobs. All currently executing jobs will continue
-	 * until they are finished. The job execution can be started again by
-	 * invoking {@link #resume()}.
+	 * Stops the processing of jobs, interrupting currently executing jobs if
+	 * necessary. The job execution can be started again by invoking {@link
+	 * #resume()}.
 	 *
 	 * <p>This method will return immediately. If an application needs to wait
-	 * for the shutdown of all jobs it should invoke the blocking method {@link
-	 * #pause()} first.</p>
+	 * for the orderly shutdown of all jobs (without interruption) it should
+	 * invoke the blocking method {@link #pause()} first.</p>
 	 */
 	public void stop()
 	{
-		bRun = false;
-		aJobQueue.clear();
-		aJobService.shutdown();
-		aJobService = null;
+		if (aJobService != null)
+		{
+			bRun = false;
+			aJobQueue.clear();
+			aJobService.shutdownNow();
+			aJobService  = null;
+			aPauseSignal = null;
+		}
 	}
 
 	//~ Inner Classes ----------------------------------------------------------
@@ -173,6 +196,22 @@ public class JobQueue
 	 */
 	private class JobRunner implements Runnable
 	{
+		//~ Instance fields ----------------------------------------------------
+
+		private CountDownLatch rPauseSignal;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance.
+		 *
+		 * @param rPauseSignal Used to signal termination of this runner
+		 */
+		public JobRunner(CountDownLatch rPauseSignal)
+		{
+			this.rPauseSignal = rPauseSignal;
+		}
+
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
@@ -193,7 +232,7 @@ public class JobQueue
 				}
 			}
 
-			aPauseSignal.countDown();
+			rPauseSignal.countDown();
 		}
 	}
 }
