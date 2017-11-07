@@ -44,10 +44,10 @@ public class CommandLineTest
 		assertTrue(cl.hasOption("a"));
 		assertTrue(cl.hasOption("b"));
 		assertFalse(cl.hasOption("c"));
-		assertEquals(Boolean.TRUE, cl.getOption("a"));
-		assertEquals(Integer.valueOf(123), cl.getOption("t1"));
-		assertEquals("ok ok", cl.getOption("t2"));
-		assertEquals("a value", cl.getOption("t3"));
+		assertEquals(Boolean.TRUE, cl.getOption("a").get());
+		assertEquals(Integer.valueOf(123), cl.getOption("t1").get());
+		assertEquals("ok ok", cl.getOption("t2").get());
+		assertEquals("a value", cl.getOption("t3").get());
 	}
 
 	/***************************************
@@ -60,7 +60,7 @@ public class CommandLineTest
 		String[]    options = new String[] { "val=" };
 		CommandLine cl	    = new CommandLine(args, options);
 
-		assertEquals("test", cl.getOption("val"));
+		assertEquals("test", cl.getOption("val").get());
 
 		try
 		{

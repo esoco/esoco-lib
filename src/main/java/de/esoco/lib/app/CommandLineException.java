@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@ package de.esoco.lib.app;
 
 /********************************************************************
  * An exception that indicates an invalid command line option in a {@link
- * CommandLine}. Invalid option are either missing completely or have an illegal
- * option value.
+ * CommandLine}. Invalid options are either missing completely or have an
+ * illegal option value. This is a runtime exception because it may occur
+ * anytime during command line processing.
  *
  * @author eso
  */
-public class CommandLineException extends Exception
+public class CommandLineException extends RuntimeException
 {
 	//~ Static fields/initializers ---------------------------------------------
 

@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,7 +61,7 @@ public class CommandLine
 	 * (the prefix '/' can be used instead of of '-').
 	 */
 	public static final String DEFAULT_OPTION_PATTERN =
-		"(?i)[-/]([\\w-_]+)(?:=(.+))?";
+		"(?i)-([\\w-_]+)(?:[=](.+))?";
 
 	//~ Instance fields --------------------------------------------------------
 
@@ -151,7 +152,7 @@ public class CommandLine
 										String    sAssignment,
 										String... rAllowedOptions)
 	{
-		StringBuilder aPattern	    = new StringBuilder(sPrefix + "(?:(");
+		StringBuilder aPattern	    = new StringBuilder(sPrefix + "(");
 		StringBuilder aValueOptions = new StringBuilder();
 
 		for (String sOption : rAllowedOptions)
@@ -195,8 +196,6 @@ public class CommandLine
 			aPattern.append(sAssignment).append("(.+)");
 		}
 
-		aPattern.append(")");
-
 		if (rAllowedOptions.length == 0)
 		{
 			aPattern.append(")");
@@ -218,7 +217,7 @@ public class CommandLine
 	 */
 	public static Pattern createStandardPattern(String... rAllowedOptions)
 	{
-		return createPattern("[-/]", "=", rAllowedOptions);
+		return createPattern("-", "[=]", rAllowedOptions);
 	}
 
 	/***************************************
@@ -352,6 +351,7 @@ public class CommandLine
 			else if (sPrevOption != null)
 			{
 				aResult.put(sPrevOption, TextUtil.parseObject(sArg));
+				sPrevOption = null;
 			}
 			else
 			{
@@ -461,13 +461,31 @@ public class CommandLine
 	 * it must always invoke this method with lower case option names because
 	 * all option names have been converted to lower case on creation.</p>
 	 *
-	 * @param  sOption The option to check
+	 * @param  sOption The option to query
 	 *
-	 * @return The option value or NULL for none
+	 * @return An {@link Optional} containing the option value if the option
+	 *         exists
 	 */
-	public Object getOption(String sOption)
+	public Optional<Object> getOption(String sOption)
 	{
-		return aCommandLineOptions.get(sOption);
+		return Optional.ofNullable(aCommandLineOptions.get(sOption));
+	}
+
+	/***************************************
+	 * Convenience method that converts the result of {@link #getOption(String)}
+	 * to a string.
+	 *
+	 * @param  sOption The option name
+	 *
+	 * @return An {@link Optional} containing the string value if the option
+	 *         exists
+	 */
+	public Optional<String> getString(String sOption)
+	{
+		Optional<Object> rOption = getOption(sOption);
+
+		return rOption.isPresent() ? Optional.of(rOption.get().toString())
+								   : Optional.empty();
 	}
 
 	/***************************************
@@ -515,10 +533,12 @@ public class CommandLine
 		String			  sOption,
 		Predicate<Object> pIsValidOption) throws CommandLineException
 	{
-		Object rValue = getOption(sOption);
+		Optional<Object> rOption = getOption(sOption);
 
-		if (rValue != null)
+		if (rOption.isPresent())
 		{
+			Object rValue = rOption.get();
+
 			if (pIsValidOption == null || pIsValidOption.test(rValue))
 			{
 				return rValue;
@@ -534,6 +554,16 @@ public class CommandLine
 			throw new CommandLineException("Missing command line option %s",
 										   sOption);
 		}
+	}
+
+	/***************************************
+	 * Returns a mandatory command line option as a string value.
+	 *
+	 * @see #requireOption(String, Predicate)
+	 */
+	public String requireString(String sOption) throws CommandLineException
+	{
+		return requireOption(sOption).toString();
 	}
 
 	/***************************************

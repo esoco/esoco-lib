@@ -157,7 +157,14 @@ public abstract class Service extends Application implements Stoppable
 
 	/**
 	 * A pre-defined communication method that can be invoked on service HTTP
-	 * endpoints to stop the service.
+	 * endpoints to query the current log level.
+	 */
+	public static final CommunicationMethod<String, Void> GET_LOG_LEVEL =
+		CommunicationMethod.doSend(HttpEndpoint.httpGet("/api/control/log_level"));
+
+	/**
+	 * A pre-defined communication method that can be invoked on service HTTP
+	 * endpoints to set the current log level.
 	 */
 	public static final CommunicationMethod<String, Void> SET_LOG_LEVEL =
 		CommunicationMethod.doSend(HttpEndpoint.httpPost("/api/control/log_level",
@@ -425,7 +432,7 @@ public abstract class Service extends Application implements Stoppable
 	 */
 	protected int getRestServerPort()
 	{
-		Object rPort = getCommandLine().getOption("port");
+		Object rPort = getCommandLine().requireOption("port");
 
 		if (rPort instanceof Number)
 		{
@@ -433,8 +440,8 @@ public abstract class Service extends Application implements Stoppable
 		}
 		else
 		{
-			throw new IllegalArgumentException("REST server port not set " +
-											   "(Option 'port'): " + rPort);
+			throw new IllegalArgumentException("Invalid REST server port: " +
+											   rPort);
 		}
 	}
 
