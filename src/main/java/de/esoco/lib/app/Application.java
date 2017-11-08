@@ -25,8 +25,12 @@ import de.esoco.lib.thread.ThreadManager;
 
 import java.io.PrintStream;
 
+import java.net.URISyntaxException;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.obrel.core.RelatedObject;
 
@@ -65,8 +69,10 @@ public abstract class Application extends RelatedObject
 
 	//~ Instance fields --------------------------------------------------------
 
+	private CommandLine aCommandLine;
+
+	private String		 sAppName		   = null;
 	private List<Object> aCleanupResources = null;
-	private CommandLine  aCommandLine;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -130,28 +136,31 @@ public abstract class Application extends RelatedObject
 	 */
 	public final void run(String[] rArgs)
 	{
-		try
+		if (sAppName == null)
 		{
-			aCommandLine = processArguments(rArgs);
+			try
+			{
+				aCommandLine = processArguments(rArgs);
 
-			String sAppName = getClass().getSimpleName();
+				String sAppName = getClass().getSimpleName();
 
-			Log.debugf("%s initializing...", sAppName);
-			initialize(aCommandLine);
-			Log.debugf("%s configuring...", sAppName);
-			configure(aCommandLine);
-			Log.debugf("%s starting...", sAppName);
-			startApp();
-			runApp();
-			stopApp();
-		}
-		catch (CommandLineException e)
-		{
-			displayUsageError(e);
-		}
-		catch (Exception e)
-		{
-			handleApplicationError(e);
+				Log.debugf("%s initializing...", sAppName);
+				initialize(aCommandLine);
+				Log.debugf("%s configuring...", sAppName);
+				configure(aCommandLine);
+				Log.debugf("%s starting...", sAppName);
+				startApp();
+				runApp();
+				stopApp();
+			}
+			catch (CommandLineException e)
+			{
+				displayUsageError(e);
+			}
+			catch (Exception e)
+			{
+				handleApplicationError(e);
+			}
 		}
 	}
 
@@ -304,16 +313,56 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
-	 * Can be overridden by subclasses to provide the list of allowed command
-	 * line options. The default implementation returns an empty array to
-	 * indicate that arbitrary options are allowed. See the documentation of
-	 * class {@link CommandLine} for more information.
+	 * Can be overridden by subclasses to provide a mapping from allowed command
+	 * line options to corresponding help text string. The default
+	 * implementation returns an empty map to indicate that arbitrary options
+	 * are allowed. See the documentation of class {@link CommandLine} for more
+	 * information.
 	 *
-	 * @return A string array containing the allowed command line options
+	 * @return A mapping from allowed command line options to help texts
 	 */
-	protected String[] getCommandLineOptions()
+	protected Map<String, String> getCommandLineOptions()
 	{
-		return new String[0];
+		return Collections.emptyMap();
+	}
+
+	/***************************************
+	 * Returns the name of the distribution binary of this application
+	 * (typically a JAR file).
+	 *
+	 * @return The name of the application binary if available
+	 */
+	protected String getNameOfAppBinary()
+	{
+		try
+		{
+			String sAppPath =
+				getClass().getProtectionDomain()
+						  .getCodeSource()
+						  .getLocation()
+						  .toURI()
+						  .getPath();
+
+			sAppName = sAppPath.substring(sAppPath.lastIndexOf('/') + 1);
+
+			int nIndex = sAppName.indexOf('.');
+
+			if (nIndex > 0)
+			{
+				sAppName = sAppName.substring(0, nIndex);
+			}
+
+			if (sAppName.length() == 0)
+			{
+				sAppName = getClass().getSimpleName();
+			}
+
+			return sAppName;
+		}
+		catch (URISyntaxException e)
+		{
+			throw new IllegalStateException(e);
+		}
 	}
 
 	/***************************************
@@ -351,7 +400,7 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void printUsage(PrintStream rOutput)
 	{
-		rOutput.printf("Usage: %s <arguments>\n", getClass().getSimpleName());
+		rOutput.printf("Usage: %s <arguments>\n", getNameOfAppBinary());
 	}
 
 	/***************************************
@@ -366,16 +415,7 @@ public abstract class Application extends RelatedObject
 	 */
 	protected CommandLine processArguments(String[] rArgs) throws Exception
 	{
-		String[] rOptions = getCommandLineOptions();
-
-		if (rOptions == null)
-		{
-			return new CommandLine(rArgs);
-		}
-		else
-		{
-			return new CommandLine(rArgs, rOptions);
-		}
+		return new CommandLine(rArgs, getCommandLineOptions());
 	}
 
 	/***************************************

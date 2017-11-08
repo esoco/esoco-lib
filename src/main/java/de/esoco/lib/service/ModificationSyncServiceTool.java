@@ -28,7 +28,9 @@ import de.esoco.lib.json.JsonParser;
 import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
@@ -49,13 +51,50 @@ public class ModificationSyncServiceTool extends Application
 	/********************************************************************
 	 * Enumeration of available sync service commands.
 	 */
-	enum Command { LIST, LOCK, UNLOCK, RESET, LOGLEVEL }
+	enum Command
+	{
+		LIST("Lists either all locks or only in a given context"),
+		LOCK("Locks a target in a context"),
+		UNLOCK("Removes a target lock in a context"),
+		RESET("Resets either all locks or only in the given context"),
+		LOGLEVEL("Queries or updates the log level or the target service");
+
+		//~ Instance fields ----------------------------------------------------
+
+		private final String sHelpText;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance.
+		 *
+		 * @param sHelp The help text for the command
+		 */
+		private Command(String sHelp)
+		{
+			sHelpText = sHelp;
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * Returns the command's help text.
+		 *
+		 * @return The help text
+		 */
+		public final String getHelpText()
+		{
+			return sHelpText;
+		}
+	}
 
 	//~ Instance fields --------------------------------------------------------
 
 	private Endpoint					    aSyncService;
 	private EndpointChain<SyncData, String> fReleaseLock;
 	private EndpointChain<SyncData, String> fRequestLock;
+
+	private Map<String, String> aCommandLineOptions = null;
 
 	//~ Static methods ---------------------------------------------------------
 
@@ -75,16 +114,44 @@ public class ModificationSyncServiceTool extends Application
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void runApp() throws Exception
+	protected Map<String, String> getCommandLineOptions()
 	{
-		CommandLine rCommandLine = getCommandLine();
+		if (aCommandLineOptions == null)
+		{
+			aCommandLineOptions = new LinkedHashMap<>();
 
-		aSyncService = Endpoint.at(rCommandLine.requireString("url"));
-		fRequestLock = requestLock().from(aSyncService);
-		fReleaseLock = releaseLock().from(aSyncService);
+			aCommandLineOptions.put("h",
+									"Display this help or informations about a certain command");
+			aCommandLineOptions.put("-help",
+									"Display this help or informations about a certain command");
+			aCommandLineOptions.put("url",
+									"The URL of the sync service (mandatory)");
+			aCommandLineOptions.put("context",
+									"The context to which to apply a command");
+			aCommandLineOptions.put("target",
+									"The target to which to apply a command (in a certain context)");
 
-		Optional<String> aContext = rCommandLine.getString("context");
+			for (Command eCommand : Command.values())
+			{
+				aCommandLineOptions.put(eCommand.name().toLowerCase(),
+										eCommand.getHelpText());
+			}
+		}
 
+		return aCommandLineOptions;
+	}
+
+	/***************************************
+	 * Handles all commands provided on the command line.
+	 *
+	 * @param rCommandLine The command line
+	 * @param rContext     The optional command context
+	 * @param rTarget      The optional command target
+	 */
+	protected void handleCommands(CommandLine	   rCommandLine,
+								  Optional<String> rContext,
+								  Optional<String> rTarget)
+	{
 		for (Command eCommand : Command.values())
 		{
 			String sCommand = eCommand.name().toLowerCase();
@@ -95,7 +162,7 @@ public class ModificationSyncServiceTool extends Application
 				{
 					case LIST:
 					case RESET:
-						handleListAndReset(eCommand, aContext);
+						handleListAndReset(eCommand, rContext);
 						break;
 
 					case LOGLEVEL:
@@ -113,9 +180,35 @@ public class ModificationSyncServiceTool extends Application
 				}
 			}
 		}
+	}
 
-//		System.out.printf("RUNNING: %s\n", Service.CHECK_RUNNING.from(aSyncService).result());
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected void runApp() throws Exception
+	{
+		CommandLine rCommandLine = getCommandLine();
 
+		if (rCommandLine.hasOption("h"))
+		{
+			printHelp(rCommandLine.getString("h"));
+		}
+		else if (rCommandLine.hasOption("-help"))
+		{
+			printHelp(rCommandLine.getString("-help"));
+		}
+		else
+		{
+			aSyncService = Endpoint.at(rCommandLine.requireString("url"));
+			fRequestLock = requestLock().from(aSyncService);
+			fReleaseLock = releaseLock().from(aSyncService);
+
+			Optional<String> aContext = rCommandLine.getString("context");
+			Optional<String> aTarget  = rCommandLine.getString("target");
+
+			handleCommands(rCommandLine, aContext, aTarget);
+		}
 	}
 
 	/***************************************
@@ -198,6 +291,33 @@ public class ModificationSyncServiceTool extends Application
 				{
 					printLocks(sContext, aLocks.get(sContext));
 				}
+			}
+		}
+	}
+
+	/***************************************
+	 * Prints help for this application or for a single command.
+	 *
+	 * @param rCommand The optional command
+	 */
+	private void printHelp(Optional<String> rCommand)
+	{
+		if (rCommand.isPresent())
+		{
+			String sCommand = rCommand.get();
+
+			System.out.printf("-%s: %s\n",
+							  sCommand,
+							  aCommandLineOptions.get(sCommand));
+		}
+		else
+		{
+			for (Entry<String, String> rCommandHelp :
+				 aCommandLineOptions.entrySet())
+			{
+				System.out.printf("-%s: %s\n",
+								  rCommandHelp.getKey(),
+								  rCommandHelp.getValue());
 			}
 		}
 	}
