@@ -38,7 +38,11 @@ public class CommandLineTest
 	@Test
 	public void testCommandLine()
 	{
-		String[]    args = "-a_/b_-t1=123_-t2='ok ok'_-t3_'a value'".split("_");
+		String[]    args =
+			new String[]
+			{
+				"-a", "-b", "-t1=123", "-t2='ok ok'", "-t3", "'a value'"
+			};
 		CommandLine cl   = new CommandLine(args);
 
 		assertTrue(cl.hasOption("a"));
@@ -56,16 +60,15 @@ public class CommandLineTest
 	@Test
 	public void testRequireOption()
 	{
-		String[]    args    = new String[] { "-val=test" };
-		String[]    options = new String[] { "val=" };
-		CommandLine cl	    = new CommandLine(args, options);
+		String[]    args = new String[] { "-val=test" };
+		CommandLine cl   = new CommandLine(args);
 
 		assertEquals("test", cl.getOption("val").get());
 
 		try
 		{
-			args = new String[] { "-val" };
-			cl   = new CommandLine(args, options);
+			args = new String[] {};
+			cl   = new CommandLine(args);
 
 			cl.requireOption("val");
 			assertTrue("Mandatory option value missing", false);
