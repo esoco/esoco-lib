@@ -26,6 +26,7 @@ import de.esoco.lib.expression.Function;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.json.JsonParser;
 import de.esoco.lib.logging.LogLevel;
+import de.esoco.lib.security.Security;
 import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
 
 import java.util.LinkedHashMap;
@@ -158,6 +159,10 @@ public class ModificationSyncServiceTool extends Application
 
 			if (rCommandLine.hasOption(sCommand))
 			{
+				System.out.printf("%s result for sync service %s:\n",
+								  eCommand,
+								  aSyncService.get(ENDPOINT_ADDRESS));
+
 				switch (eCommand)
 				{
 					case LIST:
@@ -170,9 +175,8 @@ public class ModificationSyncServiceTool extends Application
 						break;
 
 					case LOCK:
-						break;
-
 					case UNLOCK:
+						handleLockAndUnlock(eCommand, rContext, rTarget);
 						break;
 
 					default:
@@ -209,6 +213,17 @@ public class ModificationSyncServiceTool extends Application
 
 			handleCommands(rCommandLine, aContext, aTarget);
 		}
+	}
+
+	/***************************************
+	 * Returns the client ID to be used for identification to the sync service.
+	 *
+	 * @return The client ID string
+	 */
+	private String getClientId()
+	{
+		return getClass().getSimpleName() +
+			   Security.generateSha256Id().substring(0, 8);
 	}
 
 	/***************************************
@@ -262,7 +277,11 @@ public class ModificationSyncServiceTool extends Application
 	{
 		Map<String, Map<String, String>> aLocks = getLocks();
 
-		if (rContext.isPresent())
+		if (aLocks.isEmpty())
+		{
+			System.out.printf("No lock contexts defined\n");
+		}
+		else if (rContext.isPresent())
 		{
 			String			    sContext	  = rContext.get();
 			Map<String, String> rContextLocks = aLocks.get(sContext);
@@ -291,6 +310,44 @@ public class ModificationSyncServiceTool extends Application
 				{
 					printLocks(sContext, aLocks.get(sContext));
 				}
+			}
+		}
+	}
+
+	/***************************************
+	 * Handles {@link Command#LOCK} and {@link Command#UNLOCK}.
+	 *
+	 * @param eCommand The command to handle
+	 * @param rContext The context to apply the command to
+	 * @param rTarget  The target to apply the command to
+	 */
+	private void handleLockAndUnlock(Command		  eCommand,
+									 Optional<String> rContext,
+									 Optional<String> rTarget)
+	{
+		if (!rContext.isPresent())
+		{
+			System.out.printf("Sync context must be provided (-context <context>)\n");
+		}
+		else if (!rTarget.isPresent())
+		{
+			System.out.printf("Sync target must be provided (-target <target>)\n");
+		}
+		else
+		{
+			SyncData aSyncData =
+				new SyncData(getClientId(),
+							 rContext.get(),
+							 rTarget.get(),
+							 true);
+
+			if (eCommand == Command.LOCK)
+			{
+				fRequestLock.send(aSyncData);
+			}
+			else
+			{
+				fReleaseLock.send(aSyncData);
 			}
 		}
 	}
@@ -336,27 +393,12 @@ public class ModificationSyncServiceTool extends Application
 		}
 		else
 		{
-			System.out.printf("Locks for context %s on %s:\n  %s\n",
+			System.out.printf("Locks for context %s:\n  %s\n",
 							  sContext,
-							  aSyncService.get(ENDPOINT_ADDRESS),
 							  CollectionUtil.toString(rContextLocks,
 													  ": ",
 													  "\n  "));
 		}
-	}
-
-	/***************************************
-	 * Forcibly unlocks a certain target in a particular modification context.
-	 *
-	 * @param sContext The modification context
-	 * @param sTarget  The target to unlock
-	 */
-	private void unlock(String sContext, String sTarget)
-	{
-		fReleaseLock.send(new SyncData(getClass().getSimpleName(),
-									   sContext,
-									   sTarget,
-									   true));
 	}
 
 	/***************************************
@@ -367,9 +409,12 @@ public class ModificationSyncServiceTool extends Application
 	 */
 	private void unlockAll(String sContext, Map<String, String> aLocks)
 	{
+		String sClientId = getClientId();
+
 		for (String sTarget : aLocks.keySet())
 		{
-			unlock(sContext, sTarget);
+			fReleaseLock.send(new SyncData(sClientId, sContext, sTarget, true));
+
 			System.out.printf("Removed lock on %s from context %s (acquired by %s)\n",
 							  sTarget,
 							  sContext,
