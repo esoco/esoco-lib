@@ -405,7 +405,8 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 		Relatable aRequestContext = createRequestContext();
 
 		int nMaxConnections =
-			get(MAX_CONNECTIONS, ForkJoinPool.commonPool().getParallelism());
+			get(MAX_CONNECTIONS,
+				Math.max(4, ForkJoinPool.commonPool().getParallelism()));
 
 		Queue<CompletableFuture<Void>> aRequestHandlers =
 			new ArrayDeque<>(nMaxConnections);

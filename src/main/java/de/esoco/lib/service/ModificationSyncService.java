@@ -1,5 +1,5 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-business' project.
+// This file is a part of the 'esoco-lib' project.
 // Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,8 @@ package de.esoco.lib.service;
 
 import de.esoco.lib.app.RestService;
 import de.esoco.lib.app.Service;
+import de.esoco.lib.comm.CommunicationRelationTypes;
+import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpStatusCode;
 import de.esoco.lib.comm.http.HttpStatusException;
@@ -157,6 +159,19 @@ public class ModificationSyncService extends RestService
 				  .onUpdate(this::updateLocks);
 
 		return rRootSpace;
+	}
+
+	/***************************************
+	 * @see RestService#createRestServer()
+	 */
+	@Override
+	protected Server createRestServer()
+	{
+		Server rRestServer = super.createRestServer();
+
+		rRestServer.set(CommunicationRelationTypes.MAX_CONNECTIONS, 20);
+
+		return rRestServer;
 	}
 
 	/***************************************
