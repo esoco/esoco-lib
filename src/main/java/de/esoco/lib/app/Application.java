@@ -21,6 +21,7 @@ import de.esoco.lib.manage.Closeable;
 import de.esoco.lib.manage.Disposable;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
+import de.esoco.lib.text.TextConvert;
 import de.esoco.lib.thread.ThreadManager;
 
 import java.io.PrintStream;
@@ -31,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.obrel.core.RelatedObject;
 
@@ -142,16 +145,27 @@ public abstract class Application extends RelatedObject
 			{
 				aCommandLine = processArguments(rArgs);
 
-				String sAppName = getClass().getSimpleName();
+				if (aCommandLine.hasOption("h"))
+				{
+					printHelp(aCommandLine.getOption("h"));
+				}
+				else if (aCommandLine.hasOption("-help"))
+				{
+					printHelp(aCommandLine.getOption("-help"));
+				}
+				else
+				{
+					String sAppName = getClass().getSimpleName();
 
-				Log.debugf("%s initializing...", sAppName);
-				initialize(aCommandLine);
-				Log.debugf("%s configuring...", sAppName);
-				configure(aCommandLine);
-				Log.debugf("%s starting...", sAppName);
-				startApp();
-				runApp();
-				stopApp();
+					Log.debugf("%s initializing...", sAppName);
+					initialize(aCommandLine);
+					Log.debugf("%s configuring...", sAppName);
+					configure(aCommandLine);
+					Log.debugf("%s starting...", sAppName);
+					startApp();
+					runApp();
+					stopApp();
+				}
 			}
 			catch (CommandLineException e)
 			{
@@ -313,6 +327,19 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
+	 * Returns a description of this application. If present it will be
+	 * displayed together with the usage string that is output by the method
+	 * {@link #printUsage(PrintStream)}. The default implementation returns
+	 * NULL.
+	 *
+	 * @return The application description
+	 */
+	protected String getAppDescription()
+	{
+		return null;
+	}
+
+	/***************************************
 	 * Can be overridden by subclasses to provide a mapping from allowed command
 	 * line options to corresponding help text string. The default
 	 * implementation returns an empty map to indicate that arbitrary options
@@ -399,6 +426,51 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
+	 * Prints help for this application or for a single command.
+	 *
+	 * @param rCommand The optional command
+	 */
+	protected void printHelp(Optional<Object> rCommand)
+	{
+		Map<String, String> rCommandLineOptions = getCommandLineOptions();
+
+		if (rCommand.isPresent() && rCommand.get() instanceof String)
+		{
+			String sCommand = rCommand.get().toString();
+
+			System.out.printf("-%s: %s\n",
+							  sCommand,
+							  rCommandLineOptions.get(sCommand));
+		}
+		else
+		{
+			int nMaxCommandLength = 0;
+
+			printUsage(System.out);
+			System.out.printf("\n");
+
+			for (String sCommand : rCommandLineOptions.keySet())
+			{
+				nMaxCommandLength =
+					Math.max(sCommand.length(), nMaxCommandLength);
+			}
+
+			for (Entry<String, String> rCommandHelp :
+				 rCommandLineOptions.entrySet())
+			{
+				String sCommand =
+					TextConvert.padRight(rCommandHelp.getKey(),
+										 nMaxCommandLength + 2,
+										 ' ');
+
+				System.out.printf("\t-%s%s\n",
+								  sCommand,
+								  rCommandHelp.getValue());
+			}
+		}
+	}
+
+	/***************************************
 	 * Prints information about how to use this application. Should be
 	 * overridden by subclasses that need complex arguments to work.
 	 *
@@ -406,7 +478,14 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void printUsage(PrintStream rOutput)
 	{
-		rOutput.printf("Usage: %s <arguments>\n", getNameOfAppBinary());
+		String sDescription = getAppDescription();
+
+		rOutput.printf("Usage: %s [OPTION]...\n", getNameOfAppBinary());
+
+		if (sDescription != null)
+		{
+			rOutput.println(sDescription);
+		}
 	}
 
 	/***************************************

@@ -33,7 +33,6 @@ import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
@@ -112,6 +111,15 @@ public class ModificationSyncServiceTool extends Application
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected String getAppDescription()
+	{
+		return "Sends a command to a ModificationSyncService running at an URL that must be set with -url";
+	}
 
 	/***************************************
 	 * {@inheritDoc}
@@ -196,28 +204,17 @@ public class ModificationSyncServiceTool extends Application
 	{
 		CommandLine rCommandLine = getCommandLine();
 
-		if (rCommandLine.hasOption("h"))
-		{
-			printHelp(rCommandLine.getString("h"));
-		}
-		else if (rCommandLine.hasOption("-help"))
-		{
-			printHelp(rCommandLine.getString("-help"));
-		}
-		else
-		{
-			aSyncService = Endpoint.at(rCommandLine.requireString("url"));
-			fRequestLock = requestLock().from(aSyncService);
-			fReleaseLock = releaseLock().from(aSyncService);
+		aSyncService = Endpoint.at(rCommandLine.requireString("url"));
+		fRequestLock = requestLock().from(aSyncService);
+		fReleaseLock = releaseLock().from(aSyncService);
 
-			// handle errors on application level
-			aSyncService.set(Log.LOG_EXTENT, LogExtent.NOTHING);
+		// handle errors on application level
+		aSyncService.set(Log.LOG_EXTENT, LogExtent.NOTHING);
 
-			Optional<String> aContext = rCommandLine.getString("context");
-			Optional<String> aTarget  = rCommandLine.getString("target");
+		Optional<String> aContext = rCommandLine.getString("context");
+		Optional<String> aTarget  = rCommandLine.getString("target");
 
-			handleCommands(rCommandLine, aContext, aTarget);
-		}
+		handleCommands(rCommandLine, aContext, aTarget);
 	}
 
 	/***************************************
@@ -353,33 +350,6 @@ public class ModificationSyncServiceTool extends Application
 			else
 			{
 				fReleaseLock.send(aSyncData);
-			}
-		}
-	}
-
-	/***************************************
-	 * Prints help for this application or for a single command.
-	 *
-	 * @param rCommand The optional command
-	 */
-	private void printHelp(Optional<String> rCommand)
-	{
-		if (rCommand.isPresent())
-		{
-			String sCommand = rCommand.get();
-
-			System.out.printf("-%s: %s\n",
-							  sCommand,
-							  aCommandLineOptions.get(sCommand));
-		}
-		else
-		{
-			for (Entry<String, String> rCommandHelp :
-				 aCommandLineOptions.entrySet())
-			{
-				System.out.printf("-%s: %s\n",
-								  rCommandHelp.getKey(),
-								  rCommandHelp.getValue());
 			}
 		}
 	}
