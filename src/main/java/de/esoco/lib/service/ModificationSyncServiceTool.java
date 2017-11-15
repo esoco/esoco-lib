@@ -25,6 +25,8 @@ import de.esoco.lib.comm.EndpointChain;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.json.JsonParser;
+import de.esoco.lib.logging.Log;
+import de.esoco.lib.logging.LogExtent;
 import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.security.Security;
 import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
@@ -207,6 +209,9 @@ public class ModificationSyncServiceTool extends Application
 			aSyncService = Endpoint.at(rCommandLine.requireString("url"));
 			fRequestLock = requestLock().from(aSyncService);
 			fReleaseLock = releaseLock().from(aSyncService);
+
+			// handle errors on application level
+			aSyncService.set(Log.LOG_EXTENT, LogExtent.NOTHING);
 
 			Optional<String> aContext = rCommandLine.getString("context");
 			Optional<String> aTarget  = rCommandLine.getString("target");
