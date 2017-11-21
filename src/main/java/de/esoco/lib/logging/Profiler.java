@@ -35,8 +35,7 @@ public class Profiler
 	private long nCreationTime = System.currentTimeMillis();
 	private long nStartTime    = System.currentTimeMillis();
 
-	private Map<String, Profiler.Measurement> aMeasurements =
-		new LinkedHashMap<>();
+	private Map<String, Measurement> aMeasurements = new LinkedHashMap<>();
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -59,7 +58,7 @@ public class Profiler
 	 *
 	 * @return The result measurement or NULL for none
 	 */
-	public Profiler.Measurement getResult(String sDescription)
+	public Measurement getResult(String sDescription)
 	{
 		return aMeasurements.get(sDescription);
 	}
@@ -69,7 +68,7 @@ public class Profiler
 	 *
 	 * @return The results
 	 */
-	public Map<String, Profiler.Measurement> getResults()
+	public Map<String, Measurement> getResults()
 	{
 		return aMeasurements;
 	}
