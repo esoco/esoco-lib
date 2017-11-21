@@ -122,7 +122,6 @@ public class Profiler
 	 *
 	 * @param sIndent The indentation to print with
 	 */
-	@SuppressWarnings("boxing")
 	public void printResults(String sIndent)
 	{
 		for (String sDescription : aMeasurements.keySet())
