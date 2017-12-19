@@ -32,8 +32,8 @@ public class Profiler
 
 	String sDescription;
 
-	private long nCreationTime = System.currentTimeMillis();
-	private long nStartTime    = System.currentTimeMillis();
+	private final long nCreationTime = System.currentTimeMillis();
+	private long	   nStartTime    = System.currentTimeMillis();
 
 	private Map<String, Measurement> aMeasurements = new LinkedHashMap<>();
 
@@ -49,7 +49,43 @@ public class Profiler
 		this.sDescription = sDescription;
 	}
 
+	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Formats a duration in milliseconds into a string.
+	 *
+	 * @param  nDuration The duration in milliseconds
+	 *
+	 * @return The formatted string
+	 */
+	@SuppressWarnings("boxing")
+	public static String formatDuration(long nDuration)
+	{
+		if (nDuration > 1_200_000L)
+		{
+			long nSeconds = nDuration / 1000;
+
+			return String.format("%dm %02ds", nSeconds / 60, nSeconds % 60);
+		}
+		else
+		{
+			return String.format("%d.%03ds",
+								 nDuration / 1000,
+								 nDuration % 1000);
+		}
+	}
+
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Returns the time in milliseconds when this instance has been created.
+	 *
+	 * @return The creation time in milliseconds
+	 */
+	public final long getCreationTime()
+	{
+		return nCreationTime;
+	}
 
 	/***************************************
 	 * Returns a certain result.
@@ -214,21 +250,9 @@ public class Profiler
 		 * @return The string representation of this measurement
 		 */
 		@Override
-		@SuppressWarnings("boxing")
 		public String toString()
 		{
-			if (nTotalTime > 1_200_000L)
-			{
-				long nSeconds = nTotalTime / 1000;
-
-				return String.format("%dm %02ds", nSeconds / 60, nSeconds % 60);
-			}
-			else
-			{
-				return String.format("%d.%03ds",
-									 nTotalTime / 1000,
-									 nTotalTime % 1000);
-			}
+			return formatDuration(nTotalTime);
 		}
 
 		/***************************************
