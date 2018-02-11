@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class ModificationSyncServiceTool extends Application
 		LOCK("Locks a target in a context"),
 		UNLOCK("Removes a target lock in a context"),
 		RESET("Resets either all locks or only in the given context"),
-		LOGLEVEL("Queries or updates the log level or the target service");
+		LOGLEVEL("Queries or updates the log level of the target service");
 
 		//~ Instance fields ----------------------------------------------------
 
@@ -131,10 +131,11 @@ public class ModificationSyncServiceTool extends Application
 		{
 			aCommandLineOptions = new LinkedHashMap<>();
 
-			aCommandLineOptions.put("h",
-									"Display this help or informations about a certain command");
-			aCommandLineOptions.put("-help",
-									"Display this help or informations about a certain command");
+			String sHelpInfo =
+				"Display this help or informations about a certain command";
+
+			aCommandLineOptions.put("h", sHelpInfo);
+			aCommandLineOptions.put("-help", sHelpInfo);
 			aCommandLineOptions.put("url",
 									"The URL of the sync service (mandatory)");
 			aCommandLineOptions.put("context",
