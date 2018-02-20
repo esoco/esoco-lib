@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.security.AuthenticationService;
 
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -240,7 +241,7 @@ public class ModificationSyncService extends RestService
 				if (bForceRequest && !bLockedByClient)
 				{
 					Log.warnf("Locked by %s, release forced by %s",
-							  rCurrentLock,
+							  rCurrentLock.getClientInfo(),
 							  sClient);
 				}
 
@@ -293,7 +294,7 @@ public class ModificationSyncService extends RestService
 			if (bForceRequest && rCurrentLock != null)
 			{
 				Log.warnf("Locked by %s, forcing lock to %s",
-						  rCurrentLock,
+						  rCurrentLock.getClientInfo(),
 						  aNewLock);
 			}
 
@@ -442,6 +443,7 @@ public class ModificationSyncService extends RestService
 	{
 		//~ Instance fields ----------------------------------------------------
 
+		Date   aLockTime	  = new Date();
 		String sClientId;
 		String sClientAddress;
 
@@ -461,6 +463,16 @@ public class ModificationSyncService extends RestService
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
+		 * Gets a string describing the client that holds the lock.
+		 *
+		 * @return The client info
+		 */
+		public String getClientInfo()
+		{
+			return String.format("%s[%s]", sClientId, sClientAddress);
+		}
+
+		/***************************************
 		 * Checks whether this lock is currently held by the given client .
 		 *
 		 * @param  sClient The ID of the client to check against this lock
@@ -473,12 +485,15 @@ public class ModificationSyncService extends RestService
 		}
 
 		/***************************************
-		 * @see java.lang.Object#toString()
+		 * {@inheritDoc}
 		 */
 		@Override
 		public String toString()
 		{
-			return String.format("%s[%s]", sClientId, sClientAddress);
+			return String.format("%s[%s] (%3$tF %3$tT.%3$tL)",
+								 sClientId,
+								 sClientAddress,
+								 aLockTime);
 		}
 	}
 }
