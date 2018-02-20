@@ -92,7 +92,7 @@ public class ModificationSyncServiceTool extends Application
 
 	//~ Instance fields --------------------------------------------------------
 
-	private Endpoint					    aSyncService;
+	private Endpoint						   aSyncService;
 	private EndpointFunction<SyncData, String> fReleaseLock;
 	private EndpointFunction<SyncData, String> fRequestLock;
 
@@ -170,7 +170,7 @@ public class ModificationSyncServiceTool extends Application
 
 			if (rCommandLine.hasOption(sCommand))
 			{
-				System.out.printf("%s result for sync service %s:\n",
+				System.out.printf("Applying %s to %s\n",
 								  eCommand,
 								  aSyncService.get(ENDPOINT_ADDRESS));
 
