@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import org.obrel.core.Relatable;
 
 
 /********************************************************************
- * Implements the chaining of communication functions with automatic resource
- * management by closing a connection at the end of a chain.
+ * A function that applies a {@link CommunicationMethod} to an endpoint and
+ * automatically performs the resource handling upon evaluation (i.e. closing
+ * the endpoint {@link Connection}).
  *
  * @author eso
  */
-public class EndpointChain<I, O> extends AbstractBinaryFunction<I, Relatable, O>
+public class EndpointFunction<I, O>
+	extends AbstractBinaryFunction<I, Relatable, O>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -45,9 +47,11 @@ public class EndpointChain<I, O> extends AbstractBinaryFunction<I, Relatable, O>
 	 *                  with
 	 * @param fMethod   The communication method to evaluate
 	 */
-	public EndpointChain(Endpoint rEndpoint, CommunicationMethod<I, O> fMethod)
+	public EndpointFunction(
+		Endpoint				  rEndpoint,
+		CommunicationMethod<I, O> fMethod)
 	{
-		super(null, "CommunicationChain");
+		super(null);
 
 		this.rEndpoint = rEndpoint;
 		this.fMethod   = fMethod;
@@ -88,9 +92,10 @@ public class EndpointChain<I, O> extends AbstractBinaryFunction<I, Relatable, O>
 	 * @see AbstractFunction#then(Function)
 	 */
 	@Override
-	public <T> EndpointChain<I, T> then(Function<? super O, T> fOther)
+	public <T> EndpointFunction<I, T> then(Function<? super O, T> fOther)
 	{
-		return new EndpointChain<>(rEndpoint,
-								   new CommunicationChain<>(fMethod, fOther));
+		return new EndpointFunction<>(rEndpoint,
+									  new CommunicationChain<>(fMethod,
+															   fOther));
 	}
 }

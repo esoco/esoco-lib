@@ -130,7 +130,7 @@ public abstract class CommunicationMethod<I, O>
 	 *
 	 * @return The endpoint chain of this method with the given endpoint
 	 */
-	public EndpointChain<I, O> at(Endpoint rEndpoint)
+	public EndpointFunction<I, O> at(Endpoint rEndpoint)
 	{
 		return from(rEndpoint);
 	}
@@ -172,14 +172,14 @@ public abstract class CommunicationMethod<I, O>
 
 	/***************************************
 	 * Overloaded variant of {@link Function#from(Function)} that returns an
-	 * instance of {@link EndpointChain}.
+	 * instance of {@link EndpointFunction}.
 	 *
 	 * @param  rEndpoint The endpoint to return the chain for
 	 *
 	 * @return A new endpoint chain that evaluates this method at the given
 	 *         endpoint
 	 */
-	public EndpointChain<I, O> from(Endpoint rEndpoint)
+	public EndpointFunction<I, O> from(Endpoint rEndpoint)
 	{
 		return rEndpoint.then(this);
 	}

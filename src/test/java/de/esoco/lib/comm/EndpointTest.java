@@ -175,7 +175,7 @@ public class EndpointTest
 	{
 		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
 
-		EndpointChain<String, String> fGetBody =
+		EndpointFunction<String, String> fGetBody =
 			httpGet(HTML_GET_URL).from(aEndpoint).then(find(HTML_BODY_PATTERN));
 
 		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.result()));
@@ -194,7 +194,7 @@ public class EndpointTest
 	{
 		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
 
-		EndpointChain<String, String> fPostParam =
+		EndpointFunction<String, String> fPostParam =
 			httpPost("post.php",
 					 NetUtil.encodeUrlParameter("test_param", "test_value"))
 			.from(aEndpoint);
@@ -220,7 +220,7 @@ public class EndpointTest
 		Function<Reader, Integer> fReadContentLength =
 			doIfElse(pFindLength, fReadLength, value("-1")).then(parseInteger());
 
-		EndpointChain<String, String> fGetBody =
+		EndpointFunction<String, String> fGetBody =
 			textRequest(HTTP_GET_INDEX, fReadContentLength).from(aEndpoint)
 														   .then(find(HTML_BODY_PATTERN));
 

@@ -18,7 +18,7 @@ package de.esoco.lib.service;
 
 import de.esoco.lib.app.Service;
 import de.esoco.lib.comm.Endpoint;
-import de.esoco.lib.comm.EndpointChain;
+import de.esoco.lib.comm.EndpointFunction;
 import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
 
 import static de.esoco.lib.service.ModificationSyncEndpoint.getCurrentLocks;
@@ -55,13 +55,13 @@ public class ModificationSyncEndpointTest
 
 		Service.SET_LOG_LEVEL.at(aSyncService).send("\"WARN\"");
 
-		EndpointChain<SyncData, String> fLock =
+		EndpointFunction<SyncData, String> fLock =
 			requestLock().from(aSyncService);
 
-		EndpointChain<SyncData, String> fRelease =
+		EndpointFunction<SyncData, String> fRelease =
 			releaseLock().from(aSyncService);
 
-		EndpointChain<SyncData, String> fGetLocks =
+		EndpointFunction<SyncData, String> fGetLocks =
 			getCurrentLocks().from(aSyncService);
 
 		System.out.printf("RUNNING: %s\n",
@@ -109,7 +109,7 @@ public class ModificationSyncEndpointTest
 	 */
 	private static void lockEntities(
 		String							sContext,
-		EndpointChain<SyncData, String> fLock)
+		EndpointFunction<SyncData, String> fLock)
 	{
 		System.out.printf("Locking context %s\n", sContext);
 
@@ -137,7 +137,7 @@ public class ModificationSyncEndpointTest
 	 */
 	private static void releaseEntities(
 		String							sContext,
-		EndpointChain<SyncData, String> fRelease)
+		EndpointFunction<SyncData, String> fRelease)
 	{
 		System.out.printf("Releasing context %s\n", sContext);
 

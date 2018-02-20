@@ -396,9 +396,9 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 *
 	 * @see AbstractFunction#then(Function)
 	 */
-	public <I, O> EndpointChain<I, O> then(CommunicationMethod<I, O> fMethod)
+	public <I, O> EndpointFunction<I, O> then(CommunicationMethod<I, O> fMethod)
 	{
-		return new EndpointChain<>(this, fMethod);
+		return new EndpointFunction<>(this, fMethod);
 	}
 
 	/***************************************

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import de.esoco.lib.expression.Function;
 
 
 /********************************************************************
- * Implements the chaining of communication functions with automatic resource
- * management by closing a connection at the end of a chain.
+ * Binary function that chains a communication method with another function and
+ * still can be used as a communication method so that it can be invoked with a
+ * connection as the second evaluation argument.
  *
  * @author eso
  */

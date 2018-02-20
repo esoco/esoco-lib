@@ -21,7 +21,7 @@ import de.esoco.lib.app.CommandLine;
 import de.esoco.lib.app.Service;
 import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.Endpoint;
-import de.esoco.lib.comm.EndpointChain;
+import de.esoco.lib.comm.EndpointFunction;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.json.JsonParser;
@@ -93,8 +93,8 @@ public class ModificationSyncServiceTool extends Application
 	//~ Instance fields --------------------------------------------------------
 
 	private Endpoint					    aSyncService;
-	private EndpointChain<SyncData, String> fReleaseLock;
-	private EndpointChain<SyncData, String> fRequestLock;
+	private EndpointFunction<SyncData, String> fReleaseLock;
+	private EndpointFunction<SyncData, String> fRequestLock;
 
 	private Map<String, String> aCommandLineOptions = null;
 

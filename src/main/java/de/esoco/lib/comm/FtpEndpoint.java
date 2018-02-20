@@ -121,7 +121,7 @@ public class FtpEndpoint extends Endpoint
 		System.out.printf("DIRS : %s\n", fListFiles.result());
 		System.out.printf("FILES: %s\n", fListFiles.evaluate("FILE:."));
 
-		EndpointChain<String, byte[]> fDownloadFile =
+		EndpointFunction<String, byte[]> fDownloadFile =
 			download("").from(aTestFtpServer);
 
 		Params aParams = new Params().with(MAX_RESPONSE_SIZE, 2048);
