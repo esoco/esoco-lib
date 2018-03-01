@@ -24,6 +24,7 @@ import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.comm.EndpointFunction;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.json.JsonBuilder;
+import de.esoco.lib.json.JsonObject;
 import de.esoco.lib.json.JsonParser;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogExtent;
@@ -107,7 +108,14 @@ public class ModificationSyncServiceTool extends Application
 	 */
 	public static void main(String[] rArgs)
 	{
-		new ModificationSyncServiceTool().run(rArgs);
+		try
+		{
+			new ModificationSyncServiceTool().run(rArgs);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -236,15 +244,13 @@ public class ModificationSyncServiceTool extends Application
 	 * @return A mapping from lock contexts to mappings from target IDs to lock
 	 *         holders
 	 */
-	private Map<String, Map<String, String>> getLocks()
+	private JsonObject getLocks()
 	{
 		Function<SyncData, String> fGetLocks =
 			getCurrentLocks().from(aSyncService);
 
 		@SuppressWarnings("unchecked")
-		Map<String, Map<String, String>> aLocks =
-			(Map<String, Map<String, String>>)
-			new JsonParser().parse(fGetLocks.result());
+		JsonObject aLocks = new JsonParser().parseObject(fGetLocks.result());
 
 		return aLocks;
 	}
@@ -278,7 +284,7 @@ public class ModificationSyncServiceTool extends Application
 	private void handleListAndReset(Command			 eCommand,
 									Optional<String> rContext)
 	{
-		Map<String, Map<String, String>> aLocks = getLocks();
+		JsonObject aLocks = getLocks();
 
 		if (aLocks.isEmpty())
 		{
@@ -286,8 +292,8 @@ public class ModificationSyncServiceTool extends Application
 		}
 		else if (rContext.isPresent())
 		{
-			String			    sContext	  = rContext.get();
-			Map<String, String> rContextLocks = aLocks.get(sContext);
+			String     sContext		 = rContext.get();
+			JsonObject rContextLocks = aLocks.get(sContext, new JsonObject());
 
 			if (eCommand == Command.RESET)
 			{
@@ -302,16 +308,17 @@ public class ModificationSyncServiceTool extends Application
 		{
 			if (eCommand == Command.RESET)
 			{
-				for (String sContext : aLocks.keySet())
+				for (String sContext : aLocks.getProperties().keySet())
 				{
-					unlockAll(sContext, aLocks.get(sContext));
+					unlockAll(sContext, aLocks.get(sContext, new JsonObject()));
 				}
 			}
 			else
 			{
-				for (String sContext : aLocks.keySet())
+				for (String sContext : aLocks.getPropertyNames())
 				{
-					printLocks(sContext, aLocks.get(sContext));
+					printLocks(sContext,
+							   aLocks.get(sContext, new JsonObject()));
 				}
 			}
 		}
@@ -361,7 +368,7 @@ public class ModificationSyncServiceTool extends Application
 	 * @param sContext
 	 * @param rContextLocks
 	 */
-	private void printLocks(String sContext, Map<String, String> rContextLocks)
+	private void printLocks(String sContext, JsonObject rContextLocks)
 	{
 		if (rContextLocks.isEmpty())
 		{
@@ -371,7 +378,8 @@ public class ModificationSyncServiceTool extends Application
 		{
 			System.out.printf("Locks for context %s:\n  %s\n",
 							  sContext,
-							  CollectionUtil.toString(rContextLocks,
+							  CollectionUtil.toString(rContextLocks
+													  .getProperties(),
 													  ": ",
 													  "\n  "));
 		}
@@ -381,20 +389,20 @@ public class ModificationSyncServiceTool extends Application
 	 * Unlocks all targets in a certain modification context.
 	 *
 	 * @param sContext The modification context
-	 * @param aLocks   The mapping from target IDs to lock holders
+	 * @param rLocks   The mapping from target IDs to lock holders
 	 */
-	private void unlockAll(String sContext, Map<String, String> aLocks)
+	private void unlockAll(String sContext, JsonObject rLocks)
 	{
 		String sClientId = getClientId();
 
-		for (String sTarget : aLocks.keySet())
+		for (String sTarget : rLocks.getProperties().keySet())
 		{
 			fReleaseLock.send(new SyncData(sClientId, sContext, sTarget, true));
 
 			System.out.printf("Removed lock on %s from context %s (acquired by %s)\n",
 							  sTarget,
 							  sContext,
-							  aLocks.get(sTarget));
+							  rLocks.get(sTarget, ""));
 		}
 	}
 }
