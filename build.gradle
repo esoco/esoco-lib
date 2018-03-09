@@ -19,12 +19,6 @@ tasks.withType(JavaCompile) {
     options.forkOptions.executable = 'javac'
 }
 
-tasks.withType(Javadoc) {
-    failOnError = false
-    options.addStringOption('XDignore.symbol.file')
-}
-
-
 dependencies
 {
  	if (project(':objectrelations').getProjectDir().exists())
@@ -52,6 +46,15 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     archives sourceJar
     archives javadocJar
+}
+
+tasks.withType(Javadoc) {
+    failOnError = false
+    options.addBooleanOption('quiet', true)
+    
+    if (JavaVersion.current().isJava8Compatible()) {
+        options.addBooleanOption('Xdoclint:none', true) 
+    }
 }
 
 // ----------- Bintray Release -----------
