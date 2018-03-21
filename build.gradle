@@ -57,6 +57,25 @@ tasks.withType(Javadoc) {
     }
 }
 
+task mss(type: Jar) {
+    archiveName = 'mss.jar'
+
+    manifest {
+        attributes 'Implementation-Title': 'ModificationSyncService Tool',
+	        	   'Implementation-Version': '1.0.0',
+	               'Built-Date': new Date(),
+                   'Built-JDK': System.getProperty('java.version'),
+                   'Main-Class': 'de.esoco.lib.service.ModificationSyncServiceTool'
+
+    }
+
+	from { configurations.compile.collect
+		{ it.isDirectory() ? it : zipTree(it) }
+	}
+    
+    with jar
+}
+
 // ----------- Bintray Release -----------
 
 buildscript {
