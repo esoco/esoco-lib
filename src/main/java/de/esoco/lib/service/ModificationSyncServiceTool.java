@@ -126,7 +126,8 @@ public class ModificationSyncServiceTool extends Application
 	@Override
 	protected String getAppDescription()
 	{
-		return "Sends a command to a ModificationSyncService running at an URL that must be set with -url";
+		return "Sends a command to a ModificationSyncService running at an " +
+			   "URL that must be set with -url. Use -h or --help for help.";
 	}
 
 	/***************************************

@@ -23,6 +23,7 @@ import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpStatusCode;
 import de.esoco.lib.comm.http.HttpStatusException;
+import de.esoco.lib.json.JsonObject;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.security.AuthenticationService;
@@ -70,12 +71,9 @@ public class ModificationSyncService extends RestService
 	/** The part of the API providing access to server control. */
 	public static final RelationType<ObjectSpace<Object>> SYNC = newType();
 
-	private static final RelationType<Map<String, Object>> CHECK_LOCK   =
-		newType();
-	private static final RelationType<Map<String, Object>> REQUEST_LOCK =
-		newType();
-	private static final RelationType<Map<String, Object>> RELEASE_LOCK =
-		newType();
+	private static final RelationType<JsonObject> CHECK_LOCK   = newType();
+	private static final RelationType<JsonObject> REQUEST_LOCK = newType();
+	private static final RelationType<JsonObject> RELEASE_LOCK = newType();
 
 	private static final RelationType<Map<String, Map<String, LockData>>> CURRENT_LOCKS =
 		newType();
@@ -180,7 +178,7 @@ public class ModificationSyncService extends RestService
 	 *
 	 * @param rRequest The lock request
 	 */
-	private void checkLock(Map<String, Object> rRequest)
+	private void checkLock(JsonObject rRequest)
 	{
 		processSyncRequest(rRequest, this::handleCheckLock);
 	}
@@ -321,8 +319,8 @@ public class ModificationSyncService extends RestService
 	 * @param rRequestHandler The request handler
 	 */
 	private void processSyncRequest(
-		Map<String, Object> rRequest,
-		SyncRequestHandler  rRequestHandler)
+		JsonObject		   rRequest,
+		SyncRequestHandler rRequestHandler)
 	{
 		try
 		{
@@ -364,7 +362,7 @@ public class ModificationSyncService extends RestService
 	 *
 	 * @param rRequest The lock release request
 	 */
-	private void releaseLock(Map<String, Object> rRequest)
+	private void releaseLock(JsonObject rRequest)
 	{
 		processSyncRequest(rRequest, this::handleReleaseLock);
 	}
@@ -374,13 +372,13 @@ public class ModificationSyncService extends RestService
 	 *
 	 * @param rRequest The lock request
 	 */
-	private void requestLock(Map<String, Object> rRequest)
+	private void requestLock(JsonObject rRequest)
 	{
 		processSyncRequest(rRequest, this::handleRequestLock);
 	}
 
 	/***************************************
-	 * Signals a failed request by throwing an {@link HttpStatusException}.
+	 * Signals a failed request by throwing a {@link HttpStatusException}.
 	 *
 	 * @param  eStatus  The status code for the failure
 	 * @param  sMessage The failure message
