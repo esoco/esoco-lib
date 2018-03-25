@@ -74,8 +74,18 @@ public class EndpointFunction<I, O>
 	}
 
 	/***************************************
-	 * A semantic variant of {@link #evaluate(Object)} for usage in fluent
-	 * invocations.
+	 * A semantic variant of {@link #result()} that invokes the communication
+	 * method with it's default input.
+	 *
+	 * @return The result of the endpoint request
+	 */
+	public O send()
+	{
+		return result();
+	}
+
+	/***************************************
+	 * A semantic variant of {@link #evaluate(Object)}.
 	 *
 	 * @param  rInput The input of the endpoint request
 	 *

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,10 +63,10 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	//~ Static fields/initializers ---------------------------------------------
 
 	/**
-	 * A token that describes an endpoint type (used by the function base
-	 * class).
+	 * The URI scheme an endpoint has been created from (used as the function
+	 * token).
 	 */
-	protected static final RelationType<String> ENDPOINT_TOKEN = newType();
+	protected static final RelationType<String> ENDPOINT_SCHEME = newType();
 
 	/** An internal relation type to store an active endpoint connection. */
 	protected static final RelationType<Connection> ENDPOINT_CONNECTION =
@@ -135,7 +135,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 
 		if (aEndpointClass == null)
 		{
-			aEndpointClass = tryRegisterDefaultEndpoint(sScheme);
+			aEndpointClass = getDefaultEndpoint(sScheme);
 		}
 
 		if (aEndpointClass != null)
@@ -143,14 +143,15 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 			try
 			{
 				aEndpoint = aEndpointClass.newInstance();
-				aEndpoint.set(ENDPOINT_TOKEN, sScheme);
+				aEndpoint.set(ENDPOINT_SCHEME, sScheme);
 				aEndpoint.set(ENDPOINT_ADDRESS, sUri);
-				aEndpoint.init();
 
 				if (!aEndpoint.hasRelation(ENCRYPTION))
 				{
 					aEndpoint.set(ENCRYPTION, bEncrypted);
 				}
+
+				aEndpoint.init();
 			}
 			catch (Exception e)
 			{
@@ -284,14 +285,14 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 *                                given scheme could be found
 	 */
 	@SuppressWarnings("unchecked")
-	private static Class<? extends Endpoint> tryRegisterDefaultEndpoint(
-		String sScheme) throws CommunicationException
+	private static Class<? extends Endpoint> getDefaultEndpoint(String sScheme)
+		throws CommunicationException
 	{
 		Class<? extends Endpoint> aEndpointClass;
 
 		try
 		{
-			String sPrefix  = sScheme.toUpperCase();
+			String sPrefix  = sScheme.toUpperCase().replaceAll("-", "_");
 			String sPackage = Endpoint.class.getPackage().getName();
 
 			if (sPrefix.endsWith("S"))
@@ -388,7 +389,7 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	@Override
 	public String getToken()
 	{
-		return get(ENDPOINT_TOKEN);
+		return get(ENDPOINT_SCHEME);
 	}
 
 	/***************************************

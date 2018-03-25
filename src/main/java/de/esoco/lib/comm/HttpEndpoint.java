@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class HttpEndpoint extends Endpoint
 	 * Returns a new method instance that performs a POST request by
 	 * transmitting the method input to a certain URL of the target endpoint.
 	 *
-	 * @param  sTargetUrl The target URL for the POST
+	 * @param  sTargetUrl The endpoint-relative target URL for the POST request
 	 * @param  sPostData  The default data to be transmitted (the method input)
 	 *
 	 * @return The new communication method
@@ -120,6 +120,33 @@ public class HttpEndpoint extends Endpoint
 											Functions.identity());
 
 		return aPostRequest;
+	}
+
+	/***************************************
+	 * Builds a HTTP endpoint URL from the given parameters.
+	 *
+	 * @param  sHost      The host name or address
+	 * @param  nPort      The port to connect to
+	 * @param  bEncrypted TRUE for an encrypted connection
+	 *
+	 * @return The resulting endpoint URL
+	 */
+	@SuppressWarnings("boxing")
+	public static String url(String sHost, int nPort, boolean bEncrypted)
+	{
+		String sScheme = bEncrypted ? "https" : "http";
+		String sUrl;
+
+		if (nPort > 0)
+		{
+			sUrl = String.format("%s://%s:%d", sScheme, sHost, nPort);
+		}
+		else
+		{
+			sUrl = String.format("%s://%s", sScheme, sHost);
+		}
+
+		return sUrl;
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -574,6 +601,7 @@ public class HttpEndpoint extends Endpoint
 				Charset rEncoding = rConnection.get(REQUEST_ENCODING);
 
 				rOutputStream.write(sRequestData.getBytes(rEncoding));
+				rOutputStream.flush();
 			}
 		}
 	}
