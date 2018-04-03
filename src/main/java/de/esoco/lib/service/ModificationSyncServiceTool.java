@@ -34,7 +34,6 @@ import de.esoco.lib.service.ModificationSyncEndpoint.SyncData;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
 import static de.esoco.lib.service.ModificationSyncEndpoint.getCurrentLocks;
@@ -169,9 +168,9 @@ public class ModificationSyncServiceTool extends Application
 	 * @param rContext     The optional command context
 	 * @param rTarget      The optional command target
 	 */
-	protected void handleCommands(CommandLine	   rCommandLine,
-								  Optional<String> rContext,
-								  Optional<String> rTarget)
+	protected void handleCommands(CommandLine rCommandLine,
+								  String	  rContext,
+								  String	  rTarget)
 	{
 		for (Command eCommand : Command.values())
 		{
@@ -221,8 +220,8 @@ public class ModificationSyncServiceTool extends Application
 		// handle errors on application level
 		aSyncService.set(Log.LOG_EXTENT, LogExtent.NOTHING);
 
-		Optional<String> aContext = rCommandLine.getString("context");
-		Optional<String> aTarget  = rCommandLine.getString("target");
+		String aContext = rCommandLine.getString("context");
+		String aTarget  = rCommandLine.getString("target");
 
 		handleCommands(rCommandLine, aContext, aTarget);
 	}
@@ -261,12 +260,12 @@ public class ModificationSyncServiceTool extends Application
 	 *
 	 * @param rNewLevel The optional new log level for setting
 	 */
-	private void handleGetAndSetLogLevel(Optional<String> rNewLevel)
+	private void handleGetAndSetLogLevel(String rNewLevel)
 	{
-		if (rNewLevel.isPresent() && LogLevel.valueOf(rNewLevel.get()) != null)
+		if (rNewLevel != null && LogLevel.valueOf(rNewLevel) != null)
 		{
 			Service.SET_LOG_LEVEL.at(aSyncService)
-								 .send(JsonBuilder.toJson(rNewLevel.get()));
+								 .send(JsonBuilder.toJson(rNewLevel));
 		}
 		else
 		{
@@ -282,8 +281,7 @@ public class ModificationSyncServiceTool extends Application
 	 * @param eCommand The command to handle
 	 * @param rContext The context to apply the command to or none for all
 	 */
-	private void handleListAndReset(Command			 eCommand,
-									Optional<String> rContext)
+	private void handleListAndReset(Command eCommand, String rContext)
 	{
 		JsonObject aLocks = getLocks();
 
@@ -291,9 +289,9 @@ public class ModificationSyncServiceTool extends Application
 		{
 			System.out.printf("No lock contexts defined\n");
 		}
-		else if (rContext.isPresent())
+		else if (rContext != null)
 		{
-			String     sContext		 = rContext.get();
+			String     sContext		 = rContext;
 			JsonObject rContextLocks = aLocks.get(sContext, new JsonObject());
 
 			if (eCommand == Command.RESET)
@@ -332,25 +330,22 @@ public class ModificationSyncServiceTool extends Application
 	 * @param rContext The context to apply the command to
 	 * @param rTarget  The target to apply the command to
 	 */
-	private void handleLockAndUnlock(Command		  eCommand,
-									 Optional<String> rContext,
-									 Optional<String> rTarget)
+	private void handleLockAndUnlock(Command eCommand,
+									 String  rContext,
+									 String  rTarget)
 	{
-		if (!rContext.isPresent())
+		if (rContext == null)
 		{
 			System.out.printf("Sync context must be provided (-context <context>)\n");
 		}
-		else if (!rTarget.isPresent())
+		else if (rTarget == null)
 		{
 			System.out.printf("Sync target must be provided (-target <target>)\n");
 		}
 		else
 		{
 			SyncData aSyncData =
-				new SyncData(getClientId(),
-							 rContext.get(),
-							 rTarget.get(),
-							 true);
+				new SyncData(getClientId(), rContext, rTarget, true);
 
 			if (eCommand == Command.LOCK)
 			{

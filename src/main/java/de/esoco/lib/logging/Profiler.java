@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -175,14 +175,15 @@ public class Profiler
 	@SuppressWarnings("boxing")
 	public void printSummary()
 	{
-		long nTime = (System.currentTimeMillis() - nCreationTime) / 1000;
+		long nTime = System.currentTimeMillis() - nCreationTime;
 
-		System.out.printf("=== %s: %dm %02ds ===\n",
+		System.out.printf("===== %s: %d:%02d.%03d =====\n",
 						  sDescription,
-						  nTime / 60,
-						  nTime % 60);
+						  nTime / 60_000,
+						  nTime / 1000 % 60,
+						  nTime % 1000);
 
-		printResults("  ");
+		printResults("");
 	}
 
 	//~ Inner Classes ----------------------------------------------------------

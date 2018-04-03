@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -332,12 +331,11 @@ public class CommandLine
 	 *
 	 * @param  sOption The option to query
 	 *
-	 * @return An {@link Optional} containing the option value if the option
-	 *         exists
+	 * @return The option value or NULL for none
 	 */
-	public Optional<Object> getOption(String sOption)
+	public Object getOption(String sOption)
 	{
-		return Optional.ofNullable(aCommandLineOptions.get(sOption));
+		return aCommandLineOptions.get(sOption);
 	}
 
 	/***************************************
@@ -346,15 +344,13 @@ public class CommandLine
 	 *
 	 * @param  sOption The option name
 	 *
-	 * @return An {@link Optional} containing the string value if the option
-	 *         exists
+	 * @return The option string or NULL for none
 	 */
-	public Optional<String> getString(String sOption)
+	public String getString(String sOption)
 	{
-		Optional<Object> rOption = getOption(sOption);
+		Object rOption = getOption(sOption);
 
-		return rOption.isPresent() ? Optional.of(rOption.get().toString())
-								   : Optional.empty();
+		return rOption != null ? rOption.toString() : null;
 	}
 
 	/***************************************
@@ -555,12 +551,10 @@ public class CommandLine
 		String			  sOption,
 		Predicate<Object> pIsValidOption) throws CommandLineException
 	{
-		Optional<Object> rOption = getOption(sOption);
+		Object rValue = getOption(sOption);
 
-		if (rOption.isPresent())
+		if (rValue != null)
 		{
-			Object rValue = rOption.get();
-
 			if (pIsValidOption == null || pIsValidOption.test(rValue))
 			{
 				return rValue;

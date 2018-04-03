@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import org.obrel.core.RelatedObject;
 
@@ -401,11 +400,12 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void handleApplicationError(Exception e)
 	{
-		System.err.printf("Error executing %s: %s",
+		System.err.printf("Error executing %s: %s\n",
 						  getNameOfAppBinary(),
 						  e.getMessage());
 
-		if (getCommandLine().hasOption("verbose"))
+		if (getCommandLine().hasOption("v") ||
+			getCommandLine().hasOption("-verbose"))
 		{
 			e.printStackTrace();
 		}
@@ -430,13 +430,13 @@ public abstract class Application extends RelatedObject
 	 *
 	 * @param rCommand The optional command
 	 */
-	protected void printHelp(Optional<Object> rCommand)
+	protected void printHelp(Object rCommand)
 	{
 		Map<String, String> rCommandLineOptions = getCommandLineOptions();
 
-		if (rCommand.isPresent() && rCommand.get() instanceof String)
+		if (rCommand != null && rCommand instanceof String)
 		{
-			String sCommand = rCommand.get().toString();
+			String sCommand = rCommand.toString();
 
 			System.out.printf("-%s: %s\n",
 							  sCommand,

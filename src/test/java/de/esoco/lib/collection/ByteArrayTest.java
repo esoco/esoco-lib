@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 
 /********************************************************************
@@ -24,27 +27,18 @@ import junit.framework.TestCase;
  *
  * @author eso
  */
-public class ByteArrayTest extends TestCase
+public class ByteArrayTest
 {
 	//~ Instance fields --------------------------------------------------------
 
-	ByteArray aTestArray;
-
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
-	 * Default constructor.
-	 */
-	public ByteArrayTest()
-	{
-	}
+	private ByteArray aTestArray;
 
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Set up data for all tests.
+	 * Set up test data.
 	 */
-	@Override
+	@Before
 	public void setUp()
 	{
 		aTestArray = new ByteArray(10);
@@ -58,6 +52,7 @@ public class ByteArrayTest extends TestCase
 	/***************************************
 	 * Test array access.
 	 */
+	@Test
 	public void testArrayAccess()
 	{
 		assertEquals(5, aTestArray.get(5));
@@ -95,5 +90,41 @@ public class ByteArrayTest extends TestCase
 
 		aTestArray.add((byte) 42);
 		assertEquals(30, aTestArray.getCapacity());
+	}
+
+	/***************************************
+	 * Test {@link ByteArray#fromJson(String)}
+	 */
+	@Test
+	public void testFromJson()
+	{
+		assertEquals(new ByteArray(), new ByteArray().fromJson("\"0x\""));
+
+		assertEquals(aTestArray,
+					 new ByteArray().fromJson("\"0x00010203040506070809\""));
+
+		aTestArray.add((byte) 128);
+		aTestArray.add((byte) 255);
+		assertEquals(aTestArray,
+					 new ByteArray().fromJson("\"0x0001020304050607080980FF\""));
+	}
+
+	/***************************************
+	 * Test {@link ByteArray#toJson()}.
+	 */
+	@Test
+	public void testToJson()
+	{
+		assertEquals("\"0x\"", new ByteArray().toJson());
+
+		assertEquals("\"0x00010203040506070809\"", aTestArray.toJson());
+
+		aTestArray.add((byte) 10);
+		aTestArray.add((byte) 15);
+		assertEquals("\"0x000102030405060708090A0F\"", aTestArray.toJson());
+
+		aTestArray.add((byte) 128);
+		aTestArray.add((byte) 255);
+		assertEquals("\"0x000102030405060708090A0F80FF\"", aTestArray.toJson());
 	}
 }

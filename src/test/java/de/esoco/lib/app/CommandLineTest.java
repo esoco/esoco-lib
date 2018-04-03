@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ public class CommandLineTest
 		assertTrue(cl.hasOption("a"));
 		assertTrue(cl.hasOption("b"));
 		assertFalse(cl.hasOption("c"));
-		assertEquals(Boolean.TRUE, cl.getOption("a").get());
-		assertEquals(Integer.valueOf(123), cl.getOption("t1").get());
-		assertEquals("ok ok", cl.getOption("t2").get());
-		assertEquals("a value", cl.getOption("t3").get());
+		assertEquals(Boolean.TRUE, cl.getOption("a"));
+		assertEquals(Integer.valueOf(123), cl.getOption("t1"));
+		assertEquals("ok ok", cl.getOption("t2"));
+		assertEquals("a value", cl.getOption("t3"));
 	}
 
 	/***************************************
@@ -63,7 +63,7 @@ public class CommandLineTest
 		String[]    args = new String[] { "-val=test" };
 		CommandLine cl   = new CommandLine(args);
 
-		assertEquals("test", cl.getOption("val").get());
+		assertEquals("test", cl.getOption("val"));
 
 		try
 		{

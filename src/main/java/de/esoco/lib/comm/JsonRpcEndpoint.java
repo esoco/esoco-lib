@@ -206,7 +206,7 @@ public class JsonRpcEndpoint extends Endpoint
 		 */
 		@Override
 		@SuppressWarnings("unchecked")
-		public R doOn(Connection rConnection, P rParams)
+		public R doOn(Connection rConnection, P rInput)
 		{
 			Connection rTransportConnection =
 				rConnection.get(RPC_SERVER_CONNECTION);
@@ -217,12 +217,14 @@ public class JsonRpcEndpoint extends Endpoint
 			JsonObject aRequest = new JsonObject();
 
 			aRequest.set("jsonrpc", "2.0");
-			aRequest.set("id", "1");
+			aRequest.set("id", 1);
 			aRequest.set("method", sMethod);
 
-			if (rParams != null)
+			Object rRequestParams = getRequestParams(rInput);
+
+			if (rRequestParams != null)
 			{
-				aRequest.set("params", rParams);
+				aRequest.set("params", rRequestParams);
 			}
 
 			String sRawResponse =
@@ -258,6 +260,20 @@ public class JsonRpcEndpoint extends Endpoint
 															   aError.get("code"),
 															   aError.get("message")));
 			}
+		}
+
+		/***************************************
+		 * Returns the value for the "params" property of a request. The default
+		 * implementation just returns the input value. Subclasses can override
+		 * this to extend or modify the method input.
+		 *
+		 * @param  rInput The method input
+		 *
+		 * @return The actual request params
+		 */
+		protected Object getRequestParams(P rInput)
+		{
+			return rInput;
 		}
 	}
 }

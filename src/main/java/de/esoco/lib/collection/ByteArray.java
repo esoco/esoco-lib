@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,13 +16,22 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
+import de.esoco.lib.json.Json;
+import de.esoco.lib.json.JsonBuilder;
+import de.esoco.lib.json.JsonSerializable;
+import de.esoco.lib.text.TextConvert;
+
+
 /********************************************************************
  * A dynamic array of bytes that can grow and shrink to hold an arbitrary number
- * of byte values.
+ * of byte values. It also can be converted to and from a JSON string which will
+ * have the prefix "0x" followed by a joined sequence of two-char hexadecimal
+ * values for each byte. If the byte array is empty, the JSON value is only
+ * "0x".
  *
  * @author eso
  */
-public class ByteArray
+public class ByteArray implements JsonSerializable<ByteArray>
 {
 	//~ Static fields/initializers ---------------------------------------------
 
@@ -111,6 +120,15 @@ public class ByteArray
 	}
 
 	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void appendTo(JsonBuilder rBuilder)
+	{
+		rBuilder.appendString("0x" + toString());
+	}
+
+	/***************************************
 	 * Removes all entries from the array. The array's size will be 0
 	 * afterwards, it's capacity will not be changed.
 	 */
@@ -124,14 +142,18 @@ public class ByteArray
 	 * destination array must have a length of at least getSize() + nOffset,
 	 * otherwise an IndexOutOfBoundsException will be thrown.
 	 *
-	 * @param  rDst    The destination array to copy the array data into
+	 * @param  rTarget The target array to copy the array data into
 	 * @param  nOffset The start position in the destination array
+	 *
+	 * @return The target array
 	 *
 	 * @throws IndexOutOfBoundsException If the destination array is to small
 	 */
-	public void copyTo(byte[] rDst, int nOffset)
+	public byte[] copyTo(byte[] rTarget, int nOffset)
 	{
-		System.arraycopy(aData, 0, rDst, nOffset, nSize);
+		System.arraycopy(aData, 0, rTarget, nOffset, nSize);
+
+		return rTarget;
 	}
 
 	/***************************************
@@ -147,6 +169,76 @@ public class ByteArray
 		{
 			setCapacity(nMinCapacity);
 		}
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean equals(Object rObject)
+	{
+		if (this == rObject)
+		{
+			return true;
+		}
+
+		if (rObject == null || getClass() != rObject.getClass())
+		{
+			return false;
+		}
+
+		ByteArray rOther = (ByteArray) rObject;
+
+		if (nSize != rOther.nSize)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < nSize; i++)
+		{
+			if (aData[i] != rOther.aData[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	public ByteArray fromJson(String sJson)
+	{
+		String sData = Json.parse(sJson, String.class);
+
+		if (!sData.startsWith("0x"))
+		{
+			throw new IllegalArgumentException("Missing 0x prefix: " + sData);
+		}
+		else if (sData.length() % 2 == 1)
+		{
+			throw new IllegalArgumentException("Invalid byte array data: " +
+											   sData);
+		}
+		else
+		{
+			sData = sData.substring(2);
+
+			int nChars = sData.length();
+
+			clear();
+			ensureCapacity(nChars / 2);
+
+			for (int i = 0; i < nChars; i += 2)
+			{
+				aData[nSize++] =
+					(byte) Short.parseShort(sData.substring(i, i + 2), 16);
+			}
+		}
+
+		return this;
 	}
 
 	/***************************************
@@ -196,6 +288,22 @@ public class ByteArray
 	public int getSize()
 	{
 		return nSize;
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int hashCode()
+	{
+		int nHash = nSize;
+
+		for (int i = 0; i < nSize; i++)
+		{
+			nHash = 31 * nHash + aData[i];
+		}
+
+		return nHash;
 	}
 
 	/***************************************
@@ -272,6 +380,16 @@ public class ByteArray
 		nSize++;
 
 		return nPos;
+	}
+
+	/***************************************
+	 * Checks whether this array is empty.
+	 *
+	 * @return TRUE if empty
+	 */
+	public boolean isEmpty()
+	{
+		return nSize == 0;
 	}
 
 	/***************************************
@@ -378,37 +496,20 @@ public class ByteArray
 	 */
 	public byte[] toByteArray()
 	{
-		byte[] aResult = new byte[nSize];
-
-		copyTo(aResult, 0);
-
-		return aResult;
+		return copyTo(new byte[nSize], 0);
 	}
 
 	/***************************************
-	 * Returns a string representation of the array in the form
-	 * "ByteArray[value1,...,valueN]".
+	 * Returns a string representation of this array with two hexadecimal digits
+	 * for each byte without gaps between bytes. For example, a three-byte array
+	 * with the values 127, 0, 32 would be returned as "7F0020".
 	 *
-	 * @return A String representing the array
+	 * @return A hexadecimal string representation
 	 */
 	@Override
 	public String toString()
 	{
-		StringBuilder sResult = new StringBuilder("ByteArray[");
-
-		for (int i = 0; i < nSize; i++)
-		{
-			if (i > 0)
-			{
-				sResult.append(',');
-			}
-
-			sResult.append(aData[i]);
-		}
-
-		sResult.append("]");
-
-		return sResult.toString();
+		return TextConvert.hexString(aData, 0, nSize, "");
 	}
 
 	/***************************************
