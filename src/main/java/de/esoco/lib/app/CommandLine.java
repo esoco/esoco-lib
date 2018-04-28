@@ -318,6 +318,32 @@ public class CommandLine
 	}
 
 	/***************************************
+	 * Convenience method that converts the result of {@link #getOption(String)}
+	 * to an integer value.
+	 *
+	 * @param  sOption The option name
+	 *
+	 * @return The integer value or -1 if the option doesn't exists
+	 *
+	 * @throws CommandLineException If the option cannot be parsed as an integer
+	 */
+	public int getInt(String sOption)
+	{
+		String sValue = getString(sOption);
+
+		try
+		{
+			return sValue != null ? Integer.parseInt(sValue) : -1;
+		}
+		catch (NumberFormatException e)
+		{
+			throw new CommandLineException("Integer value expected: %s",
+										   sOption,
+										   e);
+		}
+	}
+
+	/***************************************
 	 * Returns the value of a certain option. If the option exists but has no
 	 * value (i.e. a switch option) the result will be {@link Boolean#TRUE}. If
 	 * the option doesn't exist in this command line NULL will be returned. The
