@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -334,7 +334,7 @@ public class NetUtil
 	/***************************************
 	 * Creates a concatenated string of multiple HTTP URL parameters that have
 	 * been encoded with {@link #encodeUrlParameter(String, String)}. The
-	 * concatenation character is '&', the encoding UTF-8.
+	 * concatenation character is '&amp;', the encoding UTF-8.
 	 *
 	 * @param  rParams A mapping from HTTP URL parameter names to values
 	 *

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import de.esoco.lib.net.NetUtil;
 
 /********************************************************************
  * An enumeration of the standard HTTP 1.1 status codes as defined in the HTTP
- * RFC 2616 {@link "https://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html"}.
+ * RFC 2616.
  */
 public enum HttpStatusCode
 {

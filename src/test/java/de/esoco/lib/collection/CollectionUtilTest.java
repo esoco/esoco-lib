@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
-import junit.framework.TestCase;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 
 /********************************************************************
@@ -28,7 +30,7 @@ import java.util.Map;
  *
  * @author eso
  */
-public class CollectionUtilTest extends TestCase
+public class CollectionUtilTest
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -47,6 +49,7 @@ public class CollectionUtilTest extends TestCase
 	/***************************************
 	 * Test of method parseMap().
 	 */
+	@Test
 	public final void testParseMap()
 	{
 		Map<Object, Object> aMap = CollectionUtil.parseMap(aTestData);
@@ -57,6 +60,7 @@ public class CollectionUtilTest extends TestCase
 	/***************************************
 	 * Test of method parseMapEntries().
 	 */
+	@Test
 	public final void testParseMapEntries()
 	{
 		Map<Object, Object> aMap = new HashMap<Object, Object>();
@@ -71,6 +75,7 @@ public class CollectionUtilTest extends TestCase
 	/***************************************
 	 * Test of method parseMapEntry().
 	 */
+	@Test
 	public final void testParseMapEntry()
 	{
 		Map<Object, Object> aMap = new HashMap<Object, Object>();
@@ -89,6 +94,7 @@ public class CollectionUtilTest extends TestCase
 	/***************************************
 	 * Tests {@link CollectionUtil#toString(Iterable, String)}.
 	 */
+	@Test
 	public void testToStringCollection()
 	{
 		List<?> aList = CollectionUtil.listOf("A", "B", "C");
@@ -99,6 +105,7 @@ public class CollectionUtilTest extends TestCase
 	/***************************************
 	 * Tests {@link CollectionUtil#toString(Map, String, String)}
 	 */
+	@Test
 	public void testToStringMap()
 	{
 		Map<?, ?> aMap = CollectionUtil.parseMap("A=1,B=2,C=12", ',');

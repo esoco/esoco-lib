@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,15 +63,10 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.MAX_RESPONSE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HANDLING_TIME;
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HISTORY;
 import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE;
-import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
-import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
-import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
-import static de.esoco.lib.security.SecurityRelationTypes.SIGNING_CERTIFICATE;
 
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
-import static org.obrel.type.StandardTypes.HOST;
 import static org.obrel.type.StandardTypes.IP_ADDRESS;
 import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
@@ -262,12 +257,19 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 
 		if (hasFlag(ENCRYPTION))
 		{
-			String   sKeyPassword = get(KEY_PASSWORD, "");
-			KeyStore rCertificate = getServerCertificate(sKeyPassword);
+			KeyStore rCertificate = get(CERTIFICATE);
 
-			aServerSocketFactory =
-				Security.getSslContext(rCertificate, sKeyPassword)
-						.getServerSocketFactory();
+			if (rCertificate != null)
+			{
+				aServerSocketFactory =
+					Security.getSslContext(rCertificate, get(KEY_PASSWORD, ""))
+							.getServerSocketFactory();
+			}
+			else
+			{
+				throw new IllegalStateException(CERTIFICATE.getSimpleName() +
+												" parameter missing to enable SSL");
+			}
 		}
 		else
 		{
@@ -275,37 +277,6 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 		}
 
 		return aServerSocketFactory.createServerSocket(nPort);
-	}
-
-	/***************************************
-	 * Returns the server certificate from the parameters stored in this
-	 * server's relations. If no explicit certificate has been provided a new
-	 * one will be generated based on the parameters.
-	 *
-	 * @param  sKeyPassword The password to protect the private key of the
-	 *                      certificate with
-	 *
-	 * @return A key store containing the server certificate and it's key
-	 */
-	protected KeyStore getServerCertificate(String sKeyPassword)
-	{
-		KeyStore aCertKeyStore = get(CERTIFICATE);
-
-		if (aCertKeyStore == null)
-		{
-			RelatedObject aCertParams = new RelatedObject();
-
-			aCertParams.set(COMMON_NAME, get(HOST, "localhost"));
-			aCertParams.set(KEY_SIZE, get(KEY_SIZE, 2048));
-			aCertParams.set(KEY_PASSWORD, sKeyPassword);
-			aCertParams.set(CERTIFICATE_VALIDITY,
-							get(CERTIFICATE_VALIDITY, 30));
-			aCertParams.set(SIGNING_CERTIFICATE, get(SIGNING_CERTIFICATE));
-
-			aCertKeyStore = Security.createCertificate(aCertParams);
-		}
-
-		return aCertKeyStore;
 	}
 
 	/***************************************

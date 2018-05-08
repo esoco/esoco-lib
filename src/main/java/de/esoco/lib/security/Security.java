@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import de.esoco.lib.logging.Log;
 import de.esoco.lib.text.TextUtil;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -42,8 +41,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.UUID;
 
 import javax.crypto.Cipher;
@@ -53,37 +50,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.obrel.core.ObjectRelations;
-import org.obrel.core.Relatable;
-import org.obrel.type.StandardTypes;
-
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.CertificateAlgorithmId;
-import sun.security.x509.CertificateSerialNumber;
-import sun.security.x509.CertificateValidity;
-import sun.security.x509.CertificateVersion;
-import sun.security.x509.CertificateX509Key;
-import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CertInfo;
-
-import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_ALGORITHM;
-import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE_VALIDITY;
-import static de.esoco.lib.security.SecurityRelationTypes.COMMON_NAME;
-import static de.esoco.lib.security.SecurityRelationTypes.COUNTRY;
-import static de.esoco.lib.security.SecurityRelationTypes.KEY_ALGORITHM;
-import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
-import static de.esoco.lib.security.SecurityRelationTypes.KEY_SIZE;
-import static de.esoco.lib.security.SecurityRelationTypes.LOCALITY;
-import static de.esoco.lib.security.SecurityRelationTypes.ORGANIZATION;
-import static de.esoco.lib.security.SecurityRelationTypes.ORGANIZATION_UNIT;
-import static de.esoco.lib.security.SecurityRelationTypes.SIGNING_CERTIFICATE;
-import static de.esoco.lib.security.SecurityRelationTypes.STATE_PROVINCE_REGION;
-
-import static org.obrel.type.StandardTypes.START_DATE;
-
-import static sun.security.x509.CertificateVersion.V3;
 
 
 /********************************************************************
@@ -123,180 +89,6 @@ public class Security
 	}
 
 	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Creates a new X509 certificate from the given parameters and returns a
-	 * key store containing the certificate and it's private key. The
-	 * certificate and key will be stored in the key store under the alias
-	 * {@link #ALIAS_GENERATED_CERT}. The following parameters must be provided
-	 * or else an exception will be thrown:
-	 *
-	 * <ul>
-	 *   <li>{@link SecurityRelationTypes#COMMON_NAME}: the common name of the
-	 *     certificate.</li>
-	 *   <li>{@link SecurityRelationTypes#CERTIFICATE_VALIDITY}: the validity of
-	 *     the certificate in days.</li>
-	 *   <li>{@link SecurityRelationTypes#KEY_PASSWORD}: the password under
-	 *     which to store the private key of the certificate in the returned key
-	 *     store. Also the password that will be used to access a key store
-	 *     containing a signing certificate (see optional parameters
-	 *     below).</li>
-	 * </ul>
-	 *
-	 * <p>The following parameters can optionally been set or else the default
-	 * values of the relation types will be used. For the text fields of the
-	 * certificates the defaults will be empty strings.</p>
-	 *
-	 * <ul>
-	 *   <li>{@link StandardTypes#START_DATE}: the date from which the
-	 *     certificate will be valid (defaults to the time of invocation).</li>
-	 *   <li>{@link SecurityRelationTypes#KEY_SIZE}: the bit size of the private
-	 *     key for the certificate.</li>
-	 *   <li>{@link SecurityRelationTypes#KEY_ALGORITHM}: the algorithm for the
-	 *     private key generation.</li>
-	 *   <li>{@link SecurityRelationTypes#SIGNING_CERTIFICATE}: A {@link
-	 *     KeyStore} that contains a certificate and private key to sign the new
-	 *     certificate with. The password to access it private key must be set
-	 *     in the parameters with {@link SecurityRelationTypes#KEY_PASSWORD} and
-	 *     the alias must be {@link #ALIAS_SIGNING_CERT}. If not present the new
-	 *     certificate will be self-signed.</li>
-	 *   <li>{@link SecurityRelationTypes#CERTIFICATE_ALGORITHM}</li>
-	 *   <li>{@link SecurityRelationTypes#ORGANIZATION}</li>
-	 *   <li>{@link SecurityRelationTypes#ORGANIZATION_UNIT}</li>
-	 *   <li>{@link SecurityRelationTypes#LOCALITY}</li>
-	 *   <li>{@link SecurityRelationTypes#STATE_PROVINCE_REGION}</li>
-	 *   <li>{@link SecurityRelationTypes#COUNTRY}</li>
-	 * </ul>
-	 *
-	 * @param  rParams The parameters to create the certificate from
-	 *
-	 * @return A new X509 certificate, signed with the given key or self-signed
-	 *
-	 * @throws IllegalArgumentException Mapped from exceptions that occur if the
-	 *                                  certificate generation or signing fails
-	 *                                  for some reason
-	 */
-	public static KeyStore createCertificate(Relatable rParams)
-	{
-		ObjectRelations.requireNonNull(rParams,
-									   KEY_PASSWORD,
-									   CERTIFICATE_VALIDITY);
-
-		KeyStore rSigningKeyStore = rParams.get(SIGNING_CERTIFICATE);
-		String   sKeyPassword     = rParams.get(KEY_PASSWORD);
-		String   sCertAlgorithm   = rParams.get(CERTIFICATE_ALGORITHM);
-		String   sKeyAlgorithm    = rParams.get(KEY_ALGORITHM);
-		Date     rStartDate		  = rParams.get(START_DATE);
-
-		int nKeySize  = rParams.get(KEY_SIZE).intValue();
-		int nValidity = rParams.get(CERTIFICATE_VALIDITY).intValue();
-
-		X500Name     aSubject  = createX500Name(rParams);
-		X500Name     aIssuer   = aSubject;
-		X509CertInfo aCertInfo = new X509CertInfo();
-		Calendar     aEndDate  = Calendar.getInstance();
-
-		X509CertImpl	  aCertificate;
-		X509Certificate[] aCertChain;
-
-		KeyPair aCertKeys;
-		KeyPair aSigningKeys;
-		String  sIssuer;
-
-		if (rStartDate == null)
-		{
-			rStartDate = new Date();
-		}
-
-		aCertKeys = generateKeyPair(sKeyAlgorithm, nKeySize);
-
-		X509Certificate rSigningCert = null;
-
-		if (rSigningKeyStore != null)
-		{
-			PrivateKey rSigningKey;
-
-			try
-			{
-				rSigningCert =
-					(X509Certificate) rSigningKeyStore.getCertificate(ALIAS_SIGNING_CERT);
-
-				rSigningKey =
-					(PrivateKey) rSigningKeyStore.getKey(ALIAS_SIGNING_CERT,
-														 sKeyPassword
-														 .toCharArray());
-			}
-			catch (Exception e)
-			{
-				throw new IllegalArgumentException(e);
-			}
-
-			if (rSigningCert == null || rSigningKey == null)
-			{
-				throw new IllegalArgumentException("KeyStore doesn't contain " +
-												   "valid signing data");
-			}
-
-			aSigningKeys = new KeyPair(aCertKeys.getPublic(), rSigningKey);
-			sIssuer		 = rSigningCert.getSubjectX500Principal().toString();
-			aCertChain   = new X509Certificate[] { null, rSigningCert };
-		}
-		else // self-signing
-		{
-			aSigningKeys = aCertKeys;
-			sIssuer		 = aSubject.toString();
-			aCertChain   = new X509Certificate[1];
-		}
-
-		aEndDate.setTime(rStartDate);
-		aEndDate.add(Calendar.DAY_OF_YEAR, nValidity);
-
-		CertificateValidity aCertValidity =
-			new CertificateValidity(rStartDate, aEndDate.getTime());
-
-		CertificateSerialNumber aSerial =
-			new CertificateSerialNumber(new java.util.Random().nextInt() &
-										0x7fffffff);
-
-		CertificateX509Key aPublicKey =
-			new CertificateX509Key(aSigningKeys.getPublic());
-
-		try
-		{
-			CertificateAlgorithmId aAlgorithmId =
-				new CertificateAlgorithmId(AlgorithmId.get(sCertAlgorithm));
-
-			if (sIssuer != null)
-			{
-				aIssuer = new X500Name(sIssuer);
-			}
-
-			aCertInfo.set(X509CertInfo.SUBJECT, aSubject);
-			aCertInfo.set(X509CertInfo.ISSUER, aIssuer);
-			aCertInfo.set(X509CertInfo.VALIDITY, aCertValidity);
-			aCertInfo.set(X509CertInfo.VERSION, new CertificateVersion(V3));
-			aCertInfo.set(X509CertInfo.SERIAL_NUMBER, aSerial);
-			aCertInfo.set(X509CertInfo.ALGORITHM_ID, aAlgorithmId);
-			aCertInfo.set(X509CertInfo.KEY, aPublicKey);
-
-			aCertificate = new X509CertImpl(aCertInfo);
-			aCertificate.sign(aSigningKeys.getPrivate(), sCertAlgorithm);
-
-			aCertChain[0] = aCertificate;
-
-			KeyStore aKeyStore =
-				createKeyStore(ALIAS_GENERATED_CERT,
-							   sKeyPassword,
-							   aCertKeys.getPrivate(),
-							   aCertChain);
-
-			return aKeyStore;
-		}
-		catch (Exception e)
-		{
-			throw new IllegalArgumentException(e);
-		}
-	}
 
 	/***************************************
 	 * Creates a Java security key store containing a certain certificate chain
@@ -673,36 +465,6 @@ public class Security
 			return aSslContext;
 		}
 		catch (Exception e)
-		{
-			throw new IllegalArgumentException(e);
-		}
-	}
-
-	/***************************************
-	 * Creates a new instance of the sun-internal security class {@link
-	 * X500Name} from parameters stored in a relatable object.
-	 *
-	 * @param  rCertParams The relatable containing the certificate parameters
-	 *                     as defined in {@link SecurityRelationTypes}
-	 *
-	 * @return The new X500 certificate name
-	 *
-	 * @throws IllegalArgumentException If the parsing of the parameters fails
-	 */
-	private static X500Name createX500Name(Relatable rCertParams)
-	{
-		ObjectRelations.requireNonNull(rCertParams, COMMON_NAME);
-
-		try
-		{
-			return new X500Name(rCertParams.get(COMMON_NAME),
-								rCertParams.get(ORGANIZATION_UNIT),
-								rCertParams.get(ORGANIZATION),
-								rCertParams.get(LOCALITY),
-								rCertParams.get(STATE_PROVINCE_REGION),
-								rCertParams.get(COUNTRY));
-		}
-		catch (IOException e)
 		{
 			throw new IllegalArgumentException(e);
 		}
