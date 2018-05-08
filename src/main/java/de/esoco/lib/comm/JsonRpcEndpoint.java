@@ -16,6 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.comm.JsonRpcEndpoint.JsonRpcBatchCall.Call;
 import de.esoco.lib.json.Json;
 import de.esoco.lib.json.JsonObject;
 import de.esoco.lib.json.JsonParser;
@@ -26,14 +27,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.obrel.core.RelationType;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_REQUEST_HEADERS;
-
-import static java.util.stream.Collectors.toList;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
 import static org.obrel.core.RelationTypes.newType;
@@ -75,7 +76,7 @@ public class JsonRpcEndpoint extends Endpoint
 	 *
 	 * @return The new JSON RPC batch request object
 	 */
-	public static <M extends JsonRpcMethod<?, R>, R> JsonRpcBatchCall<M, R>
+	public static <P, R, M extends JsonRpcMethod<P, R>> JsonRpcBatchCall<P, R>
 	batchCall(Collection<M> rMethods)
 	{
 		return new JsonRpcBatchCall<>(rMethods);
@@ -105,9 +106,9 @@ public class JsonRpcEndpoint extends Endpoint
 	 *
 	 * @return The new method
 	 */
-	public static JsonRpcMethod<Object, Object> method(String sMethod)
+	public static JsonRpcMethod<Object, Object> call(String sMethod)
 	{
-		return method(sMethod, null, null);
+		return call(sMethod, null, null);
 	}
 
 	/***************************************
@@ -120,11 +121,11 @@ public class JsonRpcEndpoint extends Endpoint
 	 *
 	 * @return The new method
 	 */
-	public static <R> JsonRpcMethod<Object, R> method(
+	public static <R> JsonRpcMethod<Object, R> call(
 		String   sMethod,
 		Class<R> rResultType)
 	{
-		return method(sMethod, null, rResultType);
+		return call(sMethod, null, rResultType);
 	}
 
 	/***************************************
@@ -138,9 +139,9 @@ public class JsonRpcEndpoint extends Endpoint
 	 *
 	 * @return The new method
 	 */
-	public static <P, R> JsonRpcMethod<P, R> method(String   sMethod,
-													P		 rDefaultParams,
-													Class<R> rResultType)
+	public static <P, R> JsonRpcMethod<P, R> call(String   sMethod,
+												  P		   rDefaultParams,
+												  Class<R> rResultType)
 	{
 		return new JsonRpcMethod<P, R>(sMethod, rDefaultParams, rResultType);
 	}
@@ -204,164 +205,55 @@ public class JsonRpcEndpoint extends Endpoint
 	//~ Inner Classes ----------------------------------------------------------
 
 	/********************************************************************
-	 * A batch invocation of multiple JSON RPC methods.
+	 * The base class for for JSON RPC requests that execute batch calls.
 	 *
 	 * @author eso
 	 */
-	public static class JsonRpcBatchCall<M extends JsonRpcMethod<?, ? extends R>, R>
-		extends JsonRpcRequest<List<M>, List<R>>
+	public static abstract class JsonRpcBatch<P, R>
+		extends JsonRpcRequest<List<P>, List<R>>
 	{
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
 		 * Creates a new instance.
 		 *
-		 * @param rDefaultMethods The default methods to call
+		 * @param sName          The request name
+		 * @param rDefaultParams The default parameters
 		 */
-		public JsonRpcBatchCall(Collection<M> rDefaultMethods)
+		public JsonRpcBatch(String sName, Collection<P> rDefaultParams)
 		{
-			super(JsonRpcBatchCall.class.getSimpleName(),
-				  new ArrayList<>(rDefaultMethods));
+			super(sName, new ArrayList<>(rDefaultParams));
 		}
 
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
-		 * {@inheritDoc}
+		 * Parses the response for a single method invocation. Must be
+		 * implemented by subclasses.
+		 *
+		 * @param  aResponse The JSON RPC response object for the method
+		 * @param  rInputs   The method inputs
+		 *
+		 * @return The parsed method response
 		 */
-		@Override
-		public Collection<JsonObject> buildRequest(List<M> rMethods)
-		{
-			List<JsonObject> aMethodRequests = new ArrayList<>(rMethods.size());
-
-			int nMethodId = 1;
-
-			for (M rMethod : rMethods)
-			{
-				JsonObject aMethodRequest = rMethod.buildDefaultRequest();
-
-				aMethodRequest.set("id", nMethodId++);
-				aMethodRequests.add(aMethodRequest);
-			}
-
-			return aMethodRequests;
-		}
+		protected abstract R parseMethodResponse(
+			JsonObject aResponse,
+			List<P>    rInputs);
 
 		/***************************************
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected List<R> parseRawResponse(
-			String  sRawResponse,
-			List<M> rMethods)
+		protected List<R> parseRawResponse(String  sRawResponse,
+										   List<P> rInputs)
 		{
-			// first parse response array, then sort by ID to match the correct
-			// method index
 			return Json.parseArray(sRawResponse, 1)
 					   .stream()
 					   .map(o -> Json.parseObject(o.toString(), 1))
 					   .sorted((j1, j2) ->
 							   j1.getInt("id", 0) - j2.getInt("id", 0))
-					   .map(aResponse -> parseMethodResult(aResponse, rMethods))
-					   .collect(toList());
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected List<R> parseResult(String sRawResponse)
-		{
-			return null; // not used, parsing occurs in parseRawResponse
-		}
-
-		/***************************************
-		 * Parses a single method result from the batch response.
-		 *
-		 * @param  aResponse The method response
-		 * @param  rMethods  The methods for the lookup by response ID
-		 *
-		 * @return The parsed method result
-		 */
-		private R parseMethodResult(JsonObject aResponse, List<M> rMethods)
-		{
-			int nId = aResponse.getInt("id", 0) - 1;
-
-			if (nId >= 0 && nId < rMethods.size())
-			{
-				return rMethods.get(nId).parseResponse(aResponse);
-			}
-			else
-			{
-				throw new CommunicationException("No method to parse response ID" +
-												 nId);
-			}
-		}
-	}
-
-	/********************************************************************
-	 * A batch invocation of a single JSON RPC method with multiple call
-	 * parameters.
-	 *
-	 * @author eso
-	 */
-	public static class JsonRpcBatchMethod<P, R>
-		extends JsonRpcRequest<List<P>, List<R>>
-	{
-		//~ Instance fields ----------------------------------------------------
-
-		private JsonRpcMethod<P, ? extends R> rRpcMethod;
-
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
-		 * Creates a new instance.
-		 *
-		 * @param rRpcMethod     The methods to call
-		 * @param rDefaultInputs The default method inputs.
-		 */
-		public JsonRpcBatchMethod(
-			JsonRpcMethod<P, R> rRpcMethod,
-			List<P>				rDefaultInputs)
-		{
-			super(JsonRpcBatchMethod.class.getSimpleName(), rDefaultInputs);
-
-			this.rRpcMethod = rRpcMethod;
-		}
-
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		public Collection<JsonObject> buildRequest(List<P> rInputs)
-		{
-			List<JsonObject> aMethodRequests = new ArrayList<>(rInputs.size());
-
-			int nRequestId = 1;
-
-			for (P rParams : rInputs)
-			{
-				JsonObject aMethodRequest = rRpcMethod.buildRequest(rParams);
-
-				aMethodRequest.set("id", nRequestId++);
-				aMethodRequests.add(aMethodRequest);
-			}
-
-			return aMethodRequests;
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected List<R> parseRawResponse(String sRawResponse, List<P> rInput)
-		{
-			return Json.parseArray(sRawResponse, 1)
-					   .stream()
-					   .map(o -> Json.parseObject(o.toString(), 1))
-					   .map(aResponse -> rRpcMethod.parseResponse(aResponse))
+					   .map(aResponse ->
+							parseMethodResponse(aResponse, rInputs))
 					   .collect(Collectors.toList());
 		}
 
@@ -371,100 +263,8 @@ public class JsonRpcEndpoint extends Endpoint
 		@Override
 		protected List<R> parseResult(String sRawResponse)
 		{
-			// not used
+			// not used for batch calls
 			return null;
-		}
-	}
-
-	/********************************************************************
-	 * A JSON RPC request that calls a certain RPC method.
-	 *
-	 * @author eso
-	 */
-	public static class JsonRpcMethod<P, R> extends JsonRpcRequest<P, R>
-	{
-		//~ Instance fields ----------------------------------------------------
-
-		private String   sMethod;
-		private Class<R> rResponseType;
-
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
-		 * Creates a new instance.
-		 *
-		 * @param sMethod        The name of the RPC method to invoke
-		 * @param rDefaultParams Default parameters for the method invocation
-		 * @param rResponseType  The target datatype to parse the response with
-		 */
-		public JsonRpcMethod(String   sMethod,
-							 P		  rDefaultParams,
-							 Class<R> rResponseType)
-		{
-			super(sMethod, rDefaultParams);
-
-			this.sMethod	   = sMethod;
-			this.rResponseType = rResponseType;
-		}
-
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * Builds the request for the default input of this instance. Needed for
-		 * batch invocation.
-		 *
-		 * @return The JSON RPC request object
-		 *
-		 * @see    JsonRpcBatchCall
-		 */
-		public JsonObject buildDefaultRequest()
-		{
-			return buildRequest(getDefaultInput());
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		public JsonObject buildRequest(P rInput)
-		{
-			JsonObject aRequest = new JsonObject();
-
-			aRequest.set("jsonrpc", "2.0");
-			aRequest.set("id", 1);
-			aRequest.set("method", sMethod);
-
-			Object rRequestParams = getRequestParams(rInput);
-
-			if (rRequestParams != null)
-			{
-				aRequest.set("params", rRequestParams);
-			}
-
-			return aRequest;
-		}
-
-		/***************************************
-		 * Returns the value for the "params" property of a request. The default
-		 * implementation just returns the input value. Subclasses can override
-		 * this to extend or modify the method input.
-		 *
-		 * @param  rInput The method input
-		 *
-		 * @return The actual request params
-		 */
-		protected Object getRequestParams(P rInput)
-		{
-			return rInput;
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected R parseResult(String sJsonResult)
-		{
-			return Json.parse(sJsonResult, rResponseType);
 		}
 	}
 
@@ -474,7 +274,8 @@ public class JsonRpcEndpoint extends Endpoint
 	 *
 	 * @author eso
 	 */
-	static abstract class JsonRpcRequest<P, R> extends CommunicationMethod<P, R>
+	public static abstract class JsonRpcRequest<P, R>
+		extends CommunicationMethod<P, R>
 	{
 		//~ Constructors -------------------------------------------------------
 
@@ -495,10 +296,24 @@ public class JsonRpcEndpoint extends Endpoint
 		 * Builds an object containing the JSON RPC request properties.
 		 *
 		 * @param  rInput The input value to create the request parameters from
+		 * @param  nId    The request ID
 		 *
 		 * @return The JSON JPC request object
 		 */
-		public abstract Object buildRequest(P rInput);
+		public abstract Object buildRequest(P rInput, int nId);
+
+		/***************************************
+		 * Builds the request for the default input of this instance. Used for
+		 * batch invocation.
+		 *
+		 * @param  nId The request ID
+		 *
+		 * @return The JSON RPC request object
+		 */
+		public Object buildDefaultRequest(int nId)
+		{
+			return buildRequest(getDefaultInput(), nId);
+		}
 
 		/***************************************
 		 * {@inheritDoc}
@@ -512,7 +327,7 @@ public class JsonRpcEndpoint extends Endpoint
 			CommunicationMethod<String, String> rTransportMethod =
 				rConnection.get(RPC_SERVER_METHOD);
 
-			Object aRequest = buildRequest(rInput);
+			Object aRequest = buildRequest(rInput, 1);
 
 			String sRawResponse =
 				rTransportMethod.evaluate(Json.toJson(aRequest),
@@ -574,6 +389,349 @@ public class JsonRpcEndpoint extends Endpoint
 															   aError.get("code"),
 															   aError.get("message")));
 			}
+		}
+	}
+
+	/********************************************************************
+	 * A batch invocation of JSON RPC methods that dispatches the responses to
+	 * different consumers for each method call.
+	 *
+	 * @author eso
+	 */
+	public static class JsonRpcBatchCall<P, R>
+		extends JsonRpcBatch<Call<P, R>, R>
+	{
+		//~ Instance fields ----------------------------------------------------
+
+		private int nFirstId;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance without default calls. The calls must either
+		 * be provided on evaluation or by adding default calls through
+		 * invocation of {@link #add(JsonRpcRequest)}
+		 */
+		public JsonRpcBatchCall()
+		{
+			super(JsonRpcBatchCall.class.getSimpleName(),
+				  Collections.emptyList());
+		}
+
+		/***************************************
+		 * Creates a new instance that will call a certain set of JSON RPC
+		 * requests.
+		 *
+		 * @param rMethods The methods to call in the batch request
+		 */
+		public <M extends JsonRpcRequest<P, R>> JsonRpcBatchCall(
+			Collection<M> rMethods)
+		{
+			this();
+
+			for (M rMethod : rMethods)
+			{
+				add(rMethod);
+			}
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * Adds a new batch call to this instance.
+		 *
+		 * @param  rRequest The JSON RPC request
+		 *
+		 * @return The new call
+		 */
+		public Call<P, R> add(JsonRpcRequest<P, R> rRequest)
+		{
+			Call<P, R> aCall = Call.of(rRequest);
+
+			getDefaultInput().add(aCall);
+
+			return aCall;
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public Object buildRequest(List<Call<P, R>> rCalls, int nId)
+		{
+			nFirstId = nId;
+
+			List<Object> aCallRequests = new ArrayList<>(rCalls.size());
+
+			for (Call<P, R> rCall : rCalls)
+			{
+				Object aRequest = rCall.rRequest.buildDefaultRequest(nId);
+
+				if (aRequest instanceof JsonObject)
+				{
+					aCallRequests.add(aRequest);
+					nId += 1;
+				}
+				else if (aRequest instanceof Collection)
+				{
+					Collection<?> rBatchRequests = (Collection<?>) aRequest;
+
+					aCallRequests.addAll(rBatchRequests);
+					nId += rBatchRequests.size();
+				}
+				else
+				{
+					throw new IllegalArgumentException("Unsupported batch " +
+													   "request data from " +
+													   rCall.rRequest);
+				}
+			}
+
+			return aCallRequests;
+		}
+
+		/***************************************
+		 * Removes all calls from this batch
+		 */
+		public void clear()
+		{
+			getDefaultInput().clear();
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		protected R parseMethodResponse(
+			JsonObject		 aResponse,
+			List<Call<P, R>> rCalls)
+		{
+			int nId = aResponse.getInt("id", 0) - nFirstId;
+
+			if (nId >= 0 && nId < rCalls.size())
+			{
+				Call<P, R> rCall = rCalls.get(nId);
+
+				return rCall.processResponse(aResponse);
+			}
+			else
+			{
+				throw new CommunicationException("No method to parse response ID" +
+												 nId);
+			}
+		}
+
+		//~ Inner Classes ------------------------------------------------------
+
+		/********************************************************************
+		 * Contains the data for a single method call in a JSON RPC batch.
+		 *
+		 * @author eso
+		 */
+		public static class Call<P, R>
+		{
+			//~ Instance fields ------------------------------------------------
+
+			private JsonRpcRequest<P, R> rRequest;
+			private Consumer<R>			 fResponseHandler;
+
+			//~ Constructors ---------------------------------------------------
+
+			/***************************************
+			 * Creates a new instance.
+			 *
+			 * @param rRequest The request for the method to be called
+			 */
+			public Call(JsonRpcRequest<P, R> rRequest)
+			{
+				this.rRequest = rRequest;
+			}
+
+			//~ Static methods -------------------------------------------------
+
+			/***************************************
+			 * Static factory method.
+			 *
+			 * @param  rRequest The JSON RPC request of the method to call
+			 *
+			 * @return The new instance
+			 */
+			public static <P, R> Call<P, R> of(JsonRpcRequest<P, R> rRequest)
+			{
+				return new Call<>(rRequest);
+			}
+
+			//~ Methods --------------------------------------------------------
+
+			/***************************************
+			 * Lets the JSON RPC request parse the response and invokes the
+			 * response handler if available.
+			 *
+			 * @param  rResponse The response to parse
+			 *
+			 * @return The parsed result
+			 */
+			public R processResponse(JsonObject rResponse)
+			{
+				R aResponse = rRequest.parseResponse(rResponse);
+
+				if (fResponseHandler != null)
+				{
+					fResponseHandler.accept(aResponse);
+				}
+
+				return aResponse;
+			}
+
+			/***************************************
+			 * Sets the response handling function of this instance.
+			 *
+			 * @param  fHandleResponse The response handling function
+			 *
+			 * @return This instance for fluent invocation
+			 */
+			public Call<P, R> then(Consumer<R> fHandleResponse)
+			{
+				fResponseHandler = fHandleResponse;
+
+				return this;
+			}
+		}
+	}
+
+	/********************************************************************
+	 * A JSON RPC batch call that invokes a single method multiple times with
+	 * different parameters.
+	 *
+	 * @author eso
+	 */
+	public static class JsonRpcBatchMethod<P, R> extends JsonRpcBatch<P, R>
+	{
+		//~ Instance fields ----------------------------------------------------
+
+		private JsonRpcMethod<P, ? extends R> rRpcMethod;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance.
+		 *
+		 * @param rRpcMethod     The methods to call
+		 * @param rDefaultInputs The default method input
+		 */
+		public JsonRpcBatchMethod(
+			JsonRpcMethod<P, R> rRpcMethod,
+			Collection<P>		rDefaultInputs)
+		{
+			super(JsonRpcBatchMethod.class.getSimpleName(), rDefaultInputs);
+
+			this.rRpcMethod = rRpcMethod;
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public Collection<JsonObject> buildRequest(List<P> rInputs, int nId)
+		{
+			List<JsonObject> aMethodRequests = new ArrayList<>(rInputs.size());
+
+			for (P rParams : rInputs)
+			{
+				aMethodRequests.add(rRpcMethod.buildRequest(rParams, nId++));
+			}
+
+			return aMethodRequests;
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		protected R parseMethodResponse(JsonObject aResponse, List<P> rInput)
+		{
+			return rRpcMethod.parseResponse(aResponse);
+		}
+	}
+
+	/********************************************************************
+	 * A JSON RPC request that calls a certain RPC method.
+	 *
+	 * @author eso
+	 */
+	public static class JsonRpcMethod<P, R> extends JsonRpcRequest<P, R>
+	{
+		//~ Instance fields ----------------------------------------------------
+
+		private String   sMethod;
+		private Class<R> rResponseType;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance.
+		 *
+		 * @param sMethod        The name of the RPC method to invoke
+		 * @param rDefaultParams Default parameters for the method invocation
+		 * @param rResponseType  The target datatype to parse the response with
+		 */
+		public JsonRpcMethod(String   sMethod,
+							 P		  rDefaultParams,
+							 Class<R> rResponseType)
+		{
+			super(sMethod, rDefaultParams);
+
+			this.sMethod	   = sMethod;
+			this.rResponseType = rResponseType;
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public JsonObject buildRequest(P rInput, int nId)
+		{
+			JsonObject aRequest = new JsonObject();
+
+			aRequest.set("jsonrpc", "2.0");
+			aRequest.set("id", nId);
+			aRequest.set("method", sMethod);
+
+			Object rRequestParams = getRequestParams(rInput);
+
+			if (rRequestParams != null)
+			{
+				aRequest.set("params", rRequestParams);
+			}
+
+			return aRequest;
+		}
+
+		/***************************************
+		 * Returns the value for the "params" property of a request. The default
+		 * implementation just returns the input value. Subclasses can override
+		 * this to extend or modify the method input.
+		 *
+		 * @param  rInput The method input
+		 *
+		 * @return The actual request params
+		 */
+		protected Object getRequestParams(P rInput)
+		{
+			return rInput;
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		protected R parseResult(String sJsonResult)
+		{
+			return Json.parse(sJsonResult, rResponseType);
 		}
 	}
 }
