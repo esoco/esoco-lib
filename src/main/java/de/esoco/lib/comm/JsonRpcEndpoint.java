@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.obrel.core.RelationType;
@@ -628,6 +629,16 @@ public class JsonRpcEndpoint extends Endpoint
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
+		 * Adds a new method parameter to be requested by this instance.
+		 *
+		 * @param rCallParam rRequest The JSON RPC request
+		 */
+		public void add(P rCallParam)
+		{
+			getDefaultInput().add(rCallParam);
+		}
+
+		/***************************************
 		 * {@inheritDoc}
 		 */
 		@Override
@@ -662,13 +673,15 @@ public class JsonRpcEndpoint extends Endpoint
 	{
 		//~ Instance fields ----------------------------------------------------
 
-		private String   sMethod;
-		private Class<R> rResponseType;
+		private final String		 sMethod;
+		private final Class<R>		 rResponseType;
+		private final Function<P, ?> fConvertInput;
 
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
-		 * Creates a new instance.
+		 * Creates a new instance that uses input values directly as RPC call
+		 * parameters.
 		 *
 		 * @param sMethod        The name of the RPC method to invoke
 		 * @param rDefaultParams Default parameters for the method invocation
@@ -678,10 +691,29 @@ public class JsonRpcEndpoint extends Endpoint
 							 P		  rDefaultParams,
 							 Class<R> rResponseType)
 		{
+			this(sMethod, rDefaultParams, rResponseType, Function.identity());
+		}
+
+		/***************************************
+		 * Creates a new instance that converts input values into before using
+		 * them as RPC call parameters.
+		 *
+		 * @param sMethod        The name of the RPC method to invoke
+		 * @param rDefaultParams Default parameters for the method invocation
+		 * @param rResponseType  The target datatype to parse the response with
+		 * @param fConvertInput  A function that converts input parameters to
+		 *                       the actual value to be used in the request
+		 */
+		public JsonRpcMethod(String			sMethod,
+							 P				rDefaultParams,
+							 Class<R>		rResponseType,
+							 Function<P, ?> fConvertInput)
+		{
 			super(sMethod, rDefaultParams);
 
 			this.sMethod	   = sMethod;
 			this.rResponseType = rResponseType;
+			this.fConvertInput = fConvertInput;
 		}
 
 		//~ Methods ------------------------------------------------------------
@@ -709,6 +741,18 @@ public class JsonRpcEndpoint extends Endpoint
 		}
 
 		/***************************************
+		 * Returns the function that is used to convert input values. If not set
+		 * otherwise the default is an identity function that returns the input
+		 * value unchanged.
+		 *
+		 * @return The input conversion function
+		 */
+		public Function<P, ?> getInputConversion()
+		{
+			return fConvertInput;
+		}
+
+		/***************************************
 		 * Returns the value for the "params" property of a request. The default
 		 * implementation just returns the input value. Subclasses can override
 		 * this to extend or modify the method input.
@@ -719,7 +763,7 @@ public class JsonRpcEndpoint extends Endpoint
 		 */
 		protected Object getRequestParams(P rInput)
 		{
-			return rInput;
+			return fConvertInput.apply(rInput);
 		}
 
 		/***************************************
