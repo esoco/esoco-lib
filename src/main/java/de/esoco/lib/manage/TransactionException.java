@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-import java.io.IOException;
-
-
 /********************************************************************
- * An exception that will be thrown if a transaction that is managed by the
- * {@link TransactionManager} fails.
+ * A runtime exception that will be thrown if a transaction that is managed by
+ * the {@link TransactionManager} fails.
  *
  * @author eso
  */
-public class TransactionException extends IOException
+public class TransactionException extends RuntimeException
 {
 	//~ Static fields/initializers ---------------------------------------------
 
