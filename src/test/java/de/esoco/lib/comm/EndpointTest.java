@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -178,7 +178,7 @@ public class EndpointTest
 		EndpointFunction<String, String> fGetBody =
 			httpGet(HTML_GET_URL).from(aEndpoint).then(find(HTML_BODY_PATTERN));
 
-		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.result()));
+		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.receive()));
 	}
 
 	/***************************************
@@ -199,7 +199,7 @@ public class EndpointTest
 					 NetUtil.encodeUrlParameter("test_param", "test_value"))
 			.from(aEndpoint);
 
-		System.out.printf("POST: %s\n", fPostParam.result());
+		System.out.printf("POST: %s\n", fPostParam.send());
 //		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fPostParam.result()));
 	}
 
@@ -224,7 +224,7 @@ public class EndpointTest
 			textRequest(HTTP_GET_INDEX, fReadContentLength).from(aEndpoint)
 														   .then(find(HTML_BODY_PATTERN));
 
-		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.result()));
+		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.receive()));
 		assertTrue(fGetBody.get(Endpoint.ENDPOINT_CONNECTION).hasFlag(CLOSED));
 	}
 }

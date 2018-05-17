@@ -43,9 +43,8 @@ public class EndpointFunction<I, O>
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rEndpoint fValue The function to evaluate the communication result
-	 *                  with
-	 * @param fMethod   The communication method to evaluate
+	 * @param rEndpoint The endpoint to invoke the method on
+	 * @param fMethod   The communication method to invoke
 	 */
 	public EndpointFunction(
 		Endpoint				  rEndpoint,
@@ -74,19 +73,30 @@ public class EndpointFunction<I, O>
 	}
 
 	/***************************************
-	 * A semantic variant of {@link #evaluate(Object)}.
+	 * A semantic variant of {@link #evaluate(Object)} to request from the
+	 * endpoint data with the default input of the invoked method.
 	 *
-	 * @param  rInput The input of the endpoint request
-	 *
-	 * @return The result of the endpoint request
+	 * @return The function result for the default method input
 	 */
-	public O request(I rInput)
+	public O receive()
 	{
-		return evaluate(rInput);
+		return evaluate(null);
 	}
 
 	/***************************************
-	 * A semantic variant of {@link #evaluate(Object)}.
+	 * A semantic variant of {@link #evaluate(Object)} to send data to the
+	 * endpoint with the default input of the invoked method.
+	 *
+	 * @return The function result for the default method input
+	 */
+	public O send()
+	{
+		return evaluate(null);
+	}
+
+	/***************************************
+	 * A semantic variant of {@link #evaluate(Object)} to send data to the
+	 * endpoint.
 	 *
 	 * @param  rInput The input of the endpoint request
 	 *

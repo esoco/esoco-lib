@@ -69,6 +69,18 @@ public class JsonRpcEndpoint extends Endpoint
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
+	 * Creates a new JSON RPC batch call that can invoke multiple RPC methods at
+	 * once. New methods must be added to the batch call object by invoking it's
+	 * {@link JsonRpcBatchCall#add(JsonRpcRequest)} method.
+	 *
+	 * @return The new JSON RPC batch request object
+	 */
+	public static <P, R> JsonRpcBatchCall<P, R> batchCall()
+	{
+		return new JsonRpcBatchCall<>();
+	}
+
+	/***************************************
 	 * Creates a new JSON RPC batch call that invokes several RPC methods at
 	 * once.
 	 *

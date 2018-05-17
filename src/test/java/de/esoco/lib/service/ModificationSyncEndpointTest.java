@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class ModificationSyncEndpointTest
 			getCurrentLocks().from(aSyncService);
 
 		System.out.printf("RUNNING: %s\n",
-						  Service.CHECK_RUNNING.from(aSyncService).result());
+						  Service.CHECK_RUNNING.from(aSyncService).receive());
 
 		long t = System.currentTimeMillis();
 
@@ -74,7 +74,7 @@ public class ModificationSyncEndpointTest
 			lockEntities("test" + i, fLock);
 		}
 
-		System.out.printf("LOCKS: %s\n", fGetLocks.result());
+		System.out.printf("LOCKS: %s\n", fGetLocks.receive());
 
 		for (int i = 1; i <= TEST_CONTEXTS; i++)
 		{
@@ -108,7 +108,7 @@ public class ModificationSyncEndpointTest
 	 * @param fLock
 	 */
 	private static void lockEntities(
-		String							sContext,
+		String							   sContext,
 		EndpointFunction<SyncData, String> fLock)
 	{
 		System.out.printf("Locking context %s\n", sContext);
@@ -136,7 +136,7 @@ public class ModificationSyncEndpointTest
 	 * @param fRelease
 	 */
 	private static void releaseEntities(
-		String							sContext,
+		String							   sContext,
 		EndpointFunction<SyncData, String> fRelease)
 	{
 		System.out.printf("Releasing context %s\n", sContext);

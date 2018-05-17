@@ -22,7 +22,6 @@ import de.esoco.lib.app.Service;
 import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.comm.EndpointFunction;
-import de.esoco.lib.expression.Function;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.json.JsonObject;
 import de.esoco.lib.json.JsonParser;
@@ -246,11 +245,11 @@ public class ModificationSyncServiceTool extends Application
 	 */
 	private JsonObject getLocks()
 	{
-		Function<SyncData, String> fGetLocks =
+		EndpointFunction<SyncData, String> fGetLocks =
 			getCurrentLocks().from(aSyncService);
 
 		@SuppressWarnings("unchecked")
-		JsonObject aLocks = new JsonParser().parseObject(fGetLocks.result());
+		JsonObject aLocks = new JsonParser().parseObject(fGetLocks.receive());
 
 		return aLocks;
 	}
@@ -271,7 +270,7 @@ public class ModificationSyncServiceTool extends Application
 		{
 			System.out.printf("Current log level: %s\n",
 							  Service.GET_LOG_LEVEL.from(aSyncService)
-							  .result());
+							  .receive());
 		}
 	}
 
