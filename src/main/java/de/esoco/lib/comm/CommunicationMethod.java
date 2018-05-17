@@ -130,7 +130,7 @@ public abstract class CommunicationMethod<I, O>
 	 *
 	 * @return The endpoint chain of this method with the given endpoint
 	 */
-	public EndpointFunction<I, O> at(Endpoint rEndpoint)
+	public EndpointFunction<I, O> on(Endpoint rEndpoint)
 	{
 		return from(rEndpoint);
 	}

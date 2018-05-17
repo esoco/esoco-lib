@@ -53,7 +53,7 @@ public class ModificationSyncEndpointTest
 	{
 		Endpoint aSyncService = Endpoint.at("http://localhost:7962");
 
-		Service.SET_LOG_LEVEL.at(aSyncService).send("\"WARN\"");
+		Service.SET_LOG_LEVEL.on(aSyncService).send("\"WARN\"");
 
 		EndpointFunction<SyncData, String> fLock =
 			requestLock().from(aSyncService);

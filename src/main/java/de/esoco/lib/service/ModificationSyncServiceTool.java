@@ -263,7 +263,7 @@ public class ModificationSyncServiceTool extends Application
 	{
 		if (rNewLevel != null && LogLevel.valueOf(rNewLevel) != null)
 		{
-			Service.SET_LOG_LEVEL.at(aSyncService)
+			Service.SET_LOG_LEVEL.on(aSyncService)
 								 .send(JsonBuilder.toJson(rNewLevel));
 		}
 		else
