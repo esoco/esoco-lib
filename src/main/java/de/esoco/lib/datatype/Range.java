@@ -341,7 +341,7 @@ public abstract class Range<T extends Comparable<T>> implements Iterable<T>
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
-		 * @see Range#Range(Comparable, Comparable, int)
+		 * @see Range#Range(Comparable, Comparable, long)
 		 */
 		protected NumberRange(N rFirst, N rLast, long nStep)
 		{
