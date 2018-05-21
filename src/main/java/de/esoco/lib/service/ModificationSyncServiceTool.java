@@ -22,7 +22,7 @@ import de.esoco.lib.app.Service;
 import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.comm.EndpointFunction;
-import de.esoco.lib.json.JsonBuilder;
+import de.esoco.lib.json.Json;
 import de.esoco.lib.json.JsonObject;
 import de.esoco.lib.json.JsonParser;
 import de.esoco.lib.logging.Log;
@@ -263,8 +263,7 @@ public class ModificationSyncServiceTool extends Application
 	{
 		if (rNewLevel != null && LogLevel.valueOf(rNewLevel) != null)
 		{
-			Service.SET_LOG_LEVEL.on(aSyncService)
-								 .send(JsonBuilder.toJson(rNewLevel));
+			Service.SET_LOG_LEVEL.on(aSyncService).send(Json.toJson(rNewLevel));
 		}
 		else
 		{

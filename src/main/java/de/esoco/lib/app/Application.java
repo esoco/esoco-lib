@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.obrel.core.RelatedObject;
 
@@ -75,6 +76,9 @@ public abstract class Application extends RelatedObject
 
 	private String		 sAppName		   = null;
 	private List<Object> aCleanupResources = null;
+
+	private Thread		  aMainThread;
+	private AtomicBoolean aShutdownRequest = new AtomicBoolean(false);
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -162,7 +166,20 @@ public abstract class Application extends RelatedObject
 					configure(aCommandLine);
 					Log.debugf("%s starting...", sAppName);
 					startApp();
+
+					aMainThread = Thread.currentThread();
+
+					Thread aShutdownHook = new Thread(this::requestShutdown);
+
+					Runtime.getRuntime().addShutdownHook(aShutdownHook);
+
 					runApp();
+
+					if (!aShutdownRequest.get())
+					{
+						Runtime.getRuntime().removeShutdownHook(aShutdownHook);
+					}
+
 					stopApp();
 				}
 			}
@@ -319,10 +336,10 @@ public abstract class Application extends RelatedObject
 	{
 		if (e != null)
 		{
-			System.out.printf("Error: %s\n", e.getMessage());
+			System.err.printf("Error: %s\n", e.getMessage());
 		}
 
-		printUsage(System.out);
+		printHelp(System.out);
 	}
 
 	/***************************************
@@ -426,6 +443,18 @@ public abstract class Application extends RelatedObject
 	}
 
 	/***************************************
+	 * Checks whether a shutdown of the application has been requested.
+	 * Applications should check this flag in their processing loop and cleanup
+	 * and terminate as soon as possible if this method returns TRUE.
+	 *
+	 * @return TRUE if a shutdown has been requested
+	 */
+	protected boolean isShutdownRequested()
+	{
+		return aShutdownRequest.get();
+	}
+
+	/***************************************
 	 * Prints help for this application or for a single command.
 	 *
 	 * @param rCommand The optional command
@@ -515,6 +544,25 @@ public abstract class Application extends RelatedObject
 		if (aCleanupResources != null)
 		{
 			aCleanupResources.remove(rResource);
+		}
+	}
+
+	/***************************************
+	 * Will be invoked from a separate thread if a shutdown of the application
+	 * has been requested.
+	 */
+	protected void requestShutdown()
+	{
+		System.out.printf("\nShutdown request received, terminating...\n");
+		aShutdownRequest.set(true);
+
+		try
+		{
+			aMainThread.join();
+		}
+		catch (InterruptedException e)
+		{
+			// just terminate
 		}
 	}
 

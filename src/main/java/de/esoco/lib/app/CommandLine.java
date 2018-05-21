@@ -587,13 +587,13 @@ public class CommandLine
 			}
 			else
 			{
-				throw new CommandLineException("Invalid command line option %s",
+				throw new CommandLineException("Invalid command line option '%s'",
 											   sOption);
 			}
 		}
 		else
 		{
-			throw new CommandLineException("Missing command line option %s",
+			throw new CommandLineException("Missing command line option '%s'",
 										   sOption);
 		}
 	}

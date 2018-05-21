@@ -231,6 +231,15 @@ public class JsonRpcEndpoint extends Endpoint
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
+		 * Resets this batch by removing all default input values so that new
+		 * inputs can be added and the batch can be re-executed.
+		 */
+		public void reset()
+		{
+			getDefaultInput().clear();
+		}
+
+		/***************************************
 		 * Parses the response for a single method invocation. Must be
 		 * implemented by subclasses.
 		 *
@@ -333,7 +342,7 @@ public class JsonRpcEndpoint extends Endpoint
 			Object aRequest = buildRequest(rInput, 1);
 
 			String sRawResponse =
-				rTransportMethod.evaluate(Json.toJson(aRequest),
+				rTransportMethod.evaluate(Json.toCompactJson(aRequest),
 										  rTransportConnection);
 
 			return parseRawResponse(sRawResponse, rInput);
@@ -485,14 +494,6 @@ public class JsonRpcEndpoint extends Endpoint
 		}
 
 		/***************************************
-		 * Removes all calls from this batch
-		 */
-		public void clear()
-		{
-			getDefaultInput().clear();
-		}
-
-		/***************************************
 		 * Checks if this batch contains no calls.
 		 *
 		 * @return TRUE if no calls have been added
@@ -519,6 +520,26 @@ public class JsonRpcEndpoint extends Endpoint
 			Action<? super R>    fResponseHandler)
 		{
 			return call(rRequest, fResponseHandler);
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String toString()
+		{
+			StringBuilder aResult =
+				new StringBuilder(getClass().getSimpleName());
+
+			int nId = 1;
+
+			for (Call<?> rCall : getDefaultInput())
+			{
+				aResult.append("\n");
+				aResult.append(rCall.rRequest.buildDefaultRequest(nId++));
+			}
+
+			return aResult.toString();
 		}
 
 		/***************************************
@@ -600,6 +621,15 @@ public class JsonRpcEndpoint extends Endpoint
 			}
 
 			return aMethodRequests;
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String toString()
+		{
+			return getClass().getSimpleName() + getDefaultInput();
 		}
 
 		/***************************************

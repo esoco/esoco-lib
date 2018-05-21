@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.logging;
 
+import de.esoco.lib.text.TextUtil;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -41,38 +43,20 @@ public class Profiler
 
 	/***************************************
 	 * Creates a new instance.
+	 */
+	public Profiler()
+	{
+		this(null);
+	}
+
+	/***************************************
+	 * Creates a new instance with a default description.
 	 *
-	 * @param sDescription A description of this instance
+	 * @param sDescription The default description of this instance
 	 */
 	public Profiler(String sDescription)
 	{
 		this.sDescription = sDescription;
-	}
-
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Formats a duration in milliseconds into a string.
-	 *
-	 * @param  nDuration The duration in milliseconds
-	 *
-	 * @return The formatted string
-	 */
-	@SuppressWarnings("boxing")
-	public static String formatDuration(long nDuration)
-	{
-		if (nDuration > 1_200_000L)
-		{
-			long nSeconds = nDuration / 1000;
-
-			return String.format("%dm %02ds", nSeconds / 60, nSeconds % 60);
-		}
-		else
-		{
-			return String.format("%d.%03ds",
-								 nDuration / 1000,
-								 nDuration % 1000);
-		}
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -175,15 +159,45 @@ public class Profiler
 	@SuppressWarnings("boxing")
 	public void printSummary()
 	{
+		printSummary(sDescription + ":", "", 1);
+	}
+
+	/***************************************
+	 * Prints the given title, the total time since creation in seconds, and all
+	 * measurements to {@link System#out}. If the number of elements processed
+	 * is larger than 1 the time the processing of a single element took will be
+	 * displayed too.
+	 *
+	 * @param sTitle       The title string
+	 * @param sElementName The name of an element if nCount > 1
+	 * @param nCount       The number of elements processed (must be >= 1)
+	 */
+	@SuppressWarnings("boxing")
+	public void printSummary(String sTitle, String sElementName, int nCount)
+	{
 		long nTime = System.currentTimeMillis() - nCreationTime;
 
-		System.out.printf("===== %s: %d:%02d.%03d =====\n",
-						  sDescription,
-						  nTime / 60_000,
-						  nTime / 1000 % 60,
-						  nTime % 1000);
+		String sHeader =
+			String.format("====== %s %s ======",
+						  sTitle,
+						  TextUtil.formatDuration(nTime));
+
+		System.out.println(sHeader);
+
+		if (nCount > 1)
+		{
+			String sElementTime =
+				String.format(" Time per %s: %s ",
+							  sElementName,
+							  TextUtil.formatDuration(nTime / nCount));
+
+			System.out.println(TextUtil.padCenter(sElementTime,
+												  sHeader.length(),
+												  '-'));
+		}
 
 		printResults("");
+		System.out.printf("%s\n", sHeader.replaceAll(".", "="));
 	}
 
 	//~ Inner Classes ----------------------------------------------------------
@@ -253,7 +267,7 @@ public class Profiler
 		@Override
 		public String toString()
 		{
-			return formatDuration(nTotalTime);
+			return TextUtil.formatDuration(nTotalTime) + "s";
 		}
 
 		/***************************************

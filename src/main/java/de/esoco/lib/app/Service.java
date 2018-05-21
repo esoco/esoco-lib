@@ -467,7 +467,7 @@ public abstract class Service extends Application implements Stoppable
 		return String.format("%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
 							 getServiceName(),
 							 rStartDate,
-							 TextUtil.formatDuration(System.currentTimeMillis() -
+							 TextUtil.formatLongDuration(System.currentTimeMillis() -
 													 rStartDate.getTime(),
 													 false));
 	}
