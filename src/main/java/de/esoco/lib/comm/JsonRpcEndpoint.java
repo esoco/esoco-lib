@@ -240,6 +240,17 @@ public class JsonRpcEndpoint extends Endpoint
 		}
 
 		/***************************************
+		 * Returns the number of requests that have been added to this batch
+		 * call.
+		 *
+		 * @return The number of batch requests
+		 */
+		public int size()
+		{
+			return getDefaultInput().size();
+		}
+
+		/***************************************
 		 * Parses the response for a single method invocation. Must be
 		 * implemented by subclasses.
 		 *

@@ -21,6 +21,11 @@ import de.esoco.lib.text.TextUtil;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypes;
+
+import static org.obrel.core.RelationTypes.newType;
+
 
 /********************************************************************
  * A class that collects performance measurements that are added through {@link
@@ -30,6 +35,16 @@ import java.util.Map;
  */
 public class Profiler
 {
+	//~ Static fields/initializers ---------------------------------------------
+
+	/** A relation type that can be used to store a profiler reference. */
+	public static final RelationType<Profiler> PROFILER = newType();
+
+	static
+	{
+		RelationTypes.init(Profiler.class);
+	}
+
 	//~ Instance fields --------------------------------------------------------
 
 	String sDescription;
