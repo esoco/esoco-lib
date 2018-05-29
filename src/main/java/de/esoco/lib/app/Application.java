@@ -173,11 +173,17 @@ public abstract class Application extends RelatedObject
 
 					Runtime.getRuntime().addShutdownHook(aShutdownHook);
 
-					runApp();
-
-					if (!aShutdownRequest.get())
+					try
 					{
-						Runtime.getRuntime().removeShutdownHook(aShutdownHook);
+						runApp();
+					}
+					finally
+					{
+						if (!aShutdownRequest.get())
+						{
+							Runtime.getRuntime()
+								   .removeShutdownHook(aShutdownHook);
+						}
 					}
 
 					stopApp();
@@ -556,8 +562,12 @@ public abstract class Application extends RelatedObject
 		System.out.printf("\nShutdown request received, terminating...\n");
 		aShutdownRequest.set(true);
 
+		// wake up main thread if it is currently inactive
+		aMainThread.interrupt();
+
 		try
 		{
+			// wait for main thread to stop (else app would terminate immediately)
 			aMainThread.join();
 		}
 		catch (InterruptedException e)
