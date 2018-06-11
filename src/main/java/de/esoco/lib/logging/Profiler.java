@@ -188,7 +188,7 @@ public class Profiler
 	 * @param nCount       The number of elements processed (must be >= 1)
 	 */
 	@SuppressWarnings("boxing")
-	public void printSummary(String sTitle, String sElementName, int nCount)
+	public void printSummary(String sTitle, String sElementName, long nCount)
 	{
 		long nTime = System.currentTimeMillis() - nCreationTime;
 

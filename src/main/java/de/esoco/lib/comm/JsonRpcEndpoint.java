@@ -16,8 +16,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
-import de.esoco.lib.expression.Action;
-import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.Functions;
 import de.esoco.lib.json.Json;
 import de.esoco.lib.json.JsonObject;
@@ -31,6 +29,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.obrel.core.RelationType;
@@ -494,8 +494,8 @@ public class JsonRpcEndpoint extends Endpoint
 		 * @return This instance for call concatenation
 		 */
 		public <R> JsonRpcBatchCall call(
-			JsonRpcRequest<?, R>   rRequest,
-			Function<? super R, ?> fResponseHandler)
+			JsonRpcRequest<?, R> rRequest,
+			Consumer<? super R>  fResponseHandler)
 		{
 			Call<R> aCall = new Call<>(rRequest, fResponseHandler);
 
@@ -512,25 +512,6 @@ public class JsonRpcEndpoint extends Endpoint
 		public boolean isEmpty()
 		{
 			return getDefaultInput().isEmpty();
-		}
-
-		/***************************************
-		 * Adds a new batch call to this instance and processes the result upon
-		 * receiving by invoking an action. As actions don't return a result the
-		 * corresponding entry in the result list of the batch call will be
-		 * NULL.
-		 *
-		 * @param  rRequest         The JSON RPC request to be invoked
-		 * @param  fResponseHandler A function that handles the response
-		 *                          received by the call
-		 *
-		 * @return This instance for call concatenation
-		 */
-		public <R> JsonRpcBatchCall process(
-			JsonRpcRequest<?, R> rRequest,
-			Action<? super R>    fResponseHandler)
-		{
-			return call(rRequest, fResponseHandler);
 		}
 
 		/***************************************
@@ -794,8 +775,8 @@ public class JsonRpcEndpoint extends Endpoint
 	{
 		//~ Instance fields ----------------------------------------------------
 
-		private JsonRpcRequest<?, R>   rRequest;
-		private Function<? super R, ?> fResponseHandler;
+		private JsonRpcRequest<?, R> rRequest;
+		private Consumer<? super R>  fResponseHandler;
 
 		//~ Constructors -------------------------------------------------------
 
@@ -807,8 +788,8 @@ public class JsonRpcEndpoint extends Endpoint
 		 *                         by the call
 		 */
 		Call(
-			JsonRpcRequest<?, R>   rRequest,
-			Function<? super R, ?> fResponseHandler)
+			JsonRpcRequest<?, R> rRequest,
+			Consumer<? super R>  fResponseHandler)
 		{
 			this.rRequest		  = rRequest;
 			this.fResponseHandler = fResponseHandler;
@@ -830,7 +811,7 @@ public class JsonRpcEndpoint extends Endpoint
 
 			if (fResponseHandler != null)
 			{
-				fResponseHandler.evaluate(aResponse);
+				fResponseHandler.accept(aResponse);
 			}
 
 			return aResponse;
