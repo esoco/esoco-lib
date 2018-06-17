@@ -816,5 +816,14 @@ public class JsonRpcEndpoint extends Endpoint
 
 			return aResponse;
 		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String toString()
+		{
+			return String.format("Call(%s)", rRequest);
+		}
 	}
 }
