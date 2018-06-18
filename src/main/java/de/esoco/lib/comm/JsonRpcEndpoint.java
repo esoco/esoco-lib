@@ -111,7 +111,7 @@ public class JsonRpcEndpoint extends Endpoint
 	 */
 	public static JsonRpcMethod<Object, Object> call(String sMethod)
 	{
-		return call(sMethod, null, null);
+		return call(sMethod, null, sJson -> Json.parse(sJson));
 	}
 
 	/***************************************
@@ -147,6 +147,25 @@ public class JsonRpcEndpoint extends Endpoint
 												  Class<R> rResultType)
 	{
 		return new JsonRpcMethod<P, R>(sMethod, rDefaultParams, rResultType);
+	}
+
+	/***************************************
+	 * Returns a new {@link JsonRpcMethod} with specific datatypes for the
+	 * method parameters and a parse function for the response.
+	 *
+	 * @param  sMethod        The name of the method to invoke
+	 * @param  rDefaultParams Default parameters for the call (can be NULL)
+	 * @param  fParseResponse A function that parses the JSON response string
+	 *                        into the result type
+	 *
+	 * @return The new method
+	 */
+	public static <P, R> JsonRpcMethod<P, R> call(
+		String				sMethod,
+		P					rDefaultParams,
+		Function<String, R> fParseResponse)
+	{
+		return new JsonRpcMethod<P, R>(sMethod, rDefaultParams, fParseResponse);
 	}
 
 	//~ Methods ----------------------------------------------------------------
