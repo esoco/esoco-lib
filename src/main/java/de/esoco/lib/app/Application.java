@@ -423,15 +423,7 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void handleApplicationError(Exception e)
 	{
-		System.err.printf("Error executing %s: %s\n",
-						  getNameOfAppBinary(),
-						  e.getMessage());
-
-		if (getCommandLine().hasOption("v") ||
-			getCommandLine().hasOption("-verbose"))
-		{
-			e.printStackTrace();
-		}
+		Log.errorf(e, "Error executing %s", getNameOfAppBinary());
 	}
 
 	/***************************************
