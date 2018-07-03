@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,13 @@ package de.esoco.lib.comm;
 import de.esoco.lib.comm.http.HttpRequestMethod;
 import de.esoco.lib.comm.http.HttpStatusCode;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+
 import java.net.HttpURLConnection;
+import java.net.Socket;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +64,23 @@ public class CommunicationRelationTypes
 	 * This type is final so that it cannot be changed after it has been set.
 	 */
 	public static final RelationType<String> ENDPOINT_ADDRESS = newType(FINAL);
+
+	/** A relation type to store an endpoint socket. */
+	public static final RelationType<Socket> ENDPOINT_SOCKET = newType();
+
+	/** A relation type to store the input stream of a socket. */
+	public static final RelationType<InputStream> SOCKET_INPUT_STREAM =
+		newType();
+
+	/** A relation type to store the output stream of a socket. */
+	public static final RelationType<OutputStream> SOCKET_OUTPUT_STREAM =
+		newType();
+
+	/** A relation type to store a reader for a socket input stream. */
+	public static final RelationType<Reader> SOCKET_READER = newType();
+
+	/** A relation type to store a writer for a socket input stream. */
+	public static final RelationType<PrintWriter> SOCKET_WRITER = newType();
 
 	/**
 	 * Defines the character encoding of a request. Has a default value of

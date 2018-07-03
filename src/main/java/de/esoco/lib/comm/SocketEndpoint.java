@@ -1,12 +1,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// This file is a part of the 'esoco-gwt' project.
-// Copyright 2016 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// This file is a part of the 'esoco-lib' project.
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
-// Licensed under the Apache License, Version 3.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	  http://www.apache.org/licenses/LICENSE-3.0
+//	  http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,15 +32,14 @@ import java.io.Writer;
 import java.net.Socket;
 import java.net.URI;
 
-import org.obrel.core.RelationType;
-import org.obrel.core.RelationTypes;
-
 import static de.esoco.lib.comm.CommunicationRelationTypes.CONNECTION_TIMEOUT;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
+import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_SOCKET;
+import static de.esoco.lib.comm.CommunicationRelationTypes.SOCKET_INPUT_STREAM;
+import static de.esoco.lib.comm.CommunicationRelationTypes.SOCKET_OUTPUT_STREAM;
+import static de.esoco.lib.comm.CommunicationRelationTypes.SOCKET_READER;
+import static de.esoco.lib.comm.CommunicationRelationTypes.SOCKET_WRITER;
 import static de.esoco.lib.comm.CommunicationRelationTypes.TRUST_SELF_SIGNED_CERTIFICATES;
-
-import static org.obrel.core.RelationTypeModifier.PRIVATE;
-import static org.obrel.core.RelationTypes.newType;
 
 
 /********************************************************************
@@ -57,27 +56,6 @@ public class SocketEndpoint extends Endpoint
 
 	/** The URL scheme name for (SSL) encrypted socket connections. */
 	public static final String ENCRYPTED_SOCKET_URL_SCHEME = "sockets";
-
-	/** An internal relation type to store a connection socket. */
-	private static final RelationType<Socket> ENDPOINT_SOCKET =
-		newType(PRIVATE);
-
-	/**
-	 * An internal relation type to store a reader for a socket input stream.
-	 */
-	private static final RelationType<Reader> ENDPOINT_SOCKET_READER =
-		newType(PRIVATE);
-
-	/**
-	 * An internal relation type to store a writer for a socket input stream.
-	 */
-	private static final RelationType<PrintWriter> ENDPOINT_SOCKET_WRITER =
-		newType(PRIVATE);
-
-	static
-	{
-		RelationTypes.init(SocketEndpoint.class);
-	}
 
 	//~ Static methods ---------------------------------------------------------
 
@@ -205,8 +183,7 @@ public class SocketEndpoint extends Endpoint
 		aSocket.setSoTimeout(rConnection.get(CONNECTION_TIMEOUT));
 		rConnection.set(ENDPOINT_SOCKET, aSocket);
 
-		if (eSocketType != SocketType.PLAIN &&
-			!hasRelation(ENCRYPTION))
+		if (eSocketType != SocketType.PLAIN && !hasRelation(ENCRYPTION))
 		{
 			rConnection.set(ENCRYPTION);
 		}
@@ -216,7 +193,12 @@ public class SocketEndpoint extends Endpoint
 
 	/********************************************************************
 	 * A generic base class for socket communication method that sends data to
-	 * an endpoint socket and optionally receives a response.
+	 * an endpoint socket and optionally receives a response. Subclasses must
+	 * either override and implement the two methods {@link
+	 * #writeRequest(Connection, OutputStream, Object)} and {@link
+	 * #readResponse(Connection, InputStream)} or perform the complete request
+	 * handling in {@link #sendRequest(Connection, OutputStream, InputStream,
+	 * Object)}.
 	 *
 	 * @author eso
 	 */
@@ -247,14 +229,14 @@ public class SocketEndpoint extends Endpoint
 		{
 			try
 			{
-				Socket		 aSocket	   = rConnection.get(ENDPOINT_SOCKET);
-				OutputStream rOutputStream = aSocket.getOutputStream();
-				InputStream  rInputStream  = aSocket.getInputStream();
+				Socket		 aSocket = rConnection.get(ENDPOINT_SOCKET);
+				OutputStream rOutput = aSocket.getOutputStream();
+				InputStream  rInput  = aSocket.getInputStream();
 
-				writeRequest(rConnection, rOutputStream, rRequest);
-				rOutputStream.flush();
+				rConnection.set(SOCKET_OUTPUT_STREAM, rOutput);
+				rConnection.set(SOCKET_INPUT_STREAM, rInput);
 
-				return readResponse(rConnection, rInputStream);
+				return sendRequest(rConnection, rOutput, rInput, rRequest);
 			}
 			catch (Exception e)
 			{
@@ -263,26 +245,62 @@ public class SocketEndpoint extends Endpoint
 		}
 
 		/***************************************
-		 * Must be implemented by subclasses to write a request to the given
-		 * output stream of the current socket.
+		 * Must be implemented by subclasses to read q request response from the
+		 * given input stream of the current socket if not overriding {@link
+		 * #sendRequest(Connection, OutputStream, InputStream, Object)}. The
+		 * default implementation always returns NULL.
 		 *
 		 * @param  rConnection  The connection to read the response from
 		 * @param  rInputStream The socket input stream to read from
 		 *
-		 * @return The response value
+		 * @return The processed response
 		 *
 		 * @throws Exception Any exception may be thrown to indicate errors
 		 */
-		protected abstract O readResponse(
+		protected O readResponse(
 			Connection  rConnection,
-			InputStream rInputStream) throws Exception;
+			InputStream rInputStream) throws Exception
+		{
+			return null;
+		}
+
+		/***************************************
+		 * Sends the request through the socket and processes the response. The
+		 * standard implementation invokes {@link #writeRequest(Connection,
+		 * OutputStream, Object)} and {@link #readResponse(Connection,
+		 * InputStream)}. Subclasses may alternatively override this method,
+		 * e.g. for more complex requests that need to perform some kind of
+		 * handshake.
+		 *
+		 * @param  rConnection The connection for the current request
+		 * @param  rOutput     The output stream to send the request through
+		 * @param  rInput      The input stream to read the response from
+		 * @param  rData       The request data to send
+		 *
+		 * @return The processed response
+		 *
+		 * @throws Exception Any exception may be thrown to indicate errors
+		 */
+		protected O sendRequest(Connection   rConnection,
+								OutputStream rOutput,
+								InputStream  rInput,
+								I			 rData) throws Exception
+		{
+			writeRequest(rConnection, rOutput, rData);
+			rOutput.flush();
+
+			return readResponse(rConnection, rInput);
+		}
 
 		/***************************************
 		 * Must be implemented by subclasses to write a request to the given
-		 * output stream of the current socket. The implementation doesn't need
-		 * to flush the output stream, this will be handled by the base
-		 * implementation. But it may be necessary to flush stream wrappers like
-		 * instances of {@link Writer}.
+		 * output stream of the current socket if not overriding {@link
+		 * #sendRequest(Connection, OutputStream, InputStream, Object)}. The
+		 * implementation doesn't need to flush the output stream, this will be
+		 * handled by the base implementation. But it may be necessary to flush
+		 * stream wrappers like instances of {@link Writer}.
+		 *
+		 * <p>The default implementation does nothing.</p>
 		 *
 		 * @param  rConnection   The connection to write the request to
 		 * @param  rOutputStream The socket output stream to write to
@@ -290,10 +308,11 @@ public class SocketEndpoint extends Endpoint
 		 *
 		 * @throws Exception Any exception may be thrown to indicate errors
 		 */
-		protected abstract void writeRequest(Connection   rConnection,
-											 OutputStream rOutputStream,
-											 I			  rRequest)
-			throws Exception;
+		protected void writeRequest(Connection   rConnection,
+									OutputStream rOutputStream,
+									I			 rRequest) throws Exception
+		{
+		}
 	}
 
 	/********************************************************************
@@ -412,12 +431,12 @@ public class SocketEndpoint extends Endpoint
 
 			if (fGetResponseSize != null)
 			{
-				Reader aReader = rConnection.get(ENDPOINT_SOCKET_READER);
+				Reader aReader = rConnection.get(SOCKET_READER);
 
 				if (aReader == null)
 				{
 					aReader = new InputStreamReader(rInputStream);
-					rConnection.set(ENDPOINT_SOCKET_READER, aReader);
+					rConnection.set(SOCKET_READER, aReader);
 				}
 
 				int nResponseSize = fGetResponseSize.evaluate(aReader);
@@ -436,12 +455,12 @@ public class SocketEndpoint extends Endpoint
 									OutputStream rOutputStream,
 									String		 sRequest) throws Exception
 		{
-			PrintWriter aWriter = rConnection.get(ENDPOINT_SOCKET_WRITER);
+			PrintWriter aWriter = rConnection.get(SOCKET_WRITER);
 
 			if (aWriter == null)
 			{
 				aWriter = new PrintWriter(rOutputStream);
-				rConnection.set(ENDPOINT_SOCKET_WRITER, aWriter);
+				rConnection.set(SOCKET_WRITER, aWriter);
 			}
 
 			aWriter.println(sRequest);
