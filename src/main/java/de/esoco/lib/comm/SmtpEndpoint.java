@@ -38,6 +38,12 @@ import static org.obrel.core.RelationTypes.newType;
 
 /********************************************************************
  * A socket-based {@link Endpoint} that allows to send email to an SMTP server.
+ * The endpoint supports encrypted connections (SMTPS) and PLAIN authentication.
+ * It does not support STARTTLS so the connection needs to be encrypted from the
+ * start (typically on port 465). To create an SMTP(S) endpoint it is
+ * recommended to invoke the factory method {@link Endpoint#at(String)} with a
+ * URL containing the host and port, e.g. <code>
+ * Endpoint.at("smtps://mail.example.com:465")</code>.
  *
  * @author eso
  */
@@ -60,6 +66,17 @@ public class SmtpEndpoint extends SocketEndpoint
 		newType(PRIVATE);
 
 	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Factory method to create an instance of {@link SmtpRequest} without a
+	 * default email message.
+	 *
+	 * @return The new request instance
+	 */
+	public static SmtpRequest sendMail()
+	{
+		return new SmtpRequest(null);
+	}
 
 	/***************************************
 	 * Factory method to create an instance of {@link SmtpRequest}.

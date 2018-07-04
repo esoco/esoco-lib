@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.obrel.core.FluentRelatable;
 import org.obrel.core.ObjectRelations;
 import org.obrel.core.Params;
 import org.obrel.core.ProvidesConfiguration;
@@ -59,6 +60,7 @@ import static org.obrel.core.RelationTypes.newType;
  * @author eso
  */
 public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
+	implements FluentRelatable<Endpoint>
 {
 	//~ Static fields/initializers ---------------------------------------------
 

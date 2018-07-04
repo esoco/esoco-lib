@@ -16,6 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm.smtp;
 
+import org.obrel.core.FluentRelatable;
 import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
 
@@ -27,7 +28,7 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * @author eso
  */
-public class Email extends RelatedObject
+public class Email extends RelatedObject implements FluentRelatable<Email>
 {
 	//~ Static fields/initializers ---------------------------------------------
 
@@ -48,6 +49,18 @@ public class Email extends RelatedObject
 
 	/** The message text of the email. */
 	public static final RelationType<String> MESSAGE = newType();
+
+	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * A factory method that creates a new instance.
+	 *
+	 * @return The new instance
+	 */
+	public static Email email()
+	{
+		return new Email();
+	}
 
 	//~ Methods ----------------------------------------------------------------
 
@@ -73,8 +86,7 @@ public class Email extends RelatedObject
 	 */
 	public Email from(String sName, String sAddress)
 	{
-		return fluentSet(SENDER_NAME, sName).fluentSet(SENDER_ADDRESS,
-													   sAddress);
+		return with(SENDER_NAME, sName).with(SENDER_ADDRESS, sAddress);
 	}
 
 	/***************************************
@@ -86,7 +98,7 @@ public class Email extends RelatedObject
 	 */
 	public Email message(String sMessage)
 	{
-		return fluentSet(MESSAGE, sMessage);
+		return with(MESSAGE, sMessage);
 	}
 
 	/***************************************
@@ -98,7 +110,7 @@ public class Email extends RelatedObject
 	 */
 	public Email subject(String sSubject)
 	{
-		return fluentSet(SUBJECT, sSubject);
+		return with(SUBJECT, sSubject);
 	}
 
 	/***************************************
@@ -123,23 +135,6 @@ public class Email extends RelatedObject
 	 */
 	public Email to(String sName, String sAddress)
 	{
-		return fluentSet(RECIPIENT_NAME, sName).fluentSet(RECIPIENT_ADDRESS,
-														  sAddress);
-	}
-
-	/***************************************
-	 * Sets a relation type and returns this instance for fluent invocation of
-	 * additional methods.
-	 *
-	 * @param  rType  The relation type
-	 * @param  rValue The value
-	 *
-	 * @return This instance for fluent invocation
-	 */
-	protected <T> Email fluentSet(RelationType<T> rType, T rValue)
-	{
-		set(rType, rValue);
-
-		return this;
+		return with(RECIPIENT_NAME, sName).with(RECIPIENT_ADDRESS, sAddress);
 	}
 }

@@ -25,6 +25,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -127,6 +130,8 @@ public class SmtpProtocolHandler
 		send("MAIL FROM:<%s>", sSenderAddress).checkOk();
 		send("RCPT TO:<%s>", sRecipientAddress).checkOk();
 		send("DATA").checkResponse(OK, START_MAIL);
+		send("Date: %s",
+			 DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now()));
 		send("From: %s <%s>", rEmail.get(SENDER_NAME), sRecipientAddress);
 		send("To: %s <%s>", rEmail.get(RECIPIENT_NAME), sRecipientAddress);
 		send("Subject: %s", rEmail.get(SUBJECT));
