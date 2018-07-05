@@ -16,6 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.datatype;
 
+import java.math.BigDecimal;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /********************************************************************
@@ -42,15 +45,15 @@ public class RangeTest
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Test of {@link CharRange}
+	 * Test of character ranges
 	 */
 	@Test
 	public void testCharRange()
 	{
 		assertEquals(Arrays.asList('A', 'B', 'C', 'D'),
-					 Range.of('A', 'D').toList());
+					 Range.from('A').to('D').toList());
 		assertEquals(Arrays.asList('9', '8', '7', '6'),
-					 Range.of('9', '6').toList());
+					 Range.from('9').to('6').toList());
 	}
 
 	/***************************************
@@ -69,14 +72,49 @@ public class RangeTest
 	}
 
 	/***************************************
+	 * Test of {@link BigDecimal} ranges
+	 */
+	@Test
+	public void testDecimalRange()
+	{
+		assertEquals(Arrays.asList(new BigDecimal(1),
+								   new BigDecimal(2),
+								   new BigDecimal(3),
+								   new BigDecimal(4),
+								   new BigDecimal(5)),
+					 Range.from(new BigDecimal(1))
+					 .to(new BigDecimal(5))
+					 .toList());
+		assertEquals(Arrays.asList(new BigDecimal(10),
+								   new BigDecimal(8),
+								   new BigDecimal(6),
+								   new BigDecimal(4),
+								   new BigDecimal(2),
+								   BigDecimal.ZERO),
+					 Range.from(new BigDecimal(10))
+					 .to(new BigDecimal(0))
+					 .step(new BigDecimal(2))
+					 .toList());
+		assertEquals(Arrays.asList(new BigDecimal(1),
+								   new BigDecimal("1.1"),
+								   new BigDecimal("1.2"),
+								   new BigDecimal("1.3"),
+								   new BigDecimal("1.4")),
+					 Range.from(BigDecimal.ONE)
+					 .to(new BigDecimal("1.4"))
+					 .step(new BigDecimal("0.1"))
+					 .toList());
+	}
+
+	/***************************************
 	 * Test of {@link Range#equals(Object)} and {@link Range#hashCode()}
 	 */
 	@Test
 	public void testEqualsAndHashCode()
 	{
-		IntRange r1 = Range.of(1, 5);
-		IntRange r2 = Range.of(1, 5);
-		IntRange r3 = Range.of(0, 4);
+		Range<Integer> r1 = Range.from(1).to(5);
+		Range<Integer> r2 = Range.from(1).to(5);
+		Range<Integer> r3 = Range.from(0).to(4);
 
 		assertEquals(r1, r2);
 		assertEquals(r1.hashCode(), r2.hashCode());
@@ -85,17 +123,94 @@ public class RangeTest
 	}
 
 	/***************************************
+	 * Test of error conditions
+	 */
+	@Test
+	public void testErrors()
+	{
+		try
+		{
+			Range.from(null);
+			fail();
+		}
+		catch (Exception e)
+		{
+			// expected
+		}
+
+		try
+		{
+			Range.from(1).size();
+			fail();
+		}
+		catch (Exception e)
+		{
+			// expected
+		}
+
+		try
+		{
+			Range.from(1).to(null);
+			fail();
+		}
+		catch (Exception e)
+		{
+			// expected
+		}
+
+		try
+		{
+			Range.from(1).to(2).to(3);
+			fail();
+		}
+		catch (Exception e)
+		{
+			// expected
+		}
+
+		try
+		{
+			Range.from(1).to(2).step(null);
+			fail();
+		}
+		catch (Exception e)
+		{
+			// expected
+		}
+
+		try
+		{
+			Range.from(1).to(2).step(-1);
+			fail();
+		}
+		catch (Exception e)
+		{
+			// expected
+		}
+	}
+
+	/***************************************
+	 * Test of float value ranges
+	 */
+	@Test
+	public void testFloatRange()
+	{
+		assertEquals(Arrays.asList(1.0, 1.25, 1.50, 1.75, 2.0),
+					 Range.from(1.0).to(2.0).step(0.25).toList());
+	}
+
+	/***************************************
 	 * Test of {@link Range#forEach(java.util.function.Consumer)}
 	 */
 	@Test
 	public void testForEach()
 	{
-		checkRangeForEach(0, 5);
-		checkRangeForEach(2, 5);
-		checkRangeForEach(5, 0);
-		checkRangeForEach(5, 2);
-		checkRangeForEach(-5, 0);
-		checkRangeForEach(5, -5);
+		checkRangeForEach(0, 5, 1);
+		checkRangeForEach(2, 5, 1);
+		checkRangeForEach(5, 0, 1);
+		checkRangeForEach(5, 2, 1);
+		checkRangeForEach(-5, 0, 1);
+		checkRangeForEach(5, -5, 1);
 	}
 
 	/***************************************
@@ -104,58 +219,61 @@ public class RangeTest
 	@Test
 	public void testStream()
 	{
-		List<Integer> l = Range.of(1, 10).stream().collect(Collectors.toList());
+		List<Integer> l =
+			Range.from(1).to(10).stream().collect(Collectors.toList());
 
 		assertEquals(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), l);
 
-		l = Range.of(1, 10)
+		l = Range.from(1)
+				 .to(10)
 				 .stream()
 				 .filter(i -> i % 2 == 0)
 				 .collect(Collectors.toList());
 
 		assertEquals(Arrays.asList(2, 4, 6, 8, 10), l);
 
-		l = Range.of(-2, 2).stream().collect(Collectors.toList());
+		l = Range.from(-2).to(2).stream().collect(Collectors.toList());
 		assertEquals(Arrays.asList(-2, -1, 0, 1, 2), l);
 
-		l = Range.of(2, -2).stream().collect(Collectors.toList());
+		l = Range.from(2).to(-2).stream().collect(Collectors.toList());
 		assertEquals(Arrays.asList(2, 1, 0, -1, -2), l);
 	}
 
 	/***************************************
-	 * Checks the bounds of integer ranges.
+	 * Checks the contents of integer ranges.
 	 *
-	 * @param nFirst
-	 * @param nLast
+	 * @param nStart
+	 * @param nEnd
 	 */
-	private void checkRangeContains(int nFirst, int nLast)
+	private void checkRangeContains(int nStart, int nEnd)
 	{
-		IntRange r = Range.of(nFirst, nLast);
+		Range<Integer> r = Range.from(nStart).to(nEnd);
 
-		for (int i = nFirst; i <= nLast; i++)
+		for (int i = nStart; i <= nEnd; i++)
 		{
 			assertTrue(r.contains(i));
 		}
 
-		assertFalse(r.contains(nFirst - (int) r.getStep()));
-		assertFalse(r.contains(nLast + (int) r.getStep()));
+		assertFalse(r.contains(nStart - r.getStep()));
+		assertFalse(r.contains(nEnd + r.getStep()));
 	}
 
 	/***************************************
 	 * Checks {@link Range#forEach(java.util.function.Consumer)}.
 	 *
-	 * @param nFirst
-	 * @param nLast
+	 * @param nStart
+	 * @param nEnd
+	 * @param nStep
 	 */
-	private void checkRangeForEach(int nFirst, int nLast)
+	private void checkRangeForEach(int nStart, int nEnd, int nStep)
 	{
 		nDiff = 0;
 
-		IntRange r = Range.of(nFirst, nLast);
+		Range<Integer> r = Range.from(nStart).to(nEnd);
 
 		r.forEach(i ->
 	  			{
-	  				assertEquals(i.intValue(), nFirst + nDiff);
+	  				assertEquals(i.intValue(), nStart + nDiff);
 	  				nDiff += r.getStep();
 				  });
 	}
