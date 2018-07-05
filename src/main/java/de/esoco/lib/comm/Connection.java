@@ -53,6 +53,9 @@ public class Connection extends RelatedObject implements Closeable
 	Connection(Endpoint rEndpoint)
 	{
 		this.rEndpoint = rEndpoint;
+
+		set(USER_NAME, getUserName());
+		set(PASSWORD, getPassword());
 	}
 
 	//~ Methods ----------------------------------------------------------------
