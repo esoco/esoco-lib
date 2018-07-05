@@ -44,7 +44,7 @@ import static de.esoco.lib.comm.smtp.Email.email;
  *
  * @author eso
  */
-public class SmtpLogging extends LogAspect<Email>
+public class MailLogging extends LogAspect<Email>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -58,7 +58,7 @@ public class SmtpLogging extends LogAspect<Email>
 	 *
 	 * @param sSmtpEndpointUrl The endpoint URL of the SMTP server
 	 */
-	public SmtpLogging(String sSmtpEndpointUrl)
+	public MailLogging(String sSmtpEndpointUrl)
 	{
 		set(MIN_LOG_LEVEL, LogLevel.ERROR);
 
@@ -74,7 +74,7 @@ public class SmtpLogging extends LogAspect<Email>
 	 *
 	 * @return This instance for fluent invocation
 	 */
-	public SmtpLogging from(String sSender)
+	public MailLogging from(String sSender)
 	{
 		aEmailTemplate.from(sSender);
 
@@ -89,7 +89,7 @@ public class SmtpLogging extends LogAspect<Email>
 	 *
 	 * @return This instance for fluent invocation
 	 */
-	public SmtpLogging loginAs(String sUserName, String sPassword)
+	public MailLogging loginAs(String sUserName, String sPassword)
 	{
 		aMailServer.set(USER_NAME, sUserName);
 		aMailServer.set(PASSWORD, sPassword);
@@ -104,7 +104,7 @@ public class SmtpLogging extends LogAspect<Email>
 	 *
 	 * @return This instance for fluent invocation
 	 */
-	public SmtpLogging to(String sReceiver)
+	public MailLogging to(String sReceiver)
 	{
 		aEmailTemplate.to(sReceiver);
 
