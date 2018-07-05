@@ -124,7 +124,9 @@ public class SmtpProtocolHandler
 	 */
 	public void send(Email rEmail)
 	{
+		String sSenderName		 = rEmail.get(SENDER_NAME);
 		String sSenderAddress    = rEmail.get(SENDER_ADDRESS);
+		String sRecipientName    = rEmail.get(RECIPIENT_NAME);
 		String sRecipientAddress = rEmail.get(RECIPIENT_ADDRESS);
 
 		send("MAIL FROM:<%s>", sSenderAddress).checkOk();
@@ -132,8 +134,8 @@ public class SmtpProtocolHandler
 		send("DATA").checkResponse(OK, START_MAIL);
 		send("Date: %s",
 			 DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now()));
-		send("From: %s <%s>", rEmail.get(SENDER_NAME), sRecipientAddress);
-		send("To: %s <%s>", rEmail.get(RECIPIENT_NAME), sRecipientAddress);
+		sendAddress("From", sSenderName, sSenderAddress);
+		sendAddress("To", sRecipientName, sRecipientAddress);
 		send("Subject: %s", rEmail.get(SUBJECT));
 		send("Mime-Version: 1.0");
 		send("Content-Type: text/plain; charset=\"utf-8\"");
@@ -210,6 +212,25 @@ public class SmtpProtocolHandler
 		}
 
 		return this;
+	}
+
+	/***************************************
+	 * Sends an email address field string to the server.
+	 *
+	 * @param sField   The field name
+	 * @param sName    The name of address
+	 * @param sAddress The email address
+	 */
+	void sendAddress(String sField, String sName, String sAddress)
+	{
+		if (sName != null)
+		{
+			send("%s: %s <%s>", sField, sName, sAddress);
+		}
+		else
+		{
+			send("%s: %s", sField, sAddress);
+		}
 	}
 
 	/***************************************

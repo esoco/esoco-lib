@@ -27,6 +27,10 @@ import java.io.OutputStream;
 
 import java.net.Socket;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 import org.obrel.core.RelationType;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.PASSWORD;
@@ -40,10 +44,22 @@ import static org.obrel.core.RelationTypes.newType;
  * A socket-based {@link Endpoint} that allows to send email to an SMTP server.
  * The endpoint supports encrypted connections (SMTPS) and PLAIN authentication.
  * It does not support STARTTLS so the connection needs to be encrypted from the
- * start (typically on port 465). To create an SMTP(S) endpoint it is
- * recommended to invoke the factory method {@link Endpoint#at(String)} with a
- * URL containing the host and port, e.g. <code>
- * Endpoint.at("smtps://mail.example.com:465")</code>.
+ * start (typically on port 465).
+ *
+ * <p>To create an SMTP(S) endpoint it is recommended to invoke the factory
+ * method {@link Endpoint#at(String)} with a URL containing the host and port,
+ * e.g. <code>Endpoint.at("smtps://mail.example.com:465")</code>. Optionally the
+ * URL can also contain authentication credentials (i.e. login name and
+ * password) before the host name. If not present in the URL the credential must
+ * be set on the endpoint instance if the server requires authentication.
+ * Credentials set on the instance will take precedence over the URL.</p>
+ *
+ * <p>Furthermore the URL may contain a query part that provides additional
+ * parameters. Currently that can be "to" to set the sender and "from" for the
+ * recipient email addresses. Sender and recipient in an {@link Email} object
+ * that is handed over to {@link #sendMail(Email)} take precedence. If either
+ * sender or recipient are missing (i.e. neither defined in the email nor in the
+ * URL) the request will fail.</p>
  *
  * @author eso
  */
@@ -145,6 +161,36 @@ public class SmtpEndpoint extends SocketEndpoint
 		{
 			SmtpProtocolHandler aSmtpHandler =
 				new SmtpProtocolHandler("localhost", rOutput, rInput);
+
+			String sFrom = rEmail.get(Email.SENDER_ADDRESS);
+			String sTo   = rEmail.get(Email.RECIPIENT_ADDRESS);
+
+			if (sFrom == null || sTo == null)
+			{
+				String			    sQuery		   =
+					rConnection.getUri().getQuery();
+				String[]		    aQueryElements = sQuery.split("&");
+				Map<String, String> aParams		   = new HashMap<>();
+
+				for (String sElement : aQueryElements)
+				{
+					String[] aParam = sElement.split("=");
+
+					if (aParam.length == 2)
+					{
+						aParams.put(aParam[0].toLowerCase(), aParam[1]);
+					}
+				}
+
+				sFrom = sFrom == null ? aParams.get("from") : sFrom;
+				sTo   = sTo == null ? aParams.get("to") : sTo;
+
+				Objects.requireNonNull(sFrom, "Missing sender address");
+				Objects.requireNonNull(sTo, "Missing recipient address");
+
+				rEmail.set(Email.SENDER_ADDRESS, sFrom);
+				rEmail.set(Email.RECIPIENT_ADDRESS, sTo);
+			}
 
 			aSmtpHandler.connect(rConnection.get(USER_NAME),
 								 rConnection.get(PASSWORD));
