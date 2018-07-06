@@ -214,6 +214,35 @@ public class RangeTest
 	}
 
 	/***************************************
+	 * Test of {@link Range#size()}
+	 */
+	@Test
+	public void testSize()
+	{
+		assertEquals(0, Range.from(0).until(0).size());
+		assertEquals(1, Range.from(0).to(0).size());
+		assertEquals(1, Range.from(0).until(-1).size());
+		assertEquals(2, Range.from(0).to(-1).size());
+
+		assertEquals(0, Range.from('A').until('A').size());
+		assertEquals(1, Range.from('A').to('A').size());
+		assertEquals(1, Range.from('B').until('A').size());
+		assertEquals(2, Range.from('B').to('A').size());
+
+		assertEquals(0, Range.from(bd("1.0")).until(bd("1.0")).size());
+		assertEquals(0, Range.from(bd("1.0")).until(bd("1.9")).size());
+		assertEquals(1, Range.from(bd("1.0")).until(bd("2.0")).size());
+		assertEquals(1, Range.from(bd("1.0")).until(bd("2.9")).size());
+		assertEquals(1, Range.from(bd("1.0")).to(bd("1.0")).size());
+		assertEquals(1, Range.from(bd("1.0")).to(bd("1.9")).size());
+		assertEquals(2, Range.from(bd("1.0")).to(bd("2.0")).size());
+		assertEquals(2, Range.from(bd("1.0")).to(bd("2.9")).size());
+		assertEquals(2, Range.from(bd("1.0")).to(bd("0.0")).size());
+		assertEquals(2, Range.from(bd("1.9")).to(bd("0.0")).size());
+		assertEquals(3, Range.from(bd("2.1")).to(bd("0.0")).size());
+	}
+
+	/***************************************
 	 * Test of {@link Range#stream()}
 	 */
 	@Test
@@ -240,6 +269,95 @@ public class RangeTest
 	}
 
 	/***************************************
+	 * Test of {@link Range#until(Comparable)}
+	 */
+	@Test
+	public void testUntil()
+	{
+		Range<Integer> ri = Range.from(0).until(5);
+
+		assertEquals(Arrays.asList(0, 1, 2, 3, 4), ri.toList());
+		assertEquals(5, ri.size());
+		assertTrue(ri.contains(4));
+		assertFalse(ri.contains(5));
+
+		ri = Range.from(10).until(5);
+
+		assertEquals(Arrays.asList(10, 9, 8, 7, 6), ri.toList());
+		assertEquals(5, ri.size());
+		assertTrue(ri.contains(6));
+		assertFalse(ri.contains(5));
+
+		ri = Range.from(10).until(0).step(2);
+
+		assertEquals(Arrays.asList(10, 8, 6, 4, 2), ri.toList());
+		assertEquals(5, ri.size());
+		assertTrue(ri.contains(2));
+		assertFalse(ri.contains(0));
+
+		Range<Character> rc = Range.from('A').until('C');
+
+		assertEquals(Arrays.asList('A', 'B'), rc.toList());
+		assertEquals(2, rc.size());
+		assertTrue(rc.contains('B'));
+		assertFalse(rc.contains('C'));
+
+		rc = Range.from('Z').until('V');
+
+		assertEquals(Arrays.asList('Z', 'Y', 'X', 'W'), rc.toList());
+		assertEquals(4, rc.size());
+		assertTrue(rc.contains('W'));
+		assertFalse(rc.contains('V'));
+
+		Range<Double> rd = Range.from(0.5).until(2.0).step(0.25);
+
+		assertEquals(Arrays.asList(0.5, 0.75, 1.0, 1.25, 1.5, 1.75),
+					 rd.toList());
+		assertEquals(6, rd.size());
+
+		rd = Range.from(2.0).until(0.5).step(0.25);
+
+		assertEquals(Arrays.asList(2.0, 1.75, 1.50, 1.25, 1.0, 0.75),
+					 rd.toList());
+		assertEquals(6, rd.size());
+
+		Range<BigDecimal> rbd =
+			Range.from(bd("0.50")).until(bd("2.00")).step(bd("0.25"));
+
+		assertEquals(Arrays.asList(bd("0.50"),
+								   bd("0.75"),
+								   bd("1.00"),
+								   bd("1.25"),
+								   bd("1.50"),
+								   bd("1.75")),
+					 rbd.toList());
+		assertEquals(6, rbd.size());
+
+		rbd = Range.from(bd("2.00")).until(bd("0.50")).step(bd("0.25"));
+
+		assertEquals(Arrays.asList(bd("2.00"),
+								   bd("1.75"),
+								   bd("1.50"),
+								   bd("1.25"),
+								   bd("1.00"),
+								   bd("0.75")),
+					 rbd.toList());
+		assertEquals(6, rbd.size());
+	}
+
+	/***************************************
+	 * Creates a {@link BigDecimal}
+	 *
+	 * @param  sValue
+	 *
+	 * @return {@link BigDecimal}
+	 */
+	private BigDecimal bd(String sValue)
+	{
+		return new BigDecimal(sValue);
+	}
+
+	/***************************************
 	 * Checks the contents of integer ranges.
 	 *
 	 * @param nStart
@@ -254,6 +372,8 @@ public class RangeTest
 			assertTrue(r.contains(i));
 		}
 
+		assertEquals(Math.abs(nEnd - nStart) + 1, r.size());
+		assertEquals(r.isAscending(), nEnd >= nStart);
 		assertFalse(r.contains(nStart - r.getStep()));
 		assertFalse(r.contains(nEnd + r.getStep()));
 	}
