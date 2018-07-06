@@ -38,9 +38,32 @@ import static de.esoco.lib.datatype.Pair.t;
 /********************************************************************
  * A generic implementation for iterable ranges of comparable numeric values.
  * Ranges consist of a start and an end value with a certain step size to
- * proceed for the increment or decrement of the current value during iteration.
- * Both the start and end value are inclusive and therefore a range always
- * contains at least one value.
+ * increment or decrement values by during iteration. The current implementation
+ * supports all standard number types (Integer, Long, Short, Byte, Float,
+ * Double, BigInteger, BigDecimal) as well as {@link Character} values.
+ *
+ * <p>Ranges are defined with a simple builder pattern: a new instance is
+ * created by the static factory method {@link #from(Comparable)} from a start
+ * value which also defines the range datatype. Before the range can be used an
+ * end value must be defined by invoking either {@link #to(Comparable)} or
+ * {@link #until(Comparable)} for inclusive or exclusive end values,
+ * respectively. The default step size is 1 (one) but a different step size can
+ * be set through {@link #step(Comparable)}. Trying to use a range that has no
+ * end value will cause a runtime exception to be thrown.</p>
+ *
+ * <p>To support the builder pattern ranges are "effectively" immutable.
+ * Effectively means that the range end and step size can only be defined once
+ * by calling the respective methods. Invoking these methods again would cause
+ * an exception to be thrown. There's one caveat: because the step size has a
+ * default value a range on which no explicit step size has been set still has a
+ * mutable step size. Therefore when defining range constants it is recommended
+ * to explicitly set the step size even if it is the default value of one.</p>
+ *
+ * <p>Decimal or floating-point datatypes should be used cautiously, especially
+ * if fractional steps are used because these may cause non-terminating
+ * divisions or rounding errors. Especially binary floating-point types (float,
+ * double) may behave unexpected because of the typical binary-to-decimal
+ * conversion inaccuracies of these types.</p>
  *
  * @author eso
  */
