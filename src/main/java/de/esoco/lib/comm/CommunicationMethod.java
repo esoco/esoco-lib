@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -119,21 +119,10 @@ public abstract class CommunicationMethod<I, O>
 	 * @param  rInput      The input value for this communication method
 	 *
 	 * @return The output value according to this method's definition
-	 */
-	public abstract O doOn(Connection rConnection, I rInput);
-
-	/***************************************
-	 * Semantic variant of {@link #from(Endpoint)} that indicates that a
-	 * communication method is executed at a certain endpoint.
 	 *
-	 * @param  rEndpoint The endpoint
-	 *
-	 * @return The endpoint chain of this method with the given endpoint
+	 * @throws Exception Any kind of exception may be thrown to signal errors
 	 */
-	public EndpointFunction<I, O> on(Endpoint rEndpoint)
-	{
-		return from(rEndpoint);
-	}
+	public abstract O doOn(Connection rConnection, I rInput) throws Exception;
 
 	/***************************************
 	 * {@inheritDoc}
@@ -159,14 +148,21 @@ public abstract class CommunicationMethod<I, O>
 
 			return rResult;
 		}
-		catch (RuntimeException e)
+		catch (Exception e)
 		{
 			if (eLogExtent.logs(LogExtent.ERRORS))
 			{
 				Log.error(getLogMessage(rConnection, rInput, e), e);
 			}
 
-			throw e;
+			if (e instanceof RuntimeException)
+			{
+				throw (RuntimeException) e;
+			}
+			else
+			{
+				throw new CommunicationException(e);
+			}
 		}
 	}
 
@@ -195,25 +191,38 @@ public abstract class CommunicationMethod<I, O>
 	}
 
 	/***************************************
-	 * A synonym for {@link #doOn(Connection, Object)} that can be used to
+	 * A synonym for {@link #evaluate(Object, Connection)} that can be used to
 	 * indicate that a value is retrieved from an endpoint connection.
 	 *
-	 * @see #doOn(Connection, Object)
+	 * @see #evaluate(Object, Connection)
 	 */
 	public O getFrom(Connection rConnection, I rInput)
 	{
-		return doOn(rConnection, rInput);
+		return evaluate(rInput, rConnection);
 	}
 
 	/***************************************
-	 * A synonym for {@link #doOn(Connection, Object)} that can be used to
+	 * Semantic variant of {@link #from(Endpoint)} that indicates that a
+	 * communication method is executed at a certain endpoint.
+	 *
+	 * @param  rEndpoint The endpoint
+	 *
+	 * @return The endpoint chain of this method with the given endpoint
+	 */
+	public EndpointFunction<I, O> on(Endpoint rEndpoint)
+	{
+		return from(rEndpoint);
+	}
+
+	/***************************************
+	 * A synonym for {@link #evaluate(Object, Connection)} that can be used to
 	 * indicate that a value is sent over an endpoint connection.
 	 *
-	 * @see #doOn(Connection, Object)
+	 * @see #evaluate(Object, Connection)
 	 */
 	public O sendTo(Connection rConnection, I rInput)
 	{
-		return doOn(rConnection, rInput);
+		return evaluate(rInput, rConnection);
 	}
 
 	/***************************************

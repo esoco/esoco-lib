@@ -62,15 +62,6 @@ public class JsonRpcEndpoint extends Endpoint
 	private static final RelationType<CommunicationMethod<String, String>> RPC_SERVER_METHOD =
 		newType(PRIVATE);
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
-	 * Creates a new instance.
-	 */
-	public JsonRpcEndpoint()
-	{
-	}
-
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
@@ -185,36 +176,36 @@ public class JsonRpcEndpoint extends Endpoint
 	@Override
 	protected void initConnection(Connection rConnection) throws Exception
 	{
-		URI rUri	   = rConnection.getUri();
-		URL aTargetUrl;
+		URI    rUri		  = rConnection.getUri();
+		String sTargetUrl = rUri.getSchemeSpecificPart();
 
+		Endpoint						    rTransportEndpoint;
 		CommunicationMethod<String, String> rTransportMethod;
 
-		if (rUri.getScheme().equals("json-rpc"))
+		if (sTargetUrl.startsWith("http"))
 		{
-			aTargetUrl = new URL(rUri.getSchemeSpecificPart());
-		}
-		else
-		{
-			aTargetUrl = rUri.toURL();
-		}
+			URL aUrl = new URL(sTargetUrl);
 
-		if (aTargetUrl.getProtocol().startsWith("http"))
+			// create endpoint from URL without path
+			rTransportEndpoint =
+				Endpoint.at(HttpEndpoint.url(aUrl.getHost(),
+											 aUrl.getPort(),
+											 aUrl.getProtocol().endsWith("s")));
+			rTransportMethod   = HttpEndpoint.httpPost(aUrl.getPath(), null);
+		}
+		else if (sTargetUrl.startsWith("pipe"))
 		{
-			rTransportMethod =
-				HttpEndpoint.httpPost(aTargetUrl.getPath(), null);
+			rTransportEndpoint = Endpoint.at(sTargetUrl);
+			rTransportMethod   = PipeEndpoint.textRequest(null);
 		}
 		else
 		{
 			throw new CommunicationException("Unsupported JSON RPC transport: " +
-											 aTargetUrl);
+											 sTargetUrl);
 		}
 
 		Connection rTransportConnection =
-			Endpoint.at(HttpEndpoint.url(aTargetUrl.getHost(),
-										 aTargetUrl.getPort(),
-										 aTargetUrl.getProtocol()
-										 .endsWith("s"))).connect(rConnection);
+			rTransportEndpoint.connect(rConnection);
 
 		rConnection.set(RPC_SERVER_CONNECTION, rTransportConnection);
 		rConnection.set(RPC_SERVER_METHOD, rTransportMethod);

@@ -142,20 +142,25 @@ public class SocketEndpoint extends Endpoint
 	{
 		Socket rSocket = rConnection.get(ENDPOINT_SOCKET);
 
-		if (rSocket != null && !rSocket.isClosed())
+		if (rSocket != null)
 		{
-			rSocket.close();
+			if (!rSocket.isClosed())
+			{
+				rSocket.close();
+			}
+
+			rConnection.set(ENDPOINT_SOCKET, null);
 		}
 	}
 
 	/***************************************
-	 * Returns the endpoint socket of a certain connection.
+	 * Returns the socket of a connection to a socket endpoint.
 	 *
 	 * @param  rConnection The connection
 	 *
 	 * @return The endpoint socket
 	 */
-	protected Socket getEndpointSocket(Connection rConnection)
+	protected Socket getSocket(Connection rConnection)
 	{
 		return rConnection.get(ENDPOINT_SOCKET);
 	}
@@ -223,25 +228,20 @@ public class SocketEndpoint extends Endpoint
 
 		/***************************************
 		 * {@inheritDoc}
+		 *
+		 * @throws IOException
 		 */
 		@Override
-		public O doOn(Connection rConnection, I rRequest)
+		public O doOn(Connection rConnection, I rRequest) throws Exception
 		{
-			try
-			{
-				Socket		 aSocket = rConnection.get(ENDPOINT_SOCKET);
-				OutputStream rOutput = aSocket.getOutputStream();
-				InputStream  rInput  = aSocket.getInputStream();
+			Socket		 aSocket = rConnection.get(ENDPOINT_SOCKET);
+			OutputStream rOutput = aSocket.getOutputStream();
+			InputStream  rInput  = aSocket.getInputStream();
 
-				rConnection.set(SOCKET_OUTPUT_STREAM, rOutput);
-				rConnection.set(SOCKET_INPUT_STREAM, rInput);
+			rConnection.set(SOCKET_OUTPUT_STREAM, rOutput);
+			rConnection.set(SOCKET_INPUT_STREAM, rInput);
 
-				return sendRequest(rConnection, rOutput, rInput, rRequest);
-			}
-			catch (Exception e)
-			{
-				throw new CommunicationException(e);
-			}
+			return sendRequest(rConnection, rOutput, rInput, rRequest);
 		}
 
 		/***************************************

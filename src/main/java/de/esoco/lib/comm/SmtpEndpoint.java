@@ -116,7 +116,7 @@ public class SmtpEndpoint extends SocketEndpoint
 	{
 		super.initConnection(rConnection);
 
-		Socket rSocket = getEndpointSocket(rConnection);
+		Socket rSocket = getSocket(rConnection);
 
 		DataOutputStream aDataOut =
 			new DataOutputStream(rSocket.getOutputStream());
