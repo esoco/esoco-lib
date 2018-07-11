@@ -53,9 +53,6 @@ public class Connection extends RelatedObject implements Closeable
 	Connection(Endpoint rEndpoint)
 	{
 		this.rEndpoint = rEndpoint;
-
-		set(USER_NAME, getUserName());
-		set(PASSWORD, getPassword());
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -103,24 +100,7 @@ public class Connection extends RelatedObject implements Closeable
 	 */
 	public String getPassword()
 	{
-		String sPassword = get(PASSWORD);
-
-		if (sPassword == null)
-		{
-			String sUserInfo = getUri().getUserInfo();
-
-			if (sUserInfo != null)
-			{
-				int nIndex = sUserInfo.indexOf(':');
-
-				if (nIndex >= 0)
-				{
-					sPassword = sUserInfo.substring(nIndex + 1);
-				}
-			}
-		}
-
-		return sPassword;
+		return get(PASSWORD);
 	}
 
 	/***************************************
@@ -149,23 +129,6 @@ public class Connection extends RelatedObject implements Closeable
 	 */
 	public String getUserName()
 	{
-		String sUserName = get(USER_NAME);
-
-		if (sUserName == null)
-		{
-			String sUserInfo = getUri().getUserInfo();
-
-			if (sUserInfo != null)
-			{
-				int nIndex = sUserInfo.indexOf(':');
-
-				if (nIndex >= 0)
-				{
-					sUserName = sUserInfo.substring(0, nIndex);
-				}
-			}
-		}
-
-		return sUserName;
+		return get(USER_NAME);
 	}
 }

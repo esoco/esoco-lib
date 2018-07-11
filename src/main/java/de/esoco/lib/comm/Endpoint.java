@@ -25,6 +25,9 @@ import de.esoco.lib.text.TextConvert;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +42,8 @@ import org.obrel.core.RelationTypes;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
+import static de.esoco.lib.comm.CommunicationRelationTypes.PASSWORD;
+import static de.esoco.lib.comm.CommunicationRelationTypes.USER_NAME;
 
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
 import static org.obrel.core.RelationTypes.newType;
@@ -62,6 +67,13 @@ import static org.obrel.core.RelationTypes.newType;
 public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	implements FluentRelatable<Endpoint>
 {
+	//~ Enums ------------------------------------------------------------------
+
+	/********************************************************************
+	 * Enumeration of the user info fields in a URI.
+	 */
+	public enum UserInfoField { USERNAME, PASSWORD }
+
 	//~ Static fields/initializers ---------------------------------------------
 
 	/**
@@ -119,16 +131,19 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * Returns an endpoint instance for a certain URI.
+	 * Returns an endpoint instance for a certain URI. The endpoint will be
+	 * initialized from the URI data. Authentication data will be moved from the
+	 * endpoint address URI to the {@link CommunicationRelationTypes#USER_NAME}
+	 * and {@link CommunicationRelationTypes#PASSWORD} relations.
 	 *
-	 * @param  sUri The URI to create the endpoint for
+	 * @param  sEndpointUri The URI to create the endpoint for
 	 *
 	 * @return The endpoint for the given URI
 	 */
-	public static Endpoint at(String sUri)
+	public static Endpoint at(String sEndpointUri)
 	{
-		int		 nColonPos  = sUri.indexOf(':');
-		String   sScheme    = sUri.substring(0, nColonPos).toUpperCase();
+		URI		 aUri	    = createUri(sEndpointUri);
+		String   sScheme    = aUri.getScheme().toUpperCase();
 		Boolean  bEncrypted = Boolean.valueOf(sScheme.endsWith("S"));
 		Endpoint aEndpoint;
 
@@ -146,7 +161,22 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 			{
 				aEndpoint = aEndpointClass.newInstance();
 				aEndpoint.set(ENDPOINT_SCHEME, sScheme);
-				aEndpoint.set(ENDPOINT_ADDRESS, sUri);
+				aEndpoint.set(USER_NAME,
+							  getUserInfoField(aUri, UserInfoField.USERNAME));
+				aEndpoint.set(PASSWORD,
+							  getUserInfoField(aUri, UserInfoField.PASSWORD));
+
+				String sUserInfo = aUri.getUserInfo();
+
+				if (sUserInfo != null)
+				{
+					// remove authentication data from URI string after storing
+					// user and password to prevent it from leaking when the
+					// endpoint address is accessed
+					sEndpointUri = sEndpointUri.replaceAll(sUserInfo + "@", "");
+				}
+
+				aEndpoint.set(ENDPOINT_ADDRESS, sEndpointUri);
 
 				if (!aEndpoint.hasRelation(ENCRYPTION))
 				{
@@ -276,6 +306,26 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	}
 
 	/***************************************
+	 * Converts a string into a URI and converts any occurring exception into a
+	 * runtime {@link CommunicationException}.
+	 *
+	 * @param  sUri The URI string
+	 *
+	 * @return The {@link URI} object
+	 */
+	private static URI createUri(String sUri)
+	{
+		try
+		{
+			return new URI(sUri);
+		}
+		catch (URISyntaxException e)
+		{
+			throw new CommunicationException(e);
+		}
+	}
+
+	/***************************************
 	 * Tries to lookup an endpoint implementation based on an URL scheme and if
 	 * found registers it for plain and encrypted protocol variants.
 	 *
@@ -319,6 +369,36 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 		}
 
 		return aEndpointClass;
+	}
+
+	/***************************************
+	 * Returns a field from the user info part of a URI.
+	 *
+	 * @param  rUri   The URI
+	 * @param  eField bPassword TRUE to return the password field, FALSE to
+	 *                return the user name field
+	 *
+	 * @return The user info field (NULL for none)
+	 */
+	private static String getUserInfoField(URI rUri, UserInfoField eField)
+	{
+		String sUserInfo = rUri.getUserInfo();
+		String sField    = null;
+
+		if (sUserInfo != null)
+		{
+			int nIndex = sUserInfo.indexOf(':');
+
+			if (nIndex >= 0)
+			{
+				sField =
+					eField == UserInfoField.PASSWORD
+					? sUserInfo.substring(nIndex + 1)
+					: sUserInfo.substring(0, nIndex);
+			}
+		}
+
+		return sField;
 	}
 
 	//~ Methods ----------------------------------------------------------------
