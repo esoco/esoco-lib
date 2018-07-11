@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -141,6 +141,27 @@ public final class LogRecord
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Converts this record into a string with the same format as the standard
+	 * log handler.
+	 *
+	 * @param  eMinStackLevel The minimum log level for which to add a stack
+	 *                        trace
+	 *
+	 * @return The formatted log record string
+	 */
+	public String format(LogLevel eMinStackLevel)
+	{
+		String sLog = Log.DEFAULT_FORMAT.apply(this);
+
+		if (rLevel.compareTo(eMinStackLevel) >= 0)
+		{
+			sLog += "\n" + Log.CAUSE_TRACE.evaluate(this);
+		}
+
+		return sLog;
+	}
 
 	/***************************************
 	 * Returns the error that caused the log record to be created.

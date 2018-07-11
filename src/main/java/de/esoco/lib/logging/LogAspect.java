@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package de.esoco.lib.logging;
 
 import de.esoco.lib.expression.Action;
-import de.esoco.lib.expression.function.AbstractAction;
-import de.esoco.lib.expression.function.AbstractFunction;
 
 import java.util.Collection;
 import java.util.Queue;
@@ -32,7 +30,6 @@ import org.obrel.core.RelationTypes;
 
 import static org.obrel.core.RelationTypes.newDefaultValueType;
 import static org.obrel.core.RelationTypes.newIntType;
-import static org.obrel.core.RelationTypes.newType;
 
 
 /********************************************************************
@@ -72,14 +69,7 @@ public abstract class LogAspect<T> extends RelatedObject
 	 * with {@link Log#getGlobalMinimumLogLevel()} if not set explicitly.
 	 */
 	public static final RelationType<LogLevel> MIN_LOG_LEVEL =
-		newType(new AbstractFunction<Object, LogLevel>("GetGlobalMinimumLogLevel")
-			{
-				@Override
-				public LogLevel evaluate(Object rIgnored)
-				{
-					return Log.getGlobalMinimumLogLevel();
-				}
-			});
+		newDefaultValueType(Log.getGlobalMinimumLogLevel());
 
 	/**
 	 * The minimum log level to be logged by this aspect that shall include the
@@ -124,21 +114,18 @@ public abstract class LogAspect<T> extends RelatedObject
 			nErrorCount		 = 0;
 			aQueueAccessLock = new ReentrantLock();
 			aLogQueue		 = new ConcurrentLinkedQueue<T>();
-			fLogFunction     =
-				new AbstractAction<LogRecord>(getClass().getSimpleName())
-				{
-					@Override
-					public void execute(LogRecord rLogRecord)
-					{
-						processLogRecord(rLogRecord);
-					}
-				};
+			fLogFunction     = this::processLogRecord;
 
 			init();
 
-			Log.infof("Log aspect %s initialized, starting logging", this);
-			Log.addDefaultLogHandler(fLogFunction);
+			String sInitMessage = getLogInitMessage();
 
+			if (sInitMessage == null)
+			{
+				Log.info(sInitMessage);
+			}
+
+			Log.addDefaultLogHandler(fLogFunction);
 			bLoggingInitialized = true;
 		}
 	}
@@ -201,6 +188,18 @@ public abstract class LogAspect<T> extends RelatedObject
 		throws Exception;
 
 	/***************************************
+	 * Returns a message that will be logged as info message after
+	 * initialization of this aspect.
+	 *
+	 * @return The log init message (NULL for none)
+	 */
+	protected String getLogInitMessage()
+	{
+		return String.format("Log aspect %s initialized, starting logging",
+							 this);
+	}
+
+	/***************************************
 	 * Will be invoked from {@link #initLogging()}. Can be implemented by
 	 * subclasses to initialize the internal state that is needed for the
 	 * operation of this aspect. The default implementation does nothing.
@@ -250,9 +249,12 @@ public abstract class LogAspect<T> extends RelatedObject
 	/***************************************
 	 * Stores a new log entry based on a log record.
 	 *
-	 * @param rLogRecord The log record
+	 * @param  rLogRecord The log record
+	 *
+	 * @return Always NULL, return value exists only to comply with function
+	 *         signature
 	 */
-	private void processLogRecord(LogRecord rLogRecord)
+	private Object processLogRecord(LogRecord rLogRecord)
 	{
 		if (rLogRecord.getLevel().compareTo(get(MIN_LOG_LEVEL)) >= 0)
 		{
@@ -277,5 +279,7 @@ public abstract class LogAspect<T> extends RelatedObject
 				}
 			}
 		}
+
+		return rLogRecord;
 	}
 }

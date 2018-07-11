@@ -19,7 +19,6 @@ package de.esoco.lib.comm.smtp;
 import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.comm.EndpointFunction;
 import de.esoco.lib.comm.SmtpEndpoint;
-import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogAspect;
 import de.esoco.lib.logging.LogLevel;
 import de.esoco.lib.logging.LogRecord;
@@ -131,24 +130,28 @@ public class MailLogging extends LogAspect<Email>
 	@Override
 	protected Email createLogObject(LogRecord rLogRecord)
 	{
-		String   sMessage  = Log.DEFAULT_FORMAT.apply(rLogRecord);
-		LogLevel eLogLevel = rLogRecord.getLevel();
-		Email    aEmail    = new Email();
-
-		if (eLogLevel.compareTo(get(MIN_STACK_LOG_LEVEL)) >= 0)
-		{
-			sMessage += "\n" + Log.CAUSE_TRACE.evaluate(rLogRecord);
-		}
+		String sMessage = rLogRecord.format(get(MIN_STACK_LOG_LEVEL));
+		Email  aEmail   = new Email();
 
 		ObjectRelations.copyRelations(aEmailTemplate, aEmail, false);
 
 		aEmail.subject(String.format("[%1$s]%2$tF %2$tT: %3$s",
-									 eLogLevel,
+									 rLogRecord.getLevel(),
 									 new Date(rLogRecord.getTime()),
 									 rLogRecord.getMessage()));
 		aEmail.message(sMessage);
 
 		return aEmail;
+	}
+
+	/***************************************
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected String getLogInitMessage()
+	{
+		return "Starting logging to mail server at " +
+			   aMailServer.get(ENDPOINT_ADDRESS);
 	}
 
 	/***************************************

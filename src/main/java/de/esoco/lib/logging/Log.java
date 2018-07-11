@@ -131,8 +131,17 @@ public final class Log
 	static
 	{
 		RelationTypes.init(Log.class);
-		setupDefaultLogHandler();
+		setupStandardLogHandler();
 		setupPackageLogHandlers();
+	}
+
+	//~ Constructors -----------------------------------------------------------
+
+	/***************************************
+	 * Private, only static use.
+	 */
+	private Log()
+	{
 	}
 
 	//~ Static methods ---------------------------------------------------------
@@ -348,8 +357,8 @@ public final class Log
 
 	/***************************************
 	 * Returns the standard log handler that performs output to System.out. To
-	 * disabled this handler it can be removed by invoking the method {@link
-	 * #removeDefaultLogHandler(Function)} with the result of this method.
+	 * disable this handler it can be removed by invoking the method {@link
+	 * #removeStandardLogHandler()}.
 	 *
 	 * @return The standard log handler
 	 */
@@ -539,6 +548,14 @@ public final class Log
 				rLogAspect.shutdownLogging();
 			}
 		}
+	}
+
+	/***************************************
+	 * Removes the standard log handler (@see {@link #getStandardLogHandler()}).
+	 */
+	public static void removeStandardLogHandler()
+	{
+		removeDefaultLogHandler(aStandardLogHandler);
 	}
 
 	/***************************************
@@ -812,9 +829,45 @@ public final class Log
 	}
 
 	/***************************************
-	 * Performs the static setup of the default and standard log handlers.
+	 * Evaluates the system property 'esoco.log.plevels' and registers the
+	 * package-specific log level handlers if such exist.
 	 */
-	private static void setupDefaultLogHandler()
+	private static void setupPackageLogHandlers()
+	{
+		String sPackageLevels = System.getProperty("esoco.log.plevels");
+
+		if (sPackageLevels != null)
+		{
+			String[] aPackageLevels = sPackageLevels.split(",");
+
+			for (String sPackageLevel : aPackageLevels)
+			{
+				String[] aPackageLevel = sPackageLevel.split("=");
+
+				if (aPackageLevel.length != 2)
+				{
+					throw new IllegalArgumentException("Invalid package log level: " +
+													   sPackageLevel);
+				}
+
+				String   sPackageOrClass = aPackageLevel[0];
+				LogLevel eLevel			 = LogLevel.valueOf(aPackageLevel[1]);
+
+				if (sPackageOrClass == null || eLevel == null)
+				{
+					throw new IllegalArgumentException(String.format("Invalid log package definition: %s",
+																	 sPackageLevel));
+				}
+
+				setLogLevel(sPackageOrClass, eLevel);
+			}
+		}
+	}
+
+	/***************************************
+	 * Performs the static setup of the standard log handler.
+	 */
+	private static void setupStandardLogHandler()
 	{
 		String	    sLevel = System.getProperty("esoco.log.level");
 		String	    sFile  = System.getProperty("esoco.log.file");
@@ -858,42 +911,6 @@ public final class Log
 			catch (Exception e)
 			{
 				Log.error("Invalid log level system property: " + sLevel, e);
-			}
-		}
-	}
-
-	/***************************************
-	 * Evaluates the system property 'esoco.log.plevels' and registers the
-	 * package-specific log level handlers if such exist.
-	 */
-	private static void setupPackageLogHandlers()
-	{
-		String sPackageLevels = System.getProperty("esoco.log.plevels");
-
-		if (sPackageLevels != null)
-		{
-			String[] aPackageLevels = sPackageLevels.split(",");
-
-			for (String sPackageLevel : aPackageLevels)
-			{
-				String[] aPackageLevel = sPackageLevel.split("=");
-
-				if (aPackageLevel.length != 2)
-				{
-					throw new IllegalArgumentException("Invalid package log level: " +
-													   sPackageLevel);
-				}
-
-				String   sPackageOrClass = aPackageLevel[0];
-				LogLevel eLevel			 = LogLevel.valueOf(aPackageLevel[1]);
-
-				if (sPackageOrClass == null || eLevel == null)
-				{
-					throw new IllegalArgumentException(String.format("Invalid log package definition: %s",
-																	 sPackageLevel));
-				}
-
-				setLogLevel(sPackageOrClass, eLevel);
 			}
 		}
 	}
