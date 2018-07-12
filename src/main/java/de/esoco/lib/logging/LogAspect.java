@@ -69,7 +69,7 @@ public abstract class LogAspect<T> extends RelatedObject
 	 * with {@link Log#getGlobalMinimumLogLevel()} if not set explicitly.
 	 */
 	public static final RelationType<LogLevel> MIN_LOG_LEVEL =
-		newDefaultValueType(Log.getGlobalMinimumLogLevel());
+		newDefaultValueType(r -> Log.getGlobalMinimumLogLevel());
 
 	/**
 	 * The minimum log level to be logged by this aspect that shall include the
