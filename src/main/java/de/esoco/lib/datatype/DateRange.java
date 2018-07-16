@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,15 @@ import java.util.Date;
  * that contain the start and end of the date range. The end date will be
  * exclusive, i.e. it will be 1 millisecond AFTER the end of the date range and
  * on the first millisecond of the adjacent range.
+ *
+ * <p>Date ranges are comparable based on their position in time (not their size
+ * in milliseconds). A range is considered to be "larger" if it's end date is
+ * after that of another range and "smaller" if the end date is before that of
+ * the other range. If the end dates are equal the start dates are consider
+ * accordingly. That also means that a range that is fully contained in another
+ * is always considered smaller. Comparing may not be sufficient for all cases
+ * so application code should also use the methods {@link #contains(DateRange)}
+ * and {@link #overlaps(DateRange)} for final decisions if necessary.</p>
  *
  * @author eso
  */
