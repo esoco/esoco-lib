@@ -21,6 +21,8 @@ import de.esoco.lib.expression.function.CalendarFunctions;
 
 import java.io.Serializable;
 
+import java.time.Instant;
+
 import java.util.Calendar;
 import java.util.Date;
 
@@ -117,8 +119,8 @@ public class DateRange implements Comparable<DateRange>, Serializable
 
 	//~ Instance fields --------------------------------------------------------
 
-	private long nStart;
-	private long nEnd;
+	private final long nStart;
+	private final long nEnd;
 
 	// Lazily initialized variable; volatile to ensure thread safety
 	private volatile int nHashCode = 0;
@@ -163,6 +165,18 @@ public class DateRange implements Comparable<DateRange>, Serializable
 	}
 
 	/***************************************
+	 * Creates a new instance from {@link Instant Instants}.
+	 *
+	 * @param rStart The start instant
+	 * @param rEnd   The end instant (exclusive)
+	 */
+	public DateRange(Instant rStart, Instant rEnd)
+	{
+		this(rStart.toEpochMilli(),
+			 (rEnd != null) ? rEnd.toEpochMilli() : Long.MAX_VALUE);
+	}
+
+	/***************************************
 	 * Creates a new DateRange object from the milliseconds of it's start and
 	 * end dates. The milliseconds are counted from the start date January 1,
 	 * 1970, 00:00:00 GMT.
@@ -176,8 +190,9 @@ public class DateRange implements Comparable<DateRange>, Serializable
 	{
 		if (nStartMillis > nEndMillis)
 		{
-			throw new IllegalArgumentException(new Date(nStartMillis) + " > " +
-											   new Date(nEndMillis));
+			throw new IllegalArgumentException(String.format("Start > End: %s > %s",
+															 new Date(nStartMillis),
+															 new Date(nEndMillis)));
 		}
 
 		nStart = nStartMillis;
