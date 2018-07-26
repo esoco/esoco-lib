@@ -118,7 +118,7 @@ public class SmtpProtocolHandler
 	}
 
 	/***************************************
-	 * Sends an email after connecting (see {@link #connect()}).
+	 * Sends an email after connecting (see {@link #connect(String, String)}).
 	 *
 	 * @param rEmail The email data
 	 */
