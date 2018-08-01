@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -459,31 +460,37 @@ public abstract class Application extends RelatedObject
 	 */
 	protected void printHelp(Object rCommand)
 	{
-		Map<String, String> rCommandLineOptions = getCommandLineOptions();
+		Map<String, String> aOptions =
+			new LinkedHashMap<>(getCommandLineOptions());
 
-		if (rCommand != null && rCommand instanceof String)
+		String sHelpInfo = "Display this help or help for a single option";
+
+		aOptions.put("h", sHelpInfo);
+		aOptions.put("-help", sHelpInfo);
+		aOptions.put("-args",
+					 "The name and path of a properties file to read the arguments from");
+
+		if (rCommand instanceof String)
 		{
 			String sCommand = rCommand.toString();
 
-			System.out.printf("-%s: %s\n",
+			System.out.printf("Option -%s: %s\n",
 							  sCommand,
-							  rCommandLineOptions.get(sCommand));
+							  aOptions.get(sCommand));
 		}
 		else
 		{
 			int nMaxCommandLength = 0;
 
 			printUsage(System.out);
-			System.out.printf("\n");
 
-			for (String sCommand : rCommandLineOptions.keySet())
+			for (String sCommand : aOptions.keySet())
 			{
 				nMaxCommandLength =
 					Math.max(sCommand.length(), nMaxCommandLength);
 			}
 
-			for (Entry<String, String> rCommandHelp :
-				 rCommandLineOptions.entrySet())
+			for (Entry<String, String> rCommandHelp : aOptions.entrySet())
 			{
 				String sCommand =
 					TextConvert.padRight(rCommandHelp.getKey(),
@@ -507,7 +514,7 @@ public abstract class Application extends RelatedObject
 	{
 		String sDescription = getAppDescription();
 
-		rOutput.printf("Usage: %s [OPTION]...\n", getNameOfAppBinary());
+		rOutput.printf("Usage: %s [options...]\n", getNameOfAppBinary());
 
 		if (sDescription != null)
 		{

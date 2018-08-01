@@ -129,8 +129,9 @@ public class CommandLine
 					   Pattern			   rArgPattern,
 					   Map<String, String> rAllowedOptions)
 	{
-		this.aCommandLineOptions = parse(rArgs, rArgPattern);
-		this.rAllowedOptions     = rAllowedOptions;
+		this.rAllowedOptions = rAllowedOptions;
+
+		aCommandLineOptions = parse(rArgs, rArgPattern);
 	}
 
 	//~ Static methods ---------------------------------------------------------
@@ -511,7 +512,8 @@ public class CommandLine
 														   "--args");
 						}
 					}
-					else if (rAllowedOptions != null)
+					else if (rAllowedOptions != null &&
+							 !(sOption.equals("h") || sOption.equals("-help")))
 					{
 						if (!rAllowedOptions.containsKey(sOption))
 						{
