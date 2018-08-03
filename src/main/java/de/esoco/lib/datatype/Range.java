@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -99,13 +99,13 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 
 	//~ Instance fields --------------------------------------------------------
 
-	private final T aStart;
+	private final T							 aStart;
+	private final Function<RangeIterator, T> fGetNextValue;
+
 	private T	    aEnd	   = null;
 	private T	    aStep	   = null;
 	private long    nSize	   = Long.MIN_VALUE;
 	private boolean bAscending;
-
-	private BiFunction<T, T, T> fGetNextValue;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -113,99 +113,147 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 	 * Internal constructor to creates a new instance. Use the factory method
 	 * {@link #from(Comparable)} to create new ranges.
 	 *
-	 * @param rStart The starting value of this range (inclusive)
+	 * @param rStart        The starting value of this range (inclusive)
+	 * @param fGetNextValue The function that generates the next value of this
+	 *                      range
 	 */
-	private Range(T rStart)
+	private Range(T rStart, Function<RangeIterator, T> fGetNextValue)
 	{
-		this.aStart = rStart;
+		Objects.requireNonNull(rStart, "Start value must not be NULL");
+
+		this.aStart		   = rStart;
+		this.fGetNextValue = fGetNextValue;
 	}
 
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * Creates a new range with a certain start value.
+	 * Creates a new range with a long datatype.
+	 *
+	 * @param  nStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<Long> from(long nStart)
+	{
+		return new Range<>(nStart,
+						   i -> Long.valueOf(i.aNext.longValue() +
+											 i.range().aStep.longValue()));
+	}
+
+	/***************************************
+	 * Creates a new range with an integer datatype.
+	 *
+	 * @param  nStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<Integer> from(int nStart)
+	{
+		return new Range<>(nStart,
+						   i -> Integer.valueOf(i.aNext.intValue() +
+												i.range().aStep.intValue()));
+	}
+
+	/***************************************
+	 * Creates a new range with a float datatype.
+	 *
+	 * @param  fStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<Float> from(float fStart)
+	{
+		return new Range<>(fStart,
+						   i -> Float.valueOf(i.aNext.floatValue() +
+											  i.range().aStep.floatValue()));
+	}
+
+	/***************************************
+	 * Creates a new range with a double datatype.
+	 *
+	 * @param  fStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<Double> from(double fStart)
+	{
+		return new Range<>(fStart,
+						   i -> Double.valueOf(i.aNext.doubleValue() +
+											   i.range().aStep.doubleValue()));
+	}
+
+	/***************************************
+	 * Creates a new range with a short datatype.
+	 *
+	 * @param  nStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<Short> from(short nStart)
+	{
+		return new Range<>(nStart,
+						   i -> Short.valueOf((short) (i.aNext.shortValue() +
+													   i.range().aStep
+													   .shortValue())));
+	}
+
+	/***************************************
+	 * Creates a new range with a byte datatype.
+	 *
+	 * @param  nStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<Byte> from(byte nStart)
+	{
+		return new Range<>(nStart,
+						   i -> Byte.valueOf((byte) (i.aNext.byteValue() +
+													 i.range().aStep
+													 .byteValue())));
+	}
+
+	/***************************************
+	 * Creates a new range with a {@link BigInteger} datatype.
 	 *
 	 * @param  rStart The start of the range
 	 *
 	 * @return The new range
 	 */
-	@SuppressWarnings("unchecked")
-	public static <T extends Comparable<T>> Range<T> from(T rStart)
+	public static Range<BigInteger> from(BigInteger rStart)
 	{
-		Objects.requireNonNull(rStart, "Start value must not be NULL");
+		return new Range<>(rStart, i -> i.aNext.add(i.range().aStep));
+	}
 
-		Class<T> rRangeType = (Class<T>) rStart.getClass();
-		Range<T> aRange     = new Range<T>(rStart);
+	/***************************************
+	 * Creates a new range with a {@link BigDecimal} datatype.
+	 *
+	 * @param  dStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	public static Range<BigDecimal> from(BigDecimal dStart)
+	{
+		return new Range<>(dStart, i -> i.aNext.add(i.range().aStep));
+	}
 
-		if (rRangeType == Long.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) Long.valueOf(((Long) rCurrent).longValue() +
-									 ((Long) rStep).longValue());
-		}
-		else if (rRangeType == Integer.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) Integer.valueOf(((Integer) rCurrent).intValue() +
-										((Integer) rStep).intValue());
-		}
-		else if (rRangeType == Short.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) Short.valueOf((short) (((Short) rCurrent).shortValue() +
-											   ((Short) rStep).shortValue()));
-		}
-		else if (rRangeType == Byte.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) Byte.valueOf((byte) (((Byte) rCurrent).byteValue() +
-											 ((Byte) rStep).byteValue()));
-		}
-		else if (rRangeType == BigInteger.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) ((BigInteger) rCurrent).add((BigInteger) rStep);
-		}
-		else if (rRangeType == BigDecimal.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) ((BigDecimal) rCurrent).add((BigDecimal) rStep);
-		}
-		else if (rRangeType == Double.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) Double.valueOf(((Double) rCurrent).doubleValue() +
-									   ((Double) rStep).doubleValue());
-		}
-		else if (rRangeType == Float.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-					(T) Float.valueOf(((Float) rCurrent).floatValue() +
-									  ((Float) rStep).floatValue());
-		}
-		else if (rRangeType == Character.class)
-		{
-			aRange.fGetNextValue =
-				(rCurrent, rStep) ->
-				{
-					int nStep = ((Character) rStep).charValue();
-
-					return (T) Character.valueOf((char) (((Character) rCurrent)
-														 .charValue() +
-														 (aRange.bAscending
-														  ? nStep : -nStep)));
-				};
-		}
-
-		return aRange;
+	/***************************************
+	 * Creates a new range with a character datatype.
+	 *
+	 * @param  cStart The start of the range
+	 *
+	 * @return The new range
+	 */
+	@SuppressWarnings("unchecked")
+	public static Range<Character> from(char cStart)
+	{
+		return new Range<>(cStart,
+						   i -> Character.valueOf((char) (i.aNext.charValue() +
+														  (i.range().bAscending
+														   ? i.range().aStep
+														   .charValue()
+														   : -i.range().aStep
+														   .charValue()))));
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -329,7 +377,7 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 	{
 		checkInitialized();
 
-		return new RangeIterator();
+		return new RangeIterator(aStart);
 	}
 
 	/***************************************
@@ -489,19 +537,6 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 	}
 
 	/***************************************
-	 * Must be implemented to return the next value in the range.
-	 *
-	 * @param  rCurrent The current value to calculate the next value from
-	 * @param  rStep    The step size to calculate the next value with
-	 *
-	 * @return The next value
-	 */
-	protected T getNextValue(T rCurrent, T rStep)
-	{
-		return fGetNextValue.apply(rCurrent, rStep);
-	}
-
-	/***************************************
 	 * Internal method to calculate the size of this range.
 	 */
 	private void calcSize()
@@ -515,10 +550,11 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 
 			if (nSize == END_EXCLUSIVE)
 			{
-				// unsigned types like Character calculate next value based on
-				// the direction, therefore toggle bUpwards temporarily
+				// calculate inclusive end
 				bAscending = !bAscending;
-				aEnd	   = fGetNextValue.apply(aEnd, negate(aStep));
+				aStep	   = negate(aStep);
+				aEnd	   = fGetNextValue.apply(new RangeIterator(aEnd));
+				aStep	   = negate(aStep);
 				bAscending = !bAscending;
 			}
 
@@ -667,16 +703,18 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 	{
 		//~ Instance fields ----------------------------------------------------
 
-		private T rNext;
+		private T aNext;
 
 		//~ Constructors -------------------------------------------------------
 
 		/***************************************
 		 * Creates a new instance.
+		 *
+		 * @param rStartValue The value to start the iteration at
 		 */
-		public RangeIterator()
+		RangeIterator(T rStartValue)
 		{
-			rNext = aStart;
+			aNext = rStartValue;
 		}
 
 		//~ Methods ------------------------------------------------------------
@@ -687,7 +725,7 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 		@Override
 		public boolean hasNext()
 		{
-			return rNext != null;
+			return aNext != null;
 		}
 
 		/***************************************
@@ -696,19 +734,29 @@ public class Range<T extends Comparable<T>> implements Iterable<T>
 		@Override
 		public T next()
 		{
-			T rCurrent = rNext;
+			T rCurrent = aNext;
 
-			rNext = getNextValue(rCurrent, aStep);
+			aNext = fGetNextValue.apply(this);
 
-			int nNextCompared = rNext.compareTo(aEnd);
+			int nNextCompared = aNext.compareTo(aEnd);
 
 			if (bAscending && nNextCompared > 0 ||
 				!bAscending && nNextCompared < 0)
 			{
-				rNext = null;
+				aNext = null;
 			}
 
 			return rCurrent;
+		}
+
+		/***************************************
+		 * Returns the range of this instance.
+		 *
+		 * @return The iterated range
+		 */
+		public final Range<T> range()
+		{
+			return Range.this;
 		}
 	}
 }

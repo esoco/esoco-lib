@@ -17,6 +17,7 @@
 package de.esoco.lib.datatype;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -130,7 +131,7 @@ public class RangeTest
 	{
 		try
 		{
-			Range.from(null);
+			Range.from((BigInteger) null);
 			fail();
 		}
 		catch (Exception e)
