@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -293,6 +293,11 @@ public class TransactionManager
 	 */
 	public static void shutdown()
 	{
+		if (aThreadTransaction.get() != null)
+		{
+			aThreadTransaction.get().rollback();
+		}
+
 		aThreadTransaction = null;
 	}
 
