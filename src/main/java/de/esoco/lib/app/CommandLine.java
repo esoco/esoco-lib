@@ -16,6 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
+import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.expression.Predicate;
 import de.esoco.lib.text.TextUtil;
 
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,6 +63,9 @@ public class CommandLine
 	 */
 	public static final String DEFAULT_OPTION_PATTERN =
 		"(?i)-([\\w-_]+)(?:=(.+))?";
+
+	private static final Set<String> STANDARD_OPTIONS =
+		CollectionUtil.fixedSetOf("h", "-help");
 
 	//~ Instance fields --------------------------------------------------------
 
@@ -512,18 +517,17 @@ public class CommandLine
 														   "--args");
 						}
 					}
-					else if (rAllowedOptions != null &&
-							 !(sOption.equals("h") || sOption.equals("-help")))
+					else
 					{
-						if (!rAllowedOptions.containsKey(sOption))
+						if (rAllowedOptions != null &&
+							!STANDARD_OPTIONS.contains(sOption) &&
+							!rAllowedOptions.containsKey(sOption))
 						{
 							throw new CommandLineException("Unsupported option: " +
 														   sArg,
 														   sArg);
 						}
-					}
-					else
-					{
+
 						aResult.put(sOption, rValue);
 						sPrevOption = sOption;
 					}
