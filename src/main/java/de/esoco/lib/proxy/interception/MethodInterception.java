@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.Map;
 
 /********************************************************************
  * An abstract Interception implementation that maps intercepted methods to
- * equal-named methods in a subclass. The default implementation of the {@link
+ * equally named methods in a subclass. The default implementation of the {@link
  * #invoke(Object, Method, Object, Object[]) invoke()} method uses reflection to
  * dispatch method calls to subclass methods. Therefore subclasses need to
  * implement the intercepted methods with the same name and parameter list, plus
