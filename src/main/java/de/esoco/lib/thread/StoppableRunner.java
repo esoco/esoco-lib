@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import de.esoco.lib.manage.Stoppable;
  * provides a thread-safe way to request the execution to be stopped. For this
  * purpose it implements the {@link de.esoco.lib.manage.Stoppable} management
  * interface. Subclasses must implement the {@link #execute()} method and
- * therein regulary check the stop request status by invoking the method {@link
+ * therein regularly check the stop request status by invoking the method {@link
  * #stopRequested()}. If it returns TRUE the execute() method should be
  * terminated as soon as possible. Users of subclasses can query the execution
  * state of an instance with the {@link #isRunning()} method.

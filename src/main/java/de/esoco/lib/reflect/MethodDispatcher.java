@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.reflect;
-
-import de.esoco.lib.thread.ResultRunner;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -57,7 +55,7 @@ import java.lang.reflect.Modifier;
  *
  * @author eso
  */
-public class MethodDispatcher<T> extends ResultRunner<T>
+public class MethodDispatcher<T>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -186,18 +184,6 @@ public class MethodDispatcher<T> extends ResultRunner<T>
 		return (T) ReflectUtil.invoke(rTarget,
 									  rMethod,
 									  bUseArgs ? rArgs : null);
-	}
-
-	/***************************************
-	 * Implementation of the Runnable interface; simply invokes the dispatch()
-	 * method without arguments.
-	 *
-	 * @return The value returned by the invoked method (NULL for void methods)
-	 */
-	@Override
-	public final T execute()
-	{
-		return dispatch();
 	}
 
 	/***************************************

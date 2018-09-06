@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,8 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * It contains several methods that will automatically associate the current
  * thread (queried through {@link Thread#currentThread()}) with a value. These
  * methods are {@link #put(Object)}, {@link #get()}, and {@link #remove()}.
- * Access to the internal data structures of a thread map instance is of course
- * synchronized so that it's methods may be invoked from different threads.
+ * Access to the internal data structures of a thread map instance is
+ * synchronized so that it's methods may be invoked from different threads. The
+ * values for terminated threads are automatically removed when accessing the
+ * map.
+ *
+ * <p>This class is intended for cases where code needs access to the managed
+ * {@link Thread} objects. If it is only necessary to store a thread-related
+ * value it is recommended to use the {@link ThreadLocal} class instead.</p>
  *
  * @author eso
  */
