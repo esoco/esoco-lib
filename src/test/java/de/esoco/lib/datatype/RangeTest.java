@@ -191,6 +191,83 @@ public class RangeTest
 	}
 
 	/***************************************
+	 * Test of {@link Range#toBefore(Comparable)}
+	 */
+	@Test
+	public void testExclusiveEnd()
+	{
+		Range<Integer> ri = Range.from(0).toBefore(5);
+
+		assertEquals(Arrays.asList(0, 1, 2, 3, 4), ri.toList());
+		assertEquals(5, ri.size());
+		assertTrue(ri.contains(4));
+		assertFalse(ri.contains(5));
+
+		ri = Range.from(10).toBefore(5);
+
+		assertEquals(Arrays.asList(10, 9, 8, 7, 6), ri.toList());
+		assertEquals(5, ri.size());
+		assertTrue(ri.contains(6));
+		assertFalse(ri.contains(5));
+
+		ri = Range.from(10).toBefore(0).step(2);
+
+		assertEquals(Arrays.asList(10, 8, 6, 4, 2), ri.toList());
+		assertEquals(5, ri.size());
+		assertTrue(ri.contains(2));
+		assertFalse(ri.contains(0));
+
+		Range<Character> rc = Range.from('A').toBefore('C');
+
+		assertEquals(Arrays.asList('A', 'B'), rc.toList());
+		assertEquals(2, rc.size());
+		assertTrue(rc.contains('B'));
+		assertFalse(rc.contains('C'));
+
+		rc = Range.from('Z').toBefore('V');
+
+		assertEquals(Arrays.asList('Z', 'Y', 'X', 'W'), rc.toList());
+		assertEquals(4, rc.size());
+		assertTrue(rc.contains('W'));
+		assertFalse(rc.contains('V'));
+
+		Range<Double> rd = Range.from(0.5).toBefore(2.0).step(0.25);
+
+		assertEquals(Arrays.asList(0.5, 0.75, 1.0, 1.25, 1.5, 1.75),
+					 rd.toList());
+		assertEquals(6, rd.size());
+
+		rd = Range.from(2.0).toBefore(0.5).step(0.25);
+
+		assertEquals(Arrays.asList(2.0, 1.75, 1.50, 1.25, 1.0, 0.75),
+					 rd.toList());
+		assertEquals(6, rd.size());
+
+		Range<BigDecimal> rbd =
+			Range.from(bd("0.50")).toBefore(bd("2.00")).step(bd("0.25"));
+
+		assertEquals(Arrays.asList(bd("0.50"),
+								   bd("0.75"),
+								   bd("1.00"),
+								   bd("1.25"),
+								   bd("1.50"),
+								   bd("1.75")),
+					 rbd.toList());
+		assertEquals(6, rbd.size());
+
+		rbd = Range.from(bd("2.00")).toBefore(bd("0.50")).step(bd("0.25"));
+
+		assertEquals(Arrays.asList(bd("2.00"),
+								   bd("1.75"),
+								   bd("1.50"),
+								   bd("1.25"),
+								   bd("1.00"),
+								   bd("0.75")),
+					 rbd.toList());
+		assertEquals(6, rbd.size());
+	}
+
+	/***************************************
 	 * Test of float value ranges
 	 */
 	@Test
@@ -220,20 +297,20 @@ public class RangeTest
 	@Test
 	public void testSize()
 	{
-		assertEquals(0, Range.from(0).until(0).size());
+		assertEquals(0, Range.from(0).toBefore(0).size());
 		assertEquals(1, Range.from(0).to(0).size());
-		assertEquals(1, Range.from(0).until(-1).size());
+		assertEquals(1, Range.from(0).toBefore(-1).size());
 		assertEquals(2, Range.from(0).to(-1).size());
 
-		assertEquals(0, Range.from('A').until('A').size());
+		assertEquals(0, Range.from('A').toBefore('A').size());
 		assertEquals(1, Range.from('A').to('A').size());
-		assertEquals(1, Range.from('B').until('A').size());
+		assertEquals(1, Range.from('B').toBefore('A').size());
 		assertEquals(2, Range.from('B').to('A').size());
 
-		assertEquals(0, Range.from(bd("1.0")).until(bd("1.0")).size());
-		assertEquals(0, Range.from(bd("1.0")).until(bd("1.9")).size());
-		assertEquals(1, Range.from(bd("1.0")).until(bd("2.0")).size());
-		assertEquals(1, Range.from(bd("1.0")).until(bd("2.9")).size());
+		assertEquals(0, Range.from(bd("1.0")).toBefore(bd("1.0")).size());
+		assertEquals(0, Range.from(bd("1.0")).toBefore(bd("1.9")).size());
+		assertEquals(1, Range.from(bd("1.0")).toBefore(bd("2.0")).size());
+		assertEquals(1, Range.from(bd("1.0")).toBefore(bd("2.9")).size());
 		assertEquals(1, Range.from(bd("1.0")).to(bd("1.0")).size());
 		assertEquals(1, Range.from(bd("1.0")).to(bd("1.9")).size());
 		assertEquals(2, Range.from(bd("1.0")).to(bd("2.0")).size());
@@ -267,83 +344,6 @@ public class RangeTest
 
 		l = Range.from(2).to(-2).stream().collect(Collectors.toList());
 		assertEquals(Arrays.asList(2, 1, 0, -1, -2), l);
-	}
-
-	/***************************************
-	 * Test of {@link Range#until(Comparable)}
-	 */
-	@Test
-	public void testUntil()
-	{
-		Range<Integer> ri = Range.from(0).until(5);
-
-		assertEquals(Arrays.asList(0, 1, 2, 3, 4), ri.toList());
-		assertEquals(5, ri.size());
-		assertTrue(ri.contains(4));
-		assertFalse(ri.contains(5));
-
-		ri = Range.from(10).until(5);
-
-		assertEquals(Arrays.asList(10, 9, 8, 7, 6), ri.toList());
-		assertEquals(5, ri.size());
-		assertTrue(ri.contains(6));
-		assertFalse(ri.contains(5));
-
-		ri = Range.from(10).until(0).step(2);
-
-		assertEquals(Arrays.asList(10, 8, 6, 4, 2), ri.toList());
-		assertEquals(5, ri.size());
-		assertTrue(ri.contains(2));
-		assertFalse(ri.contains(0));
-
-		Range<Character> rc = Range.from('A').until('C');
-
-		assertEquals(Arrays.asList('A', 'B'), rc.toList());
-		assertEquals(2, rc.size());
-		assertTrue(rc.contains('B'));
-		assertFalse(rc.contains('C'));
-
-		rc = Range.from('Z').until('V');
-
-		assertEquals(Arrays.asList('Z', 'Y', 'X', 'W'), rc.toList());
-		assertEquals(4, rc.size());
-		assertTrue(rc.contains('W'));
-		assertFalse(rc.contains('V'));
-
-		Range<Double> rd = Range.from(0.5).until(2.0).step(0.25);
-
-		assertEquals(Arrays.asList(0.5, 0.75, 1.0, 1.25, 1.5, 1.75),
-					 rd.toList());
-		assertEquals(6, rd.size());
-
-		rd = Range.from(2.0).until(0.5).step(0.25);
-
-		assertEquals(Arrays.asList(2.0, 1.75, 1.50, 1.25, 1.0, 0.75),
-					 rd.toList());
-		assertEquals(6, rd.size());
-
-		Range<BigDecimal> rbd =
-			Range.from(bd("0.50")).until(bd("2.00")).step(bd("0.25"));
-
-		assertEquals(Arrays.asList(bd("0.50"),
-								   bd("0.75"),
-								   bd("1.00"),
-								   bd("1.25"),
-								   bd("1.50"),
-								   bd("1.75")),
-					 rbd.toList());
-		assertEquals(6, rbd.size());
-
-		rbd = Range.from(bd("2.00")).until(bd("0.50")).step(bd("0.25"));
-
-		assertEquals(Arrays.asList(bd("2.00"),
-								   bd("1.75"),
-								   bd("1.50"),
-								   bd("1.25"),
-								   bd("1.00"),
-								   bd("0.75")),
-					 rbd.toList());
-		assertEquals(6, rbd.size());
 	}
 
 	/***************************************
