@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.thread;
+package de.esoco.lib.concurrent;
 
 import java.util.AbstractMap;
 import java.util.Iterator;

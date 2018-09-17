@@ -22,7 +22,6 @@ import de.esoco.lib.manage.Disposable;
 import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.text.TextConvert;
-import de.esoco.lib.thread.ThreadManager;
 
 import java.io.PrintStream;
 
@@ -244,8 +243,9 @@ public abstract class Application extends RelatedObject
 			  rResource instanceof Closeable ||
 			  rResource instanceof Disposable))
 		{
-			throw new IllegalArgumentException("No supported management interface implemented on " +
-											   rResource);
+			throw new IllegalArgumentException(
+				"No supported management interface implemented on " +
+				rResource);
 		}
 
 		if (aCleanupResources == null)
@@ -307,14 +307,13 @@ public abstract class Application extends RelatedObject
 						? CLEANUP_RESOURCE_WAIT_TIME : nRemainingWaitTime;
 
 					nRemainingWaitTime -=
-						waitForResource((RunCheck) rResource,
-										nWaitTime,
-										CLEANUP_SLEEP_TIME);
+						waitForResource(
+							(RunCheck) rResource,
+							nWaitTime,
+							CLEANUP_SLEEP_TIME);
 				}
 			}
 		}
-
-		ThreadManager.shutdownAll(60, true);
 	}
 
 	/***************************************
@@ -467,16 +466,18 @@ public abstract class Application extends RelatedObject
 
 		aOptions.put("h", sHelpInfo);
 		aOptions.put("-help", sHelpInfo);
-		aOptions.put("-args",
-					 "The name and path of a properties file to read the arguments from");
+		aOptions.put(
+			"-args",
+			"The name and path of a properties file to read the arguments from");
 
 		if (rCommand instanceof String)
 		{
 			String sCommand = rCommand.toString();
 
-			System.out.printf("Option -%s: %s\n",
-							  sCommand,
-							  aOptions.get(sCommand));
+			System.out.printf(
+				"Option -%s: %s\n",
+				sCommand,
+				aOptions.get(sCommand));
 		}
 		else
 		{
@@ -493,13 +494,15 @@ public abstract class Application extends RelatedObject
 			for (Entry<String, String> rCommandHelp : aOptions.entrySet())
 			{
 				String sCommand =
-					TextConvert.padRight(rCommandHelp.getKey(),
-										 nMaxCommandLength + 2,
-										 ' ');
+					TextConvert.padRight(
+						rCommandHelp.getKey(),
+						nMaxCommandLength + 2,
+						' ');
 
-				System.out.printf("\t-%s%s\n",
-								  sCommand,
-								  rCommandHelp.getValue());
+				System.out.printf(
+					"\t-%s%s\n",
+					sCommand,
+					rCommandHelp.getValue());
 			}
 		}
 	}

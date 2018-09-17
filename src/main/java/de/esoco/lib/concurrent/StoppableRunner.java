@@ -14,14 +14,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.thread;
+package de.esoco.lib.concurrent;
 
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.manage.Stoppable;
 
 
 /********************************************************************
- * Extension of the {@link de.esoco.lib.thread.CheckableRunner} class that
+ * Extension of the {@link de.esoco.lib.concurrent.CheckableRunner} class that
  * provides a thread-safe way to request the execution to be stopped. For this
  * purpose it implements the {@link de.esoco.lib.manage.Stoppable} management
  * interface. Subclasses must implement the {@link #execute()} method and
