@@ -18,7 +18,7 @@ package de.esoco.lib.concurrent.coroutine.step;
 
 import de.esoco.lib.concurrent.coroutine.ChannelId;
 import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.Coroutine.Step;
+import de.esoco.lib.concurrent.coroutine.Step;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -17,7 +17,7 @@
 package de.esoco.lib.concurrent.coroutine.step;
 
 import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.Coroutine.Step;
+import de.esoco.lib.concurrent.coroutine.Step;
 import de.esoco.lib.expression.Functions;
 
 import java.util.function.BiFunction;

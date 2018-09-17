@@ -16,8 +16,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
-import de.esoco.lib.concurrent.coroutine.Coroutine.Step;
-
 import java.util.concurrent.CompletableFuture;
 
 

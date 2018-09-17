@@ -16,21 +16,167 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
-import de.esoco.lib.concurrent.coroutine.step.ChannelReceive;
-
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.function.Function;
 
 import org.obrel.core.FluentRelatable;
 import org.obrel.core.ObjectRelations;
 import org.obrel.core.RelatedObject;
+import org.obrel.type.MetaTypes;
 
 import static org.obrel.type.StandardTypes.NAME;
 
 
 /********************************************************************
  * A pure Java implementation of cooperative concurrency, also known as
- * coroutines.
+ * coroutines. Coroutines implement lightweight multiprocessing, where all
+ * running coroutines share the available execution threads, yielding on each
+ * processing steps to give other coroutines the chance to execute. Furthermore
+ * coroutines can suspend their execution when waiting for other coroutines or
+ * external resources (e.g. data to be sent or received), giving other code the
+ * chance to use the available threads.
+ *
+ * <p>To achieve this functionality, the implementation makes use of modern Java
+ * features that are available since Java 8. The execution of coroutine steps is
+ * done by means of {@link CompletableFuture} which in turn runs the code by
+ * default in the {@link ForkJoinPool#commonPool() common thread pool} defined
+ * in the {@link ForkJoinPool} class. But the actual {@link Executor} used for
+ * running coroutines can be changed as needed.</p>
+ *
+ * <p>To provide a fluent and readable declaration the API makes extensive use
+ * of the new functional programming features of Java and the (recommended) use
+ * of static imports. By using these, especially with lambda expressions and
+ * method references a concise and easily understandable declaration of
+ * coroutines is possible.</p>
+ *
+ * <p>Basically a coroutine itself is only a function that receives an input
+ * value, processes it, and return an output value as the result of the
+ * execution. This is similar to the {@link Function} interface introduced with
+ * Java 8. If invoked with the method {@link #runBlocking(Object)} it will
+ * behave exactly like a simple function, blocking the current thread until the
+ * processing has finished and the result value has been produced. But if
+ * invoked with {@link #runAsync(Object)} the coroutine will be executed
+ * parallel to the current thread, interrupting it's execution shortly between
+ * processing steps or even pausing until some data is available.</p>
+ *
+ * <p>Besides this class there are a few other classes that play a role in the
+ * execution of coroutines:</p>
+ *
+ * <ul>
+ *   <li>{@link CoroutineContext}: Each coroutine runs in a certain context
+ *     which can either be provided explicitly to {@link
+ *     #runAsync(CoroutineContext, Object)} or is created automatically
+ *     otherwise. If coroutines need to communicate during their execution they
+ *     need to run in the same context.</li>
+ *   <li>{@link Continuation}: Every execution of a coroutine is associated with
+ *     a continuation object that contains the current state and is local to
+ *     that execution and not shared with other running instances. It implements
+ *     the {@link Future} interface (and some additional methods) so that it can
+ *     be used to query and synchronize with the current execution state. The
+ *     steps of a coroutine can use the continuation to share state between them
+ *     which or deliver complex results which otherwise could be carried through
+ *     the input and output values easily.</li>
+ *   <li>{@link Step}: This inner class is the base for all steps that can be
+ *     executed in a coroutine. Like the coroutine itself it basically is a
+ *     function that receives and input value (and a {@link Continuation}) and
+ *     produces a result. There are additional methods to support the
+ *     asynchronous execution and specialized steps use these to implement
+ *     features like suspension in these. Several standard steps are defined in
+ *     the 'step' sub-package but the base class can also be extended to create
+ *     new kinds of coroutine steps.</li>
+ *   <li>{@link Channel}: The previous classes are always involved when building
+ *     and executing coroutines. Channels are an optional feature that allows
+ *     multiple coroutines to communicate. When waiting to send or receive data
+ *     through a channel coroutines will automatically suspend execution and
+ *     continue to run as soon as the communication becomes possible. They are
+ *     managed by the {@link CoroutineContext} a coroutine runs in. Therefore
+ *     all coroutines that need to communicate through a channel need to run in
+ *     the same context.</li>
+ *   <li>{@link Suspension}: a suspension also only occurs in advanced
+ *     coroutines. If a coroutine needs to wait for some external condition
+ *     (like a {@link Channel} operation) it creates a suspension that contains
+ *     the current state of the coroutine. The waiting code can then use that
+ *     suspension to resume the execution when the condition is fulfilled.</li>
+ * </ul>
+ *
+ * <p>A coroutine can either be created by invoking the {@link #Coroutine(Step)
+ * constructor} with the first {@link Step} to execute or by invoking the
+ * factory method {@link #first(Step)}. The latter allows to declare a coroutine
+ * in a fluent way with better readability. There is a slight limitation caused
+ * by the generic type system of Java: if the result of {@link #first(Step)
+ * first()} is assigned to a variable with a specific input type it may be
+ * necessary to declare the input type explicitly in a lambda expression. For
+ * example, the following example (using a static import of {@link #first(Step)
+ * first()}) may cause a compiler error:</p>
+ * <code>Coroutine&lt;String, String&gt; toUpper = first(s ->
+ * s.toUpperCase());</code>
+ *
+ * <p>To make the code compile, the type of the lambda argument needs to be
+ * declared explicitly:</p>
+ * <code>Coroutine&lt;String, String&gt; toUpper = first((String s) ->
+ * s.toUpperCase());</code>
+ *
+ * <p>After a coroutine has been created it can be extended with additional
+ * steps by invoking {@link #then(Step)}. This method takes the next step to be
+ * executed and <b>returns a new coroutine instance</b>. This means that
+ * coroutines are <b>effectively immutable</b>, i.e. they cannot be modified
+ * after they have been created. Only new coroutines can be created from them.
+ * This allows to build coroutine templates that can be extended by adding
+ * additional processing steps without changing them. The {@link #then(Step)
+ * then()} methods implement a builder pattern. Together with the {@link
+ * #first(Step) first()} method and the builder methods of the step
+ * implementations this forms a set of fluent API methods to create
+ * coroutines.</p>
+ *
+ * <p>The immutability of coroutines only covers the "explicit" internal state
+ * but not the relations. Coroutine also extends {@link RelatedObject} and
+ * therefore allows to set arbitrary relations on it. These could be used to
+ * configure step behavior or pre-set data, for example. To also make the
+ * relations of an instance immutable (e.g. to "seal" a template) just set the
+ * flag relation {@link MetaTypes#IMMUTABLE IMMUTABLE} on it which will prevent
+ * the further modification of relations. This will then also effect all running
+ * instances of the coroutine (see below).</p>
+ *
+ * <p>When a coroutine is executed a copy of it is created and then associated
+ * with a new {@link Continuation} instance. That prevents running code to
+ * modify the state of the coroutine it has been started from but on the other
+ * hand gives it access to any relations defined in the coroutine. The actual
+ * runtime state is stored in the continuation object and may be modified freely
+ * by the coroutine code. It is recommended that coroutine steps use the
+ * continuation if the need to store and share data beside the standard input
+ * and output parameters. The handling of coroutines and their copying may be
+ * modified in later versions of the framework.</p>
+ *
+ * <p>Accessing state in the continuation can be done without further
+ * synchronization because the steps in a coroutine are executed sequentially
+ * and never concurrently (unless stated otherwise in some special step
+ * implementations maybe). But if steps access variables outside the
+ * continuation they must apply the same caution like other multi-threaded code
+ * in Java because access to such resource may (and will probably) need
+ * synchronization to avoid concurrency issues (which are notoriously difficult
+ * to debug). This included the {@link CoroutineContext} which can be shared by
+ * multiple running coroutines (or coroutine instances). There are no
+ * synchronization mechanisms in the default context implementation. If a step
+ * implementation wants to modify data (e.g. relations) in the context it must
+ * perform the necessary synchronization itself.</p>
+ *
+ * <p><b>Attention:</b> Should synchronization be necessary it should be applied
+ * with caution. Coroutines implement <b>cooperative multi-tasking</b>. That
+ * means that the steps are executed in a thread pool which typically assumes
+ * that the code running in the pool only occupies a thread as long as needed
+ * for processing. Blocking such a thread in some way (like waiting for a lock,
+ * accessing a synchronized resource, or just sleeping) counteracts the purpose
+ * of the thread pool in particular and of cooperative multi-tasking in general.
+ * Therefore it is strongly recommended to not perform "classical"
+ * synchronizations from coroutine steps. Instead it should be checked whether
+ * it is possible to implement this in a cooperative way by suspending the
+ * coroutine execution while waiting for a resource. That waiting could be
+ * performed in a separate thread (outside of the coroutine thread pool) and
+ * resume the coroutine when the resource becomes available.</p>
  *
  * @author eso
  */
@@ -54,6 +200,17 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
+	 * A copy constructor.
+	 *
+	 * @param rOther The coroutine to copy the definition from
+	 */
+	private Coroutine(Coroutine<I, O> rOther)
+	{
+		init(rOther.aCode);
+		ObjectRelations.copyRelations(rOther, this, true);
+	}
+
+	/***************************************
 	 * Internal constructor to create a new instance that is an extension of
 	 * another coroutine.
 	 *
@@ -63,7 +220,6 @@ public class Coroutine<I, O> extends RelatedObject
 	private <T> Coroutine(Coroutine<I, T> rOther, Step<T, O> rNextStep)
 	{
 		init(rOther.aCode.then(rNextStep));
-
 		ObjectRelations.copyRelations(rOther, this, true);
 	}
 
@@ -85,32 +241,12 @@ public class Coroutine<I, O> extends RelatedObject
 		return new Coroutine<>(rStep);
 	}
 
-	/***************************************
-	 * A factory method that creates a new coroutine which starts execution with
-	 * receiving from a certain channel. If the channel doesn't exist in the
-	 * context when the coroutine is run it will be created with a capacity of 1
-	 * (see {@link CoroutineContext#getChannel(ChannelId)}). To change the
-	 * channel capacity the channel must be created in advance in an explicit
-	 * context which is then handed to {@link #runAsync(CoroutineContext,
-	 * Object)}.
-	 *
-	 * @param  rId fCode The function containing the starting code of the
-	 *             coroutine
-	 *
-	 * @return A new coroutine instance
-	 */
-	public static <T> Coroutine<Void, T> receive(ChannelId<T> rId)
-	{
-		Objects.requireNonNull(rId);
-
-		return new Coroutine<Void, T>(new ChannelReceive<>(rId));
-	}
-
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * A convenience method to asynchronously run a coroutine with a NULL input
-	 * value. This is typically used to start coroutines with a Void input type.
+	 * A convenience method to asynchronously run this coroutine with a NULL
+	 * input value. This is typically used to start coroutines with a Void input
+	 * type.
 	 *
 	 * @return A {@link Continuation} that provides access to the execution
 	 *         result
@@ -123,12 +259,12 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * Runs this coroutine asynchronously in a default context. This method can
-	 * be used if no explicit context is needed for an execution. A default
-	 * context will be created automatically. The returned {@link Continuation}
-	 * provides access to the context and can then be used to execute additional
-	 * coroutines in it if necessary (e.g. for channel-based communication
-	 * between coroutines).
+	 * Runs a copy of this coroutine asynchronously in a default context. This
+	 * method can be used if no explicit context is needed for an execution. A
+	 * default context will be created automatically. The returned {@link
+	 * Continuation} provides access to the context and can then be used to
+	 * execute additional coroutines in it if necessary (e.g. for channel-based
+	 * communication between coroutines).
 	 *
 	 * <p>If multiple coroutines need to communicate through {@link Channel
 	 * channels} they must run in the same context because channels are managed
@@ -149,12 +285,17 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * Runs this coroutine asynchronously in a certain context. This method
-	 * returns a {@link Continuation} that contains the execution state and
-	 * provides access to the coroutine result AFTER it finishes. Because the
-	 * execution happens asynchronously (i.e. in another thread) the receiving
-	 * code must always use the corresponding continuation methods to check for
-	 * completion before accessing the continuation state.
+	 * Runs a copy of this coroutine asynchronously in a certain context. This
+	 * method returns a {@link Continuation} that contains the execution state
+	 * and provides access to the coroutine result AFTER it finishes. Because
+	 * the execution happens asynchronously (i.e. in another thread) the
+	 * receiving code must always use the corresponding continuation methods to
+	 * check for completion before accessing the continuation state.
+	 *
+	 * <p>Because a copy of this coroutine is used for execution, the
+	 * continuation also references the copy and not this instance. If the
+	 * running code tries to modify state of the coroutine it will only modify
+	 * the copy, not the original instance.</p>
 	 *
 	 * <p>If multiple coroutines need to communicate through {@link Channel
 	 * channels} they must run in the same context because channels are managed
@@ -172,19 +313,21 @@ public class Coroutine<I, O> extends RelatedObject
 	@SuppressWarnings("unchecked")
 	public Continuation<O> runAsync(CoroutineContext rContext, I rInput)
 	{
-		Continuation<O> aContinuation = new Continuation<>(rContext, this);
+		Coroutine<I, O> aRunCoroutine = new Coroutine<>(this);
+		Continuation<O> aContinuation =
+			new Continuation<>(rContext, aRunCoroutine);
 
 		CompletableFuture<I> fExecution =
 			CompletableFuture.supplyAsync(() -> rInput, aContinuation);
 
-		aCode.runAsync(fExecution, null, aContinuation);
+		aRunCoroutine.aCode.runAsync(fExecution, null, aContinuation);
 
 		return aContinuation;
 	}
 
 	/***************************************
-	 * Runs this coroutine on the current thread in a default context and
-	 * returns after the execution finishes.
+	 * Runs a copy of this coroutine on the current thread in a default context
+	 * and returns after the execution finishes.
 	 *
 	 * @param  rInput The input value
 	 *
@@ -198,14 +341,14 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * Runs this coroutine on the current thread in a certain context and
-	 * returns after the execution finishes. The returned {@link Continuation}
-	 * will already be finished when this method returns and provides access to
-	 * the result. If multiple coroutines should be run in parallel by using a
-	 * blocking run method the caller needs to create multiple threads. If these
-	 * threaded coroutines then need to communicated through {@link Channel
-	 * channels} they must also run in the same context (see {@link
-	 * #runAsync(CoroutineContext, Object)} for details).
+	 * Runs a copy of this coroutine on the current thread in a certain context
+	 * and returns after the execution finishes. The returned {@link
+	 * Continuation} will already be finished when this method returns and
+	 * provides access to the result. If multiple coroutines should be run in
+	 * parallel by using a blocking run method the caller needs to create
+	 * multiple threads. If these threaded coroutines then need to communicated
+	 * through {@link Channel channels} they must also run in the same context
+	 * (see {@link #runAsync(CoroutineContext, Object)} for details).
 	 *
 	 * @param  rContext The context to run this coroutine in
 	 * @param  rInput   The input value
@@ -215,9 +358,11 @@ public class Coroutine<I, O> extends RelatedObject
 	@SuppressWarnings("unchecked")
 	public Continuation<O> runBlocking(CoroutineContext rContext, I rInput)
 	{
-		Continuation<O> aContinuation = new Continuation<>(rContext, this);
+		Coroutine<I, O> aRunCoroutine = new Coroutine<>(this);
+		Continuation<O> aContinuation =
+			new Continuation<>(rContext, aRunCoroutine);
 
-		aCode.runBlocking(rInput, aContinuation);
+		aRunCoroutine.aCode.runBlocking(rInput, aContinuation);
 
 		return aContinuation;
 	}
@@ -298,140 +443,6 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
-	 * The base class of the single execution steps in a coroutine.
-	 *
-	 * @author eso
-	 */
-	public static abstract class Step<I, O>
-	{
-		//~ Instance fields ----------------------------------------------------
-
-		private String sLabel;
-
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
-		 * Creates a new instance.
-		 */
-		protected Step()
-		{
-			sLabel = getClass().getSimpleName();
-		}
-
-		/***************************************
-		 * Creates a new instance with a certain name.
-		 *
-		 * @param sLabel A label that identifies this step in it's coroutine
-		 */
-		protected Step(String sLabel)
-		{
-			this.sLabel = sLabel;
-		}
-
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
-		 * Suspends this step for later invocation and returns an instance of
-		 * {@link Suspension} that contains the state necessary for resuming the
-		 * execution. Other than {@link #suspend(Object, Continuation)} this
-		 * suspension will not contain an explicit input value. Such suspensions
-		 * are used if the input will only become available when the suspension
-		 * ends (e.g. when receiving data asynchronously).
-		 *
-		 * @param  rContinuation The continuation of the suspended execution
-		 *
-		 * @return A new suspension object
-		 */
-		public Suspension<I> suspend(Continuation<?> rContinuation)
-		{
-			return suspend(null, rContinuation);
-		}
-
-		/***************************************
-		 * Suspends this step for later invocation and returns an instance of
-		 * {@link Suspension} that contains the state necessary for resuming the
-		 * execution. If the input value is not known before the suspension ends
-		 * the method {@link #suspend(Continuation)} can be used instead.
-		 *
-		 * @param  rInput        The input value for the execution
-		 * @param  rContinuation The continuation of the suspended execution
-		 *
-		 * @return A new suspension object
-		 */
-		public Suspension<I> suspend(I rInput, Continuation<?> rContinuation)
-		{
-			return new Suspension<>(rInput, this, rContinuation);
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		public String toString()
-		{
-			return sLabel;
-		}
-
-		/***************************************
-		 * This method must be implemented by subclasses to provide the actual
-		 * functionality of this step.
-		 *
-		 * @param  rInput        The input value
-		 * @param  rContinuation The continuation of the execution
-		 *
-		 * @return The result of the execution
-		 */
-		protected abstract O execute(I rInput, Continuation<?> rContinuation);
-
-		/***************************************
-		 * Runs this execution step asynchronously as a continuation of a
-		 * previous code execution in a {@link CompletableFuture} and proceeds
-		 * to the next step afterwards.
-		 *
-		 * <p>Subclasses that need to suspend the invocation of the next step
-		 * until some condition is met (e.g. sending or receiving data has
-		 * finished) need to override this method and call {@link
-		 * #resume(Object, Continuation)} on the next step if the suspension
-		 * ends.</p>
-		 *
-		 * @param fPreviousExecution The future of the previous code execution
-		 * @param rNextStep          The next step to execute
-		 * @param rContinuation      The continuation of the execution
-		 */
-		protected void runAsync(CompletableFuture<I> fPreviousExecution,
-								Step<O, ?>			 rNextStep,
-								Continuation<?>		 rContinuation)
-		{
-			CompletableFuture<O> fExecution =
-				fPreviousExecution.thenApplyAsync(
-					i -> execute(i, rContinuation),
-					rContinuation);
-
-			if (rNextStep != null)
-			{
-				// the next step is either a StepChain which contains it's own
-				// next step or the final step in a coroutine and therefore the
-				// rNextStep argument can be NULL
-				rNextStep.runAsync(fExecution, null, rContinuation);
-			}
-		}
-
-		/***************************************
-		 * Runs this execution immediately, blocking the current thread until
-		 * the execution finishes.
-		 *
-		 * @param  rInput        The input value
-		 * @param  rContinuation The continuation of the execution
-		 *
-		 * @return The execution result
-		 */
-		protected O runBlocking(I rInput, Continuation<?> rContinuation)
-		{
-			return execute(rInput, rContinuation);
-		}
-	}
 
 	/********************************************************************
 	 * The final step of a coroutine execution that updates the state of the
