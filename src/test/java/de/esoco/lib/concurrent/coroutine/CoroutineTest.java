@@ -22,9 +22,6 @@ import static de.esoco.lib.concurrent.coroutine.ChannelId.stringChannel;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelReceive.receive;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelSend.send;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.apply;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.consume;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.run;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.supply;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -62,10 +59,6 @@ public class CoroutineTest
 		Coroutine<?, String> cr2 =
 			cr1.then(apply((String s) -> s.toLowerCase()));
 
-		System.out.printf("%s\n", cs);
-		System.out.printf("%s\n", cr1);
-		System.out.printf("%s\n", cr2);
-
 		Continuation<?> r1 = cr1.runAsync(ctx, null);
 		Continuation<?> r2 = cr2.runAsync(ctx, null);
 
@@ -100,26 +93,6 @@ public class CoroutineTest
 		assertEquals(Integer.valueOf(12345), cb.getResult());
 		assertTrue(ca.isDone());
 		assertTrue(cb.isDone());
-	}
-
-	/***************************************
-	 * Test of {@link Coroutine#runAsync()}.
-	 */
-	public void testSimpleCoroutine()
-	{
-		Coroutine<String, String> cr =
-			Coroutine.first(apply((String s) -> s.toUpperCase()))
-					 .then(apply(s -> s.replace('C', '_')))
-					 .then(apply(s -> s.replaceAll("[A-Z]", "!")))
-					 .then(consume(s ->
-		 						System.out.printf("IN: %s\n", s)))
-					 .then(run(() -> System.out.printf("RUNNING!\n")))
-					 .then(supply(() -> "FINISHED"));
-
-		System.out.printf("BLOCK: %s\n", cr.runBlocking("abcde").getResult());
-
-		Continuation<?> c =
-			cr.runAsync("abcde").then(v -> System.out.printf("ASYNC: %s\n", v));
 	}
 
 	/***************************************
