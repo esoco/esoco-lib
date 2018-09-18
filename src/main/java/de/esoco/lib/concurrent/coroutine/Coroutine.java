@@ -244,9 +244,8 @@ public class Coroutine<I, O> extends RelatedObject
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * A convenience method to asynchronously run this coroutine with a NULL
-	 * input value. This is typically used to start coroutines with a Void input
-	 * type.
+	 * Asynchronously runs this coroutine with a NULL input value. This is
+	 * typically used to start coroutines with a Void input type.
 	 *
 	 * @return A {@link Continuation} that provides access to the execution
 	 *         result
@@ -255,7 +254,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	public Continuation<O> runAsync()
 	{
-		return runAsync(null);
+		return runAsync((I) null);
 	}
 
 	/***************************************
@@ -282,6 +281,21 @@ public class Coroutine<I, O> extends RelatedObject
 	public Continuation<O> runAsync(I rInput)
 	{
 		return runAsync(null, rInput);
+	}
+
+	/***************************************
+	 * Asynchronously runs this coroutine with a NULL input value in a certain
+	 * context. This is typically used to start coroutines with a Void input
+	 * type.
+	 *
+	 * @return A {@link Continuation} that provides access to the execution
+	 *         result
+	 *
+	 * @see    #runAsync(CoroutineContext, Object)
+	 */
+	public Continuation<O> runAsync(CoroutineContext rContext)
+	{
+		return runAsync(rContext, null);
 	}
 
 	/***************************************
