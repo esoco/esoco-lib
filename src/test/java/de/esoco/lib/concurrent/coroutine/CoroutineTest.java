@@ -22,6 +22,9 @@ import static de.esoco.lib.concurrent.coroutine.ChannelId.stringChannel;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelReceive.receive;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelSend.send;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.apply;
+import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.supply;
+import static de.esoco.lib.concurrent.coroutine.step.Condition.doIf;
+import static de.esoco.lib.concurrent.coroutine.step.Condition.doIfElse;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -76,6 +79,48 @@ public class CoroutineTest
 	}
 
 	/***************************************
+	 * Tests a coroutine with a single step.
+	 */
+	@Test
+	public void testCondition()
+	{
+		assertBooleanInput(
+			"true",
+			"false",
+			Coroutine.first(
+				doIfElse(b -> b, supply(() -> "true"), supply(() -> "false"))));
+
+		assertBooleanInput(
+			"true",
+			"false",
+			Coroutine.first(
+				doIf((Boolean b) -> b, supply(() -> "true")).orElse(
+					supply(() -> "false"))));
+
+		assertBooleanInput(
+			"true",
+			"false",
+			Coroutine.first(apply((Boolean b) -> b.toString()))
+			.then(apply(s -> Boolean.valueOf(s)))
+			.then(
+				doIfElse(b -> b, supply(() -> "true"), supply(() -> "false"))));
+
+		assertBooleanInput(
+			"true",
+			"false",
+			Coroutine.first(apply((Boolean b) -> b.toString()))
+			.then(apply(s -> Boolean.valueOf(s)))
+			.then(
+				doIf((Boolean b) -> b, supply(() -> "true")).orElse(
+					supply(() -> "false"))));
+
+		assertBooleanInput(
+			"true",
+			null,
+			Coroutine.first(doIf(b -> b, supply(() -> "true"))));
+	}
+
+	/***************************************
 	 * Tests a coroutine with multiple steps.
 	 */
 	@Test
@@ -111,5 +156,32 @@ public class CoroutineTest
 		assertEquals("TEST", cb.getResult());
 		assertTrue(ca.isDone());
 		assertTrue(cb.isDone());
+	}
+
+	/***************************************
+	 * Asserts the results of executing a {@link Coroutine} with a boolean
+	 * input.
+	 *
+	 * @param sTrueResult  The expected result for a TRUE input
+	 * @param sFalseResult The expected result for a FALSE input
+	 * @param cr           The coroutine
+	 */
+	private void assertBooleanInput(String					   sTrueResult,
+									String					   sFalseResult,
+									Coroutine<Boolean, String> cr)
+	{
+		Continuation<String> cat = cr.runAsync(true);
+		Continuation<String> caf = cr.runAsync(false);
+		Continuation<String> cbt = cr.runBlocking(true);
+		Continuation<String> cbf = cr.runBlocking(false);
+
+		assertEquals(sTrueResult, cat.getResult());
+		assertEquals(sTrueResult, cbt.getResult());
+		assertEquals(sFalseResult, caf.getResult());
+		assertEquals(sFalseResult, cbf.getResult());
+		assertTrue(cat.isDone());
+		assertTrue(caf.isDone());
+		assertTrue(cbt.isDone());
+		assertTrue(cbf.isDone());
 	}
 }

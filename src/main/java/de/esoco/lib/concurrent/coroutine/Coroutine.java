@@ -196,6 +196,8 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	public Coroutine(Step<I, O> rFirstStep)
 	{
+		Objects.requireNonNull(rFirstStep);
+
 		init(new StepChain<>(rFirstStep, new FinishStep<>()));
 	}
 
@@ -219,6 +221,8 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	private <T> Coroutine(Coroutine<I, T> rOther, Step<T, O> rNextStep)
 	{
+		Objects.requireNonNull(rNextStep);
+
 		init(rOther.aCode.then(rNextStep));
 		ObjectRelations.copyRelations(rOther, this, true);
 	}
@@ -236,8 +240,6 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	public static <I, O> Coroutine<I, O> first(Step<I, O> rStep)
 	{
-		Objects.requireNonNull(rStep);
-
 		return new Coroutine<>(rStep);
 	}
 
@@ -411,8 +413,6 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	public <T> Coroutine<I, T> then(Step<O, T> rStep)
 	{
-		Objects.requireNonNull(rStep);
-
 		return new Coroutine<>(this, rStep);
 	}
 
@@ -476,8 +476,10 @@ public class Coroutine<I, O> extends RelatedObject
 		 */
 		@Override
 		@SuppressWarnings("unchecked")
-		protected T execute(T rResult, Continuation<?> rContinuation)
+		public T execute(T rResult, Continuation<?> rContinuation)
 		{
+			// as this is the finish step, it must have the same type T as the
+			// continuation result
 			((Continuation<T>) rContinuation).finish(rResult);
 
 			return rResult;
@@ -517,16 +519,7 @@ public class Coroutine<I, O> extends RelatedObject
 		 * {@inheritDoc}
 		 */
 		@Override
-		public String toString()
-		{
-			return rFirstStep + " -> " + rNextStep;
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected O execute(I rInput, Continuation<?> rContinuation)
+		public O execute(I rInput, Continuation<?> rContinuation)
 		{
 			if (rContinuation.isCancelled())
 			{
@@ -546,9 +539,9 @@ public class Coroutine<I, O> extends RelatedObject
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void runAsync(CompletableFuture<I> fPreviousExecution,
-								Step<O, ?>			 rIgnored,
-								Continuation<?>		 rContinuation)
+		public void runAsync(CompletableFuture<I> fPreviousExecution,
+							 Step<O, ?>			  rIgnored,
+							 Continuation<?>	  rContinuation)
 		{
 			if (rContinuation.isCancelled())
 			{
@@ -564,6 +557,15 @@ public class Coroutine<I, O> extends RelatedObject
 					rNextStep,
 					rContinuation);
 			}
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public String toString()
+		{
+			return rFirstStep + " -> " + rNextStep;
 		}
 
 		/***************************************

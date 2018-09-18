@@ -78,6 +78,63 @@ public abstract class Step<I, O>
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
+	 * This method must be implemented by subclasses to provide the actual
+	 * functionality of this step.
+	 *
+	 * @param  rInput        The input value
+	 * @param  rContinuation The continuation of the execution
+	 *
+	 * @return The result of the execution
+	 */
+	public abstract O execute(I rInput, Continuation<?> rContinuation);
+
+	/***************************************
+	 * Runs this execution step asynchronously as a continuation of a previous
+	 * code execution in a {@link CompletableFuture} and proceeds to the next
+	 * step afterwards.
+	 *
+	 * <p>Subclasses that need to suspend the invocation of the next step until
+	 * some condition is met (e.g. sending or receiving data has finished) need
+	 * to override this method and call {@link #resume(Object, Continuation)} on
+	 * the next step if the suspension ends.</p>
+	 *
+	 * @param fPreviousExecution The future of the previous code execution
+	 * @param rNextStep          The next step to execute
+	 * @param rContinuation      The continuation of the execution
+	 */
+	public void runAsync(CompletableFuture<I> fPreviousExecution,
+						 Step<O, ?>			  rNextStep,
+						 Continuation<?>	  rContinuation)
+	{
+		CompletableFuture<O> fExecution =
+			fPreviousExecution.thenApplyAsync(
+				i -> execute(i, rContinuation),
+				rContinuation);
+
+		if (rNextStep != null)
+		{
+			// the next step is either a StepChain which contains it's own
+			// next step or the final step in a coroutine and therefore the
+			// rNextStep argument can be NULL
+			rNextStep.runAsync(fExecution, null, rContinuation);
+		}
+	}
+
+	/***************************************
+	 * Runs this execution immediately, blocking the current thread until the
+	 * execution finishes.
+	 *
+	 * @param  rInput        The input value
+	 * @param  rContinuation The continuation of the execution
+	 *
+	 * @return The execution result
+	 */
+	public O runBlocking(I rInput, Continuation<?> rContinuation)
+	{
+		return execute(rInput, rContinuation);
+	}
+
+	/***************************************
 	 * Suspends this step for later invocation and returns an instance of {@link
 	 * Suspension} that contains the state necessary for resuming the execution.
 	 * Other than {@link #suspend(Object, Continuation)} this suspension will
@@ -120,59 +177,13 @@ public abstract class Step<I, O>
 	}
 
 	/***************************************
-	 * This method must be implemented by subclasses to provide the actual
-	 * functionality of this step.
+	 * Allows subclasses to regularly terminate the coroutine that is executed
+	 * in the given continuation with a result of NULL.
 	 *
-	 * @param  rInput        The input value
-	 * @param  rContinuation The continuation of the execution
-	 *
-	 * @return The result of the execution
+	 * @param rContinuation The continuation to finish
 	 */
-	protected abstract O execute(I rInput, Continuation<?> rContinuation);
-
-	/***************************************
-	 * Runs this execution step asynchronously as a continuation of a previous
-	 * code execution in a {@link CompletableFuture} and proceeds to the next
-	 * step afterwards.
-	 *
-	 * <p>Subclasses that need to suspend the invocation of the next step until
-	 * some condition is met (e.g. sending or receiving data has finished) need
-	 * to override this method and call {@link #resume(Object, Continuation)} on
-	 * the next step if the suspension ends.</p>
-	 *
-	 * @param fPreviousExecution The future of the previous code execution
-	 * @param rNextStep          The next step to execute
-	 * @param rContinuation      The continuation of the execution
-	 */
-	protected void runAsync(CompletableFuture<I> fPreviousExecution,
-							Step<O, ?>			 rNextStep,
-							Continuation<?>		 rContinuation)
+	protected void terminateCoroutine(Continuation<?> rContinuation)
 	{
-		CompletableFuture<O> fExecution =
-			fPreviousExecution.thenApplyAsync(
-				i -> execute(i, rContinuation),
-				rContinuation);
-
-		if (rNextStep != null)
-		{
-			// the next step is either a StepChain which contains it's own
-			// next step or the final step in a coroutine and therefore the
-			// rNextStep argument can be NULL
-			rNextStep.runAsync(fExecution, null, rContinuation);
-		}
-	}
-
-	/***************************************
-	 * Runs this execution immediately, blocking the current thread until the
-	 * execution finishes.
-	 *
-	 * @param  rInput        The input value
-	 * @param  rContinuation The continuation of the execution
-	 *
-	 * @return The execution result
-	 */
-	protected O runBlocking(I rInput, Continuation<?> rContinuation)
-	{
-		return execute(rInput, rContinuation);
+		rContinuation.finish(null);
 	}
 }

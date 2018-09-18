@@ -74,7 +74,7 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	 * @param rContext   The coroutine context or NULL for a default context
 	 * @param rCoroutine The coroutine that is executed with this continuation
 	 */
-	Continuation(CoroutineContext rContext, Coroutine<?, T> rCoroutine)
+	public Continuation(CoroutineContext rContext, Coroutine<?, T> rCoroutine)
 	{
 		this.rContext   = rContext != null ? rContext : new CoroutineContext();
 		this.rCoroutine = rCoroutine;

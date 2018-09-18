@@ -136,7 +136,7 @@ public class CodeExecution<I, O> extends Step<I, O>
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected O execute(I rInput, Continuation<?> rContinuation)
+	public O execute(I rInput, Continuation<?> rContinuation)
 	{
 		return fCode.apply(rInput, rContinuation);
 	}

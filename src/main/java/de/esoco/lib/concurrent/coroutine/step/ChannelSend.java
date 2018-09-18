@@ -72,7 +72,7 @@ public class ChannelSend<T> extends Step<T, T>
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected T execute(T rInput, Continuation<?> rContinuation)
+	public T execute(T rInput, Continuation<?> rContinuation)
 	{
 		rContinuation.getChannel(rChannelId).sendBlocking(rInput);
 
@@ -83,9 +83,9 @@ public class ChannelSend<T> extends Step<T, T>
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void runAsync(CompletableFuture<T> fPreviousExecution,
-							Step<T, ?>			 rNextStep,
-							Continuation<?>		 rContinuation)
+	public void runAsync(CompletableFuture<T> fPreviousExecution,
+						 Step<T, ?>			  rNextStep,
+						 Continuation<?>	  rContinuation)
 	{
 		fPreviousExecution.thenAccept(
 			v -> rContinuation.getChannel(rChannelId)

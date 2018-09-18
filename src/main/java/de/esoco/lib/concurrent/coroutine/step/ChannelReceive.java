@@ -73,7 +73,7 @@ public class ChannelReceive<I, O> extends Step<I, O>
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected O execute(I rIgnored, Continuation<?> rContinuation)
+	public O execute(I rIgnored, Continuation<?> rContinuation)
 	{
 		return rContinuation.getChannel(rChannelId).receiveBlocking();
 	}
@@ -82,7 +82,7 @@ public class ChannelReceive<I, O> extends Step<I, O>
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void runAsync(CompletableFuture<I> fPreviousExecution,
+	public void runAsync(CompletableFuture<I> fPreviousExecution,
 							Step<O, ?>			 rNextStep,
 							Continuation<?>		 rContinuation)
 	{
