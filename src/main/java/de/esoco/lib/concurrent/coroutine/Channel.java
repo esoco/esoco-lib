@@ -16,10 +16,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
+import de.esoco.lib.concurrent.RunLock;
+
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
@@ -34,13 +36,11 @@ public class Channel<T>
 
 	private final ChannelId<T> rId;
 
-	private final BlockingQueue<T> aChannelData;
+	private final BlockingQueue<T>     aChannelData;
+	private final Deque<Suspension<T>> aSendQueue    = new LinkedList<>();
+	private final Deque<Suspension<T>> aReceiveQueue = new LinkedList<>();
 
-	private final Deque<Suspension<T>> aSendQueue =
-		new ConcurrentLinkedDeque<>();
-
-	private final Deque<Suspension<T>> aReceiveQueue =
-		new ConcurrentLinkedDeque<>();
+	private final RunLock aAccessLock = new RunLock();
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -78,18 +78,22 @@ public class Channel<T>
 	 */
 	public T receiveBlocking()
 	{
-		try
-		{
-			T rValue = aChannelData.take();
+		return aAccessLock.supplyLocked(
+			() ->
+			{
+				try
+				{
+					T rValue = aChannelData.take();
 
-			resumeSenders();
+					resumeSenders();
 
-			return rValue;
-		}
-		catch (InterruptedException e)
-		{
-			throw new CompletionException(e);
-		}
+					return rValue;
+				}
+				catch (InterruptedException e)
+				{
+					throw new CompletionException(e);
+				}
+			});
 	}
 
 	/***************************************
@@ -99,27 +103,26 @@ public class Channel<T>
 	 * after some other code sends a values into this channel. Suspended senders
 	 * will be served with a first-suspended-first-served policy.
 	 *
-	 * @param  rSuspension The coroutine suspension to resume after data has
-	 *                     been receive
-	 *
-	 * @return The received value
+	 * @param rSuspension The coroutine suspension to resume after data has been
+	 *                    receive
 	 */
-	public T receiveSuspending(Suspension<T> rSuspension)
+	public void receiveSuspending(Suspension<T> rSuspension)
 	{
-		T rValue = aChannelData.poll();
+		aAccessLock.runLocked(
+			() ->
+			{
+				T rValue = aChannelData.poll();
 
-		if (rValue != null)
-		{
-			rSuspension.resume(rValue);
-
-			resumeSenders();
-		}
-		else
-		{
-			aReceiveQueue.add(rSuspension);
-		}
-
-		return rValue;
+				if (rValue != null)
+				{
+					rSuspension.resume(rValue);
+					resumeSenders();
+				}
+				else
+				{
+					aReceiveQueue.add(rSuspension);
+				}
+			});
 	}
 
 	/***************************************
@@ -143,15 +146,19 @@ public class Channel<T>
 	 */
 	public void sendBlocking(T rValue)
 	{
-		try
-		{
-			aChannelData.put(rValue);
-			resumeReceivers();
-		}
-		catch (InterruptedException e)
-		{
-			throw new CompletionException(e);
-		}
+		aAccessLock.runLocked(
+			() ->
+			{
+				try
+				{
+					aChannelData.put(rValue);
+					resumeReceivers();
+				}
+				catch (InterruptedException e)
+				{
+					throw new CompletionException(e);
+				}
+			});
 	}
 
 	/***************************************
@@ -165,16 +172,19 @@ public class Channel<T>
 	 */
 	public void sendSuspending(Suspension<T> rSuspension)
 	{
-		if (aChannelData.offer(rSuspension.input()))
-		{
-			rSuspension.resume();
-
-			resumeReceivers();
-		}
-		else
-		{
-			aSendQueue.add(rSuspension);
-		}
+		aAccessLock.runLocked(
+			() ->
+			{
+				if (aChannelData.offer(rSuspension.input()))
+				{
+					rSuspension.resume();
+					resumeReceivers();
+				}
+				else
+				{
+					aSendQueue.add(rSuspension);
+				}
+			});
 	}
 
 	/***************************************

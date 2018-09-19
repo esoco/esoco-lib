@@ -21,7 +21,9 @@ import de.esoco.lib.concurrent.RunLock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.obrel.core.RelatedObject;
 
@@ -35,7 +37,8 @@ public class CoroutineContext extends RelatedObject
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final Executor rCoroutineExecutor;
+	private final Executor			 rExecutor;
+	private ScheduledExecutorService rScheduler;
 
 	private final Map<ChannelId<?>, Channel<?>> aChannels    = new HashMap<>();
 	private final RunLock					    aChannelLock = new RunLock();
@@ -52,13 +55,35 @@ public class CoroutineContext extends RelatedObject
 	}
 
 	/***************************************
-	 * Creates a new instance with a specific coroutine executor.
+	 * Creates a new instance with a specific coroutine executor. If the
+	 * executor also implements the {@link ScheduledExecutorService} interface
+	 * it will also be used for scheduling purposes.
 	 *
 	 * @param rExecutor The coroutine executor
 	 */
 	public CoroutineContext(Executor rExecutor)
 	{
-		rCoroutineExecutor = rExecutor;
+		this.rExecutor = rExecutor;
+
+		if (rExecutor instanceof ScheduledExecutorService)
+		{
+			rScheduler = (ScheduledExecutorService) rExecutor;
+		}
+	}
+
+	/***************************************
+	 * Creates a new instance with a specific coroutine executor and scheduler.
+	 * The latter will be used to execute timed coroutine steps.
+	 *
+	 * @param rExecutor  The coroutine executor
+	 * @param rScheduler The scheduled executor service
+	 */
+	public CoroutineContext(
+		Executor				 rExecutor,
+		ScheduledExecutorService rScheduler)
+	{
+		this.rExecutor  = rExecutor;
+		this.rScheduler = rScheduler;
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -127,11 +152,29 @@ public class CoroutineContext extends RelatedObject
 	 * Returns the executor to be used for the execution of the steps of a
 	 * {@link Coroutine}.
 	 *
-	 * @return The {@link Executor} for this context
+	 * @return The coroutine executor for this context
 	 */
 	public Executor getExecutor()
 	{
-		return rCoroutineExecutor;
+		return rExecutor;
+	}
+
+	/***************************************
+	 * Returns the executor to be used for the execution of timed steps in a
+	 * {@link Coroutine}. If no scheduler has been set in the constructor or
+	 * created before a new instance with a pool size of 1 will be created by
+	 * invoking {@link Executors#newScheduledThreadPool(int)}.
+	 *
+	 * @return The coroutine scheduler for this context
+	 */
+	public ScheduledExecutorService getScheduler()
+	{
+		if (rScheduler == null)
+		{
+			rScheduler = Executors.newScheduledThreadPool(1);
+		}
+
+		return rScheduler;
 	}
 
 	/***************************************

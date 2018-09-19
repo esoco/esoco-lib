@@ -16,6 +16,11 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
+import de.esoco.lib.concurrent.coroutine.step.Condition;
+import de.esoco.lib.concurrent.coroutine.step.Iteration;
+
+import java.util.Arrays;
+
 import org.junit.Test;
 
 import static de.esoco.lib.concurrent.coroutine.ChannelId.stringChannel;
@@ -25,6 +30,7 @@ import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.apply;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.supply;
 import static de.esoco.lib.concurrent.coroutine.step.Condition.doIf;
 import static de.esoco.lib.concurrent.coroutine.step.Condition.doIfElse;
+import static de.esoco.lib.concurrent.coroutine.step.Iteration.forEach;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +48,7 @@ public class CoroutineTest
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Test asynchronous channel communication
+	 * Test of asynchronous channel communication.
 	 */
 	@Test
 	public void testChannel()
@@ -62,16 +68,24 @@ public class CoroutineTest
 		Coroutine<?, String> cr2 =
 			cr1.then(apply((String s) -> s.toLowerCase()));
 
-		Continuation<?> r1 = cr1.runAsync(ctx, null);
-		Continuation<?> r2 = cr2.runAsync(ctx, null);
+		Continuation<String> r1 = cr1.runAsync(ctx);
+		Continuation<String> r2 = cr2.runAsync(ctx);
 
 		Continuation<?> s1 = cs.runAsync(ctx, "123");
 		Continuation<?> s2 = cs.runAsync(ctx, "456");
 
 		assertEquals("123test", s1.getResult());
 		assertEquals("456test", s2.getResult());
-		assertEquals("123TEST", r1.getResult());
-		assertEquals("456test", r2.getResult());
+
+		String r1v = r1.getResult();
+		String r2v = r2.getResult();
+
+		// because of the concurrent execution it is not sure which result
+		// r1 and r2 will receive
+		assertTrue(
+			"123test".equalsIgnoreCase(r1v) || "456test".equalsIgnoreCase(r1v));
+		assertTrue(
+			"123test".equalsIgnoreCase(r2v) || "456test".equalsIgnoreCase(r2v));
 		assertTrue(s1.isDone());
 		assertTrue(s2.isDone());
 		assertTrue(r1.isDone());
@@ -79,7 +93,7 @@ public class CoroutineTest
 	}
 
 	/***************************************
-	 * Tests a coroutine with a single step.
+	 * Test of {@link Condition} step.
 	 */
 	@Test
 	public void testCondition()
@@ -121,7 +135,24 @@ public class CoroutineTest
 	}
 
 	/***************************************
-	 * Tests a coroutine with multiple steps.
+	 * Test of {@link Iteration} step.
+	 */
+	@Test
+	public void testIteration()
+	{
+		Coroutine<String, ?> cr =
+			Coroutine.first(apply((String s) -> Arrays.asList(s.split(","))))
+					 .then(
+		 				forEach(
+		 					apply(s ->
+		 							System.out.printf("ITER: %s\n", s))));
+
+		Continuation<?> cb = cr.runBlocking("a,b,c,d,e");
+		Continuation<?> ca = cr.runAsync("a,b,c,d,e");
+	}
+
+	/***************************************
+	 * Test of coroutines with multiple steps.
 	 */
 	@Test
 	public void testMultiStep()
@@ -141,7 +172,7 @@ public class CoroutineTest
 	}
 
 	/***************************************
-	 * Tests a coroutine with a single step.
+	 * Test of coroutines with a single step.
 	 */
 	@Test
 	public void testSingleStep()

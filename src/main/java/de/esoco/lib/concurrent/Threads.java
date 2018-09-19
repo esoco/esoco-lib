@@ -45,14 +45,7 @@ public class Threads
 	 */
 	public static void sleep(long nMillis)
 	{
-		try
-		{
-			Thread.sleep(nMillis);
-		}
-		catch (InterruptedException e)
-		{
-			// just continue
-		}
+		sleep(nMillis, TimeUnit.MILLISECONDS);
 	}
 
 	/***************************************
@@ -63,6 +56,13 @@ public class Threads
 	 */
 	public static void sleep(long nTime, TimeUnit eUnit)
 	{
-		sleep(eUnit.toMillis(nTime));
+		try
+		{
+			eUnit.sleep(nTime);
+		}
+		catch (InterruptedException e)
+		{
+			// just continue
+		}
 	}
 }

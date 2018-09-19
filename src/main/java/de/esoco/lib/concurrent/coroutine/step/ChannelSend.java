@@ -20,6 +20,7 @@ import de.esoco.lib.concurrent.coroutine.ChannelId;
 import de.esoco.lib.concurrent.coroutine.Continuation;
 import de.esoco.lib.concurrent.coroutine.Step;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -48,14 +49,14 @@ public class ChannelSend<T> extends Step<T, T>
 	 */
 	public ChannelSend(ChannelId<T> rId)
 	{
+		Objects.requireNonNull(rId);
 		this.rChannelId = rId;
 	}
 
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * A factory method for this class to be used with static imports for fluent
-	 * declarations.
+	 * Suspends until a value can be sent to a channel.
 	 *
 	 * @param  rId The ID of the channel to send to
 	 *
@@ -72,23 +73,23 @@ public class ChannelSend<T> extends Step<T, T>
 	 * {@inheritDoc}
 	 */
 	@Override
-	public T execute(T rInput, Continuation<?> rContinuation)
+	public void runAsync(CompletableFuture<T> fPreviousExecution,
+						 Step<T, ?>			  rNextStep,
+						 Continuation<?>	  rContinuation)
 	{
-		rContinuation.getChannel(rChannelId).sendBlocking(rInput);
-
-		return rInput;
+		fPreviousExecution.thenAcceptAsync(
+			v -> rContinuation.getChannel(rChannelId)
+				.sendSuspending(rNextStep.suspend(v, rContinuation)));
 	}
 
 	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void runAsync(CompletableFuture<T> fPreviousExecution,
-						 Step<T, ?>			  rNextStep,
-						 Continuation<?>	  rContinuation)
+	protected T execute(T rInput, Continuation<?> rContinuation)
 	{
-		fPreviousExecution.thenAccept(
-			v -> rContinuation.getChannel(rChannelId)
-				.sendSuspending(rNextStep.suspend(v, rContinuation)));
+		rContinuation.getChannel(rChannelId).sendBlocking(rInput);
+
+		return rInput;
 	}
 }

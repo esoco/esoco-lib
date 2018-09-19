@@ -20,6 +20,7 @@ import de.esoco.lib.concurrent.coroutine.Continuation;
 import de.esoco.lib.concurrent.coroutine.Step;
 import de.esoco.lib.expression.Functions;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -47,6 +48,7 @@ public class CodeExecution<I, O> extends Step<I, O>
 	 */
 	public CodeExecution(BiFunction<I, Continuation<?>, O> fCode)
 	{
+		Objects.requireNonNull(fCode);
 		this.fCode = fCode;
 	}
 
@@ -58,14 +60,15 @@ public class CodeExecution<I, O> extends Step<I, O>
 	 */
 	public CodeExecution(Function<I, O> fCode)
 	{
+		Objects.requireNonNull(fCode);
 		this.fCode = (i, c) -> fCode.apply(i);
 	}
 
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * A factory method for this class to invoke a {@link Function}. To be used
-	 * with static imports for fluent declarations.
+	 * Applies a {@link Function} to the step input and return the processed
+	 * output.
 	 *
 	 * @param  fCode The function to be executed
 	 *
@@ -77,9 +80,8 @@ public class CodeExecution<I, O> extends Step<I, O>
 	}
 
 	/***************************************
-	 * A factory method for this class to invoke a {@link BiFunction} that also
-	 * receives the current continuation. To be used with static imports for
-	 * fluent declarations.
+	 * Applies a {@link BiFunction} to the step input and the continuation of
+	 * the current execution and return the processed output.
 	 *
 	 * @param  fCode The binary function to be executed
 	 *
@@ -92,8 +94,7 @@ public class CodeExecution<I, O> extends Step<I, O>
 	}
 
 	/***************************************
-	 * A factory method for this class to invoke a {@link Consumer}. To be used
-	 * with static imports for fluent declarations.
+	 * Consumes the input value with a {@link Consumer} and creates no result.
 	 *
 	 * @param  fCode The consumer to be executed
 	 *
@@ -105,8 +106,8 @@ public class CodeExecution<I, O> extends Step<I, O>
 	}
 
 	/***************************************
-	 * A factory method for this class to invoke a {@link Runnable}. To be used
-	 * with static imports for fluent declarations.
+	 * Executes a {@link Runnable}, ignoring any input value and returning no
+	 * result.
 	 *
 	 * @param  fCode The runnable to be executed
 	 *
@@ -118,8 +119,8 @@ public class CodeExecution<I, O> extends Step<I, O>
 	}
 
 	/***************************************
-	 * A factory method for this class to invoke a {@link Supplier}. To be used
-	 * with static imports for fluent declarations.
+	 * Provides a value from a {@link Supplier} as the result, ignoring any
+	 * input value.
 	 *
 	 * @param  fCode The supplier to be executed
 	 *
@@ -136,7 +137,7 @@ public class CodeExecution<I, O> extends Step<I, O>
 	 * {@inheritDoc}
 	 */
 	@Override
-	public O execute(I rInput, Continuation<?> rContinuation)
+	protected O execute(I rInput, Continuation<?> rContinuation)
 	{
 		return fCode.apply(rInput, rContinuation);
 	}

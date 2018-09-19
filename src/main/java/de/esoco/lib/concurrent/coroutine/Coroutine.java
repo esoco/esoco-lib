@@ -183,6 +183,10 @@ import static org.obrel.type.StandardTypes.NAME;
 public class Coroutine<I, O> extends RelatedObject
 	implements FluentRelatable<Coroutine<I, O>>
 {
+	//~ Static fields/initializers ---------------------------------------------
+
+	private static int nNextCoroutineId = 1;
+
 	//~ Instance fields --------------------------------------------------------
 
 	private StepChain<I, ?, O> aCode;
@@ -202,7 +206,7 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * A copy constructor.
+	 * Copies a coroutine for execution.
 	 *
 	 * @param rOther The coroutine to copy the definition from
 	 */
@@ -210,6 +214,8 @@ public class Coroutine<I, O> extends RelatedObject
 	{
 		init(rOther.aCode);
 		ObjectRelations.copyRelations(rOther, this, true);
+
+		set(NAME, get(NAME) + "-" + nNextCoroutineId++);
 	}
 
 	/***************************************
@@ -476,7 +482,7 @@ public class Coroutine<I, O> extends RelatedObject
 		 */
 		@Override
 		@SuppressWarnings("unchecked")
-		public T execute(T rResult, Continuation<?> rContinuation)
+		protected T execute(T rResult, Continuation<?> rContinuation)
 		{
 			// as this is the finish step, it must have the same type T as the
 			// continuation result
@@ -519,26 +525,6 @@ public class Coroutine<I, O> extends RelatedObject
 		 * {@inheritDoc}
 		 */
 		@Override
-		public O execute(I rInput, Continuation<?> rContinuation)
-		{
-			if (rContinuation.isCancelled())
-			{
-				rContinuation.finish(null);
-
-				return null;
-			}
-			else
-			{
-				return rNextStep.execute(
-					rFirstStep.execute(rInput, rContinuation),
-					rContinuation);
-			}
-		}
-
-		/***************************************
-		 * {@inheritDoc}
-		 */
-		@Override
 		public void runAsync(CompletableFuture<I> fPreviousExecution,
 							 Step<O, ?>			  rIgnored,
 							 Continuation<?>	  rContinuation)
@@ -551,7 +537,8 @@ public class Coroutine<I, O> extends RelatedObject
 			{
 				// a step chain will always be the second step in the preceding
 				// chain step and therefore the ignored step argument will
-				// always be null
+				// always be null; therefore use rNextStep instead which will
+				// either be another chain or the finish step
 				rFirstStep.runAsync(
 					fPreviousExecution,
 					rNextStep,
@@ -566,6 +553,26 @@ public class Coroutine<I, O> extends RelatedObject
 		public String toString()
 		{
 			return rFirstStep + " -> " + rNextStep;
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		protected O execute(I rInput, Continuation<?> rContinuation)
+		{
+			if (rContinuation.isCancelled())
+			{
+				rContinuation.finish(null);
+
+				return null;
+			}
+			else
+			{
+				return rNextStep.execute(
+					rFirstStep.execute(rInput, rContinuation),
+					rContinuation);
+			}
 		}
 
 		/***************************************
