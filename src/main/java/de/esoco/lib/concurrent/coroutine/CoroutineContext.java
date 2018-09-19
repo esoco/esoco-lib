@@ -20,10 +20,13 @@ import de.esoco.lib.concurrent.RunLock;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.obrel.core.RelatedObject;
 
@@ -42,6 +45,10 @@ public class CoroutineContext extends RelatedObject
 
 	private final Map<ChannelId<?>, Channel<?>> aChannels    = new HashMap<>();
 	private final RunLock					    aChannelLock = new RunLock();
+
+	private final AtomicLong nRunningCoroutines = new AtomicLong();
+	private final RunLock    aCoroutineLock     = new RunLock();
+	private CountDownLatch   aAllFinishedSignal = new CountDownLatch(1);
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -87,6 +94,26 @@ public class CoroutineContext extends RelatedObject
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Blocks until all coroutines in this context have finished execution. If
+	 * no coroutines are running or all have finished execution already this
+	 * method returns immediately.
+	 */
+	public void awaitAll()
+	{
+		if (aAllFinishedSignal != null)
+		{
+			try
+			{
+				aAllFinishedSignal.await();
+			}
+			catch (InterruptedException e)
+			{
+				throw new CompletionException(e);
+			}
+		}
+	}
 
 	/***************************************
 	 * Creates a new channel with a certain capacity and stores it in this
@@ -149,6 +176,18 @@ public class CoroutineContext extends RelatedObject
 	}
 
 	/***************************************
+	 * Returns the number of currently running coroutines. This will only be a
+	 * momentary value as the execution of the coroutines happens asynchronously
+	 * and coroutines may finish while querying this count.
+	 *
+	 * @return The number of running coroutines
+	 */
+	public long getCoroutineCount()
+	{
+		return nRunningCoroutines.get();
+	}
+
+	/***************************************
 	 * Returns the executor to be used for the execution of the steps of a
 	 * {@link Coroutine}.
 	 *
@@ -204,5 +243,39 @@ public class CoroutineContext extends RelatedObject
 	public void removeChannel(ChannelId<?> rId)
 	{
 		aChannelLock.runLocked(() -> aChannels.remove(rId));
+	}
+
+	/***************************************
+	 * Notifies this context that a coroutine execution has been finished
+	 * (either regularly or by canceling).
+	 *
+	 * @param rContinuation The continuation of the execution
+	 */
+	void coroutineFinished(Continuation<?> rContinuation)
+	{
+		if (nRunningCoroutines.decrementAndGet() == 0)
+		{
+			aCoroutineLock.runLocked(() -> aAllFinishedSignal.countDown());
+		}
+	}
+
+	/***************************************
+	 * Notifies this context that a coroutine has been started in it.
+	 *
+	 * @param rContinuation The continuation of the execution
+	 */
+	void coroutineStarted(Continuation<?> rContinuation)
+	{
+		if (nRunningCoroutines.incrementAndGet() == 1)
+		{
+			aCoroutineLock.runLocked(
+				() ->
+				{
+					if (aAllFinishedSignal.getCount() == 0)
+					{
+						aAllFinishedSignal = new CountDownLatch(1);
+					}
+				});
+		}
 	}
 }

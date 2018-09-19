@@ -78,6 +78,8 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	{
 		this.rContext   = rContext != null ? rContext : new CoroutineContext();
 		this.rCoroutine = rCoroutine;
+
+		rContext.coroutineStarted(this);
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -285,7 +287,9 @@ public class Continuation<T> extends RelatedObject implements Executor,
 
 		if (!bCancelled && fRunWhenDone != null)
 		{
-			fRunWhenDone.apply(rResult);
+			CompletableFuture.runAsync(() -> fRunWhenDone.apply(rResult));
 		}
+
+		rContext.coroutineFinished(this);
 	}
 }

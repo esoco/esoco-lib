@@ -82,8 +82,8 @@ public class CoroutineTest
 		String r1v = r1.getResult();
 		String r2v = r2.getResult();
 
-		// because of the concurrent execution it is not sure which result
-		// r1 and r2 will receive
+		// because of the concurrent execution it is not fixed which
+		// of the values r1 and r2 will receive
 		assertTrue(
 			"123test".equalsIgnoreCase(r1v) || "456test".equalsIgnoreCase(r1v));
 		assertTrue(
