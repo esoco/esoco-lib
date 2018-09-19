@@ -20,6 +20,8 @@ import de.esoco.lib.concurrent.coroutine.step.Condition;
 import de.esoco.lib.concurrent.coroutine.step.Iteration;
 
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -140,15 +142,19 @@ public class CoroutineTest
 	@Test
 	public void testIteration()
 	{
-		Coroutine<String, ?> cr =
-			Coroutine.first(apply((String s) -> Arrays.asList(s.split(","))))
+		Coroutine<String, List<String>> cr =
+			Coroutine.first(apply((String s) ->
+		 						Arrays.asList(s.split(","))))
 					 .then(
 		 				forEach(
-		 					apply(s ->
-		 							System.out.printf("ITER: %s\n", s))));
+		 					apply((String s) -> s.toUpperCase()),
+		 					() -> new LinkedList<>()));
 
-		Continuation<?> cb = cr.runBlocking("a,b,c,d,e");
-		Continuation<?> ca = cr.runAsync("a,b,c,d,e");
+		Continuation<?> ca = cr.runAsync("a,b,c,d");
+		Continuation<?> cb = cr.runBlocking("a,b,c,d");
+
+		assertEquals(Arrays.asList("A", "B", "C", "D"), ca.getResult());
+		assertEquals(Arrays.asList("A", "B", "C", "D"), cb.getResult());
 	}
 
 	/***************************************

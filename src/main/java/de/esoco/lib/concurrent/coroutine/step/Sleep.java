@@ -121,7 +121,7 @@ public class Sleep<T> extends Step<T, T>
 				rContinuation.getContext()
 				.getScheduler()
 				.schedule(
-					() -> rNextStep.restart(i, rContinuation),
+					() -> rNextStep.suspend(rContinuation).resume(i),
 					nDuration,
 					eTimeUnit);
 			},

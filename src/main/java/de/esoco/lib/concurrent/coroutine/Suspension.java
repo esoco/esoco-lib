@@ -83,9 +83,9 @@ public class Suspension<T>
 	 *
 	 * @see #resume(Object)
 	 */
-	public final CompletableFuture<T> resume()
+	public final void resume()
 	{
-		return resume(rInput);
+		resume(rInput);
 	}
 
 	/***************************************
@@ -94,21 +94,17 @@ public class Suspension<T>
 	 * Step#runAsync(CompletableFuture, Step, Continuation)} in a new {@link
 	 * CompletableFuture} that is executed in the executor of the continuation.
 	 *
-	 * @param  rStepInput The input value to the step
-	 *
-	 * @return The {@link CompletableFuture} the step has been resumed in
+	 * @param rStepInput The input value to the step
 	 */
-	public CompletableFuture<T> resume(T rStepInput)
+	public void resume(T rStepInput)
 	{
 		CompletableFuture<T> fResume =
 			CompletableFuture.supplyAsync(() -> rStepInput, rContinuation);
 
 		// the resume step is always either a StepChain which contains it's own
-		// next step or the final step in a coroutine and therefore no rNextStep
-		// argument is necessary
-		rStep.runAsync(fResume, rContinuation);
-
-		return fResume;
+		// next step or the final step in a coroutine and therefore rNextStep
+		// can be NULL
+		rStep.runAsync(fResume, null, rContinuation);
 	}
 
 	/***************************************

@@ -78,43 +78,6 @@ public abstract class Step<I, O>
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Invokes both {@link #suspend(Continuation)} and then {@link
-	 * Suspension#resume(Object)}. This sequence is needed to restart a
-	 * suspended coroutine at a certain step.
-	 *
-	 * @param  rInput        The input value for the suspended step
-	 * @param  rContinuation The continuation of the execution
-	 *
-	 * @return The {@link CompletableFuture} the step has been restarted in
-	 */
-	public CompletableFuture<I> restart(I				rInput,
-										Continuation<?> rContinuation)
-	{
-		return suspend(rContinuation).resume(rInput);
-	}
-
-	/***************************************
-	 * Invokes {@link #runAsync(CompletableFuture, Step, Continuation)} with the
-	 * next step set to NULL. This method is a convenience method for step
-	 * implementation that need to invoke a step when no next step is available.
-	 * It cannot be overridden, all special implementations of asynchronous
-	 * invocation must be done in the original runAsync() method.
-	 *
-	 * @param  fPreviousExecution The future of the previous code execution
-	 * @param  rContinuation      The continuation of the execution
-	 *
-	 * @return The chain this step's execution is appended to
-	 *
-	 * @see    #runAsync(CompletableFuture, Step, Continuation)
-	 */
-	public final void runAsync(
-		CompletableFuture<I> fPreviousExecution,
-		Continuation<?>		 rContinuation)
-	{
-		runAsync(fPreviousExecution, null, rContinuation);
-	}
-
-	/***************************************
 	 * Runs this execution step asynchronously as a continuation of a previous
 	 * code execution in a {@link CompletableFuture} and proceeds to the next
 	 * step afterwards.
@@ -142,7 +105,7 @@ public abstract class Step<I, O>
 			// the next step is either a StepChain which contains it's own
 			// next step or the final step in a coroutine and therefore the
 			// rNextStep argument can be NULL
-			rNextStep.runAsync(fExecution, rContinuation);
+			rNextStep.runAsync(fExecution, null, rContinuation);
 		}
 	}
 

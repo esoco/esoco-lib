@@ -19,53 +19,89 @@ package de.esoco.lib.concurrent.coroutine.step;
 import de.esoco.lib.concurrent.coroutine.Continuation;
 import de.esoco.lib.concurrent.coroutine.Step;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.consume;
 
 
 /********************************************************************
  * A step that implements suspendable iteration over an {@link Iterable} input
  * value. Each value returned by the iterator will be processed with a separate
- * execution, allowing steps from other coroutines to run in parallel..
+ * execution, allowing steps from other coroutines to run in parallel. The
+ * processed values can either be discarded or collected for further processing.
+ * The static factory methods {@link #forEach(Step)} and {@link #forEach(Step,
+ * Supplier)} create instances for both scenarios.
  *
  * @author eso
  */
-public class Iteration<T, I extends Iterable<T>> extends Step<I, Void>
+public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
+	extends Step<I, C>
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final Step<T, ?> rProcessingStep;
+	private final Step<T, R>  rProcessingStep;
+	private final Supplier<C> fCollectionFactory;
 
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rProcessingStep The step to be applied to each value returned by
-	 *                        the iterator
+	 * @param rProcessingStep    The step to be applied to each value returned
+	 *                           by the iterator
+	 * @param fCollectionFactory A supplier that returns a collection of the
+	 *                           target type to store the processed values in
 	 */
-	public Iteration(Step<T, ?> rProcessingStep)
+	public Iteration(Step<T, R>  rProcessingStep,
+					 Supplier<C> fCollectionFactory)
 	{
-		this.rProcessingStep = rProcessingStep;
+		this.rProcessingStep    = rProcessingStep;
+		this.fCollectionFactory = fCollectionFactory;
 	}
 
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
 	 * Iterates over each element in the {@link Iterator} of an {@link Iterable}
-	 * input value. If invoked asynchronously each iteration step will be
-	 * invoked as a separate suspension, but sequentially for each value
-	 * returned by the iterator. After the iteration has completed the coroutine
-	 * continues with the next step.
+	 * input value and processes the element with another step. The processed
+	 * values will be discarded, the returned step will always have a result of
+	 * NULL. The method {@link #forEach(Step, Supplier)} can be used to collect
+	 * the processed values.
 	 *
-	 * @param  rProcessor The step to process each value
+	 * @param  rProcessingStep The step to process each value
 	 *
 	 * @return A new step instance
 	 */
-	public static <T, I extends Iterable<T>> Iteration<T, I> forEach(
-		Step<T, ?> rProcessor)
+	public static <T, R, I extends Collection<T>, C extends Collection<R>> Iteration<T, R,
+																					 I, C>
+	forEach(Step<T, R> rProcessingStep)
 	{
-		return new Iteration<>(rProcessor);
+		return new Iteration<>(rProcessingStep, null);
+	}
+
+	/***************************************
+	 * Iterates over each element in the {@link Iterator} of an {@link Iterable}
+	 * input value, processes the element with another step, and collects the
+	 * result into a target collection. If invoked asynchronously each iteration
+	 * step will be invoked as a separate suspension, but sequentially for each
+	 * value returned by the iterator. After the iteration has completed the
+	 * coroutine continues with the next step with the collected values as it's
+	 * input.
+	 *
+	 * @param  rProcessingStep    The step to process each value
+	 * @param  fCollectionFactory A supplier that returns a collection of the
+	 *                            target type to store the processed values in
+	 *
+	 * @return A new step instance
+	 */
+	public static <T, R, I extends Iterable<T>, C extends Collection<R>> Iteration<T, R,
+																				   I, C>
+	forEach(Step<T, R> rProcessingStep, Supplier<C> fCollectionFactory)
+	{
+		return new Iteration<>(rProcessingStep, fCollectionFactory);
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -75,36 +111,50 @@ public class Iteration<T, I extends Iterable<T>> extends Step<I, Void>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<I> fPreviousExecution,
-						 Step<Void, ?>		  rNextStep,
+						 Step<C, ?>			  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
+		C aResults =
+			fCollectionFactory != null ? fCollectionFactory.get() : null;
+
 		fPreviousExecution.thenAcceptAsync(
-			i -> iterateAsync(i.iterator(), rNextStep, rContinuation));
+			i -> iterateAsync(i.iterator(), aResults, rNextStep, rContinuation));
 	}
 
 	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected Void execute(I rInput, Continuation<?> rContinuation)
+	protected C execute(I rInput, Continuation<?> rContinuation)
 	{
+		C aResults =
+			fCollectionFactory != null ? fCollectionFactory.get() : null;
+
 		for (T rValue : rInput)
 		{
-			rProcessingStep.runBlocking(rValue, rContinuation);
+			R aResult = rProcessingStep.runBlocking(rValue, rContinuation);
+
+			if (aResults != null)
+			{
+				aResults.add(aResult);
+			}
 		}
 
-		return null;
+		return aResults;
 	}
 
 	/***************************************
 	 * Performs the asynchronous iteration over all values in an iterator.
 	 *
 	 * @param rIterator     The iterator
+	 * @param rResults      The collection to place the processed values in or
+	 *                      NULL to collect no results
 	 * @param rNextStep     The step to execute when the iteration is finished
 	 * @param rContinuation The current continuation
 	 */
 	private void iterateAsync(Iterator<T>	  rIterator,
-							  Step<Void, ?>   rNextStep,
+							  C				  rResults,
+							  Step<C, ?>	  rNextStep,
 							  Continuation<?> rContinuation)
 	{
 		if (rIterator.hasNext())
@@ -114,17 +164,27 @@ public class Iteration<T, I extends Iterable<T>> extends Step<I, Void>
 					() -> rIterator.next(),
 					rContinuation);
 
-			fGetNextValue.thenAccept(
-				v ->
-				{
-					rProcessingStep.restart(v, rContinuation)
-					.thenRun(
-						() -> iterateAsync(rIterator, rNextStep, rContinuation));
-				});
+			rProcessingStep.runAsync(
+				fGetNextValue,
+				consume(
+					o ->
+					{
+						if (rResults != null)
+						{
+							rResults.add(o);
+						}
+
+						iterateAsync(
+							rIterator,
+							rResults,
+							rNextStep,
+							rContinuation);
+					}),
+				rContinuation);
 		}
 		else
 		{
-			rNextStep.suspend(rContinuation).resume();
+			rNextStep.suspend(rContinuation).resume(rResults);
 		}
 	}
 }

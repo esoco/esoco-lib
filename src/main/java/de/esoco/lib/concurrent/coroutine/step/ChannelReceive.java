@@ -80,7 +80,8 @@ public class ChannelReceive<I, O> extends Step<I, O>
 	{
 		fPreviousExecution.thenAcceptAsync(
 			v -> rContinuation.getChannel(rChannelId)
-				.receiveSuspending(rNextStep.suspend(rContinuation)));
+				.receiveSuspending(rNextStep.suspend(rContinuation)),
+			rContinuation);
 	}
 
 	/***************************************
