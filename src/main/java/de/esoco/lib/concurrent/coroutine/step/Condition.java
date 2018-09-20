@@ -182,8 +182,6 @@ public class Condition<I, O> extends Step<I, O>
 
 	/***************************************
 	 * {@inheritDoc}
-	 *
-	 * @return
 	 */
 	@Override
 	public void runAsync(CompletableFuture<I> fPreviousExecution,

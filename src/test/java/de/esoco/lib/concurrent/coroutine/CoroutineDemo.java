@@ -21,6 +21,7 @@ import de.esoco.lib.logging.Profiler;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 
+import static de.esoco.lib.concurrent.coroutine.CoroutineScope.launch;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.run;
 import static de.esoco.lib.datatype.Range.from;
 
@@ -35,28 +36,44 @@ public class CoroutineDemo
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
+	 * Creates a new instance.
+	 */
+	public static void demoCoroutineScope()
+	{
+		launch(
+			run ->
+		{
+			run.async(
+				Coroutine.first(run(() -> from(1).to(10).forEach(Math::sqrt))));
+		});
+	}
+
+	/***************************************
 	 * Runs coroutines parallel in threads and with asynchronous execution for
 	 * comparison.
 	 */
 	public static void demoParallelExecution()
 	{
-		CoroutineContext	    ctx = new CoroutineContext();
-		Coroutine<Object, Void> cr  =
+		Coroutine<Object, Void> cr =
 			Coroutine.first(run(() -> from(1).to(10).forEach(Math::sqrt)));
 
-		int nThreadCount    = 1_000;
-		int nCoroutineCount = 1_000;
+		int nThreadCount    = 100_000;
+		int nCoroutineCount = 100_000;
 
 		Profiler	   p	  = new Profiler("Parallel Coroutine Execution");
 		CountDownLatch signal = new CountDownLatch(nThreadCount);
 
 		for (int i = 0; i < nThreadCount; i++)
 		{
-			new Thread(() ->
+			new Thread(
+				() ->
+			{
+				launch(run ->
 				{
-					cr.runBlocking(ctx, null);
+					run.blocking(cr);
 					signal.countDown();
-				}).start();
+				});
+			}).start();
 		}
 
 		try
@@ -70,12 +87,14 @@ public class CoroutineDemo
 
 		p.measure(nThreadCount + " Threads");
 
-		for (int i = 0; i < nCoroutineCount; i++)
+		launch(
+			run ->
 		{
-			cr.runAsync(ctx);
-		}
-
-		ctx.awaitAll();
+			for (int i = 0; i < nCoroutineCount; i++)
+			{
+				run.async(cr);
+			}
+		});
 
 		p.measure(nCoroutineCount + " Coroutines");
 		p.printSummary();

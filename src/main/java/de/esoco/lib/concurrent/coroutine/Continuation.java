@@ -53,8 +53,8 @@ public class Continuation<T> extends RelatedObject implements Executor,
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final CoroutineContext rContext;
-	private final Coroutine<?, T>  rCoroutine;
+	private final CoroutineScope  rScope;
+	private final Coroutine<?, T> rCoroutine;
 
 	private T	    rResult    = null;
 	private boolean bCancelled = false;
@@ -69,17 +69,17 @@ public class Continuation<T> extends RelatedObject implements Executor,
 
 	/***************************************
 	 * Creates a new instance for the execution of the given {@link Coroutine}
-	 * in a specific context.
+	 * in a certain scope.
 	 *
-	 * @param rContext   The coroutine context or NULL for a default context
+	 * @param rScope     The coroutine context
 	 * @param rCoroutine The coroutine that is executed with this continuation
 	 */
-	public Continuation(CoroutineContext rContext, Coroutine<?, T> rCoroutine)
+	public Continuation(CoroutineScope rScope, Coroutine<?, T> rCoroutine)
 	{
-		this.rContext   = rContext != null ? rContext : new CoroutineContext();
+		this.rScope     = rScope;
 		this.rCoroutine = rCoroutine;
 
-		rContext.coroutineStarted(this);
+		rScope.coroutineStarted(this);
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -174,7 +174,7 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	 */
 	public final <C> Channel<C> getChannel(ChannelId<C> rId)
 	{
-		return rContext.getChannel(rId);
+		return getContext().getChannel(rId);
 	}
 
 	/***************************************
@@ -184,7 +184,7 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	 */
 	public final CoroutineContext getContext()
 	{
-		return rContext;
+		return rScope.getContext();
 	}
 
 	/***************************************
@@ -214,6 +214,16 @@ public class Continuation<T> extends RelatedObject implements Executor,
 		{
 			throw new CompletionException(e);
 		}
+	}
+
+	/***************************************
+	 * Returns the scope in which the coroutine is executed.
+	 *
+	 * @return The coroutine scope
+	 */
+	public final CoroutineScope getScope()
+	{
+		return rScope;
 	}
 
 	/***************************************
@@ -252,20 +262,20 @@ public class Continuation<T> extends RelatedObject implements Executor,
 		// lock ensures that fRunWhenDone is not set while finishing is in progress
 		aPostProcessingLock.runLocked(
 			() ->
+		{
+			if (bFinished)
 			{
-				if (bFinished)
+				if (!bCancelled)
 				{
-					if (!bCancelled)
-					{
-						CompletableFuture.runAsync(
-							() -> fRunWhenDone.apply(getResult()));
-					}
+					CompletableFuture.runAsync(
+						() -> fRunWhenDone.apply(getResult()));
 				}
-				else
-				{
-					this.fRunWhenDone = fRunWhenDone;
-				}
-			});
+			}
+			else
+			{
+				this.fRunWhenDone = fRunWhenDone;
+			}
+		});
 
 		return this;
 	}
@@ -290,6 +300,6 @@ public class Continuation<T> extends RelatedObject implements Executor,
 			CompletableFuture.runAsync(() -> fRunWhenDone.apply(rResult));
 		}
 
-		rContext.coroutineFinished(this);
+		rScope.coroutineFinished(this);
 	}
 }

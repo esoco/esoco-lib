@@ -16,6 +16,9 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
+import java.util.Objects;
+
+
 /********************************************************************
  * Contains global {@link Coroutine} management functions.
  *
@@ -25,7 +28,7 @@ public class Coroutines
 {
 	//~ Static fields/initializers ---------------------------------------------
 
-	private static CoroutineContext rDefaultContext = null;
+	private static CoroutineContext rDefaultContext = new CoroutineContext();
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -41,7 +44,7 @@ public class Coroutines
 	/***************************************
 	 * Returns the default {@link CoroutineContext}.
 	 *
-	 * @return The default context (can be NULL)
+	 * @return The default context
 	 */
 	public static CoroutineContext getDefaultContext()
 	{
@@ -50,14 +53,14 @@ public class Coroutines
 
 	/***************************************
 	 * Sets the default {@link CoroutineContext}. The context will be used for
-	 * all coroutines that are started without an explicit context. If set to
-	 * NULL (the default) such coroutines are started with an individual (local)
-	 * context instead.
+	 * all coroutines that are started without an explicit context.
 	 *
-	 * @param rDefaultContext The new default context or NULL for none
+	 * @param rContext The new default context or NULL for none
 	 */
-	public static void setDefaultContext(CoroutineContext rDefaultContext)
+	public static void setDefaultContext(CoroutineContext rContext)
 	{
-		Coroutines.rDefaultContext = rDefaultContext;
+		Objects.requireNonNull(rContext);
+
+		rDefaultContext = rContext;
 	}
 }

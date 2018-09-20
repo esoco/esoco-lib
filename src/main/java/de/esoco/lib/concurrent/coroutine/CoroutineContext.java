@@ -46,9 +46,9 @@ public class CoroutineContext extends RelatedObject
 	private final Map<ChannelId<?>, Channel<?>> aChannels    = new HashMap<>();
 	private final RunLock					    aChannelLock = new RunLock();
 
-	private final AtomicLong nRunningCoroutines = new AtomicLong();
-	private final RunLock    aCoroutineLock     = new RunLock();
-	private CountDownLatch   aAllFinishedSignal = new CountDownLatch(1);
+	private final AtomicLong nRunningScopes		   = new AtomicLong();
+	private final RunLock    aScopeLock			   = new RunLock();
+	private CountDownLatch   aScopesFinishedSignal = new CountDownLatch(1);
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -96,17 +96,17 @@ public class CoroutineContext extends RelatedObject
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Blocks until all coroutines in this context have finished execution. If
-	 * no coroutines are running or all have finished execution already this
-	 * method returns immediately.
+	 * Blocks until the coroutines of all {@link CoroutineScope scopes} in this
+	 * context have finished execution. If no coroutines are running or all have
+	 * finished execution already this method returns immediately.
 	 */
-	public void awaitAll()
+	public void awaitAllScopes()
 	{
-		if (aAllFinishedSignal != null)
+		if (aScopesFinishedSignal != null)
 		{
 			try
 			{
-				aAllFinishedSignal.await();
+				aScopesFinishedSignal.await();
 			}
 			catch (InterruptedException e)
 			{
@@ -176,18 +176,6 @@ public class CoroutineContext extends RelatedObject
 	}
 
 	/***************************************
-	 * Returns the number of currently running coroutines. This will only be a
-	 * momentary value as the execution of the coroutines happens asynchronously
-	 * and coroutines may finish while querying this count.
-	 *
-	 * @return The number of running coroutines
-	 */
-	public long getCoroutineCount()
-	{
-		return nRunningCoroutines.get();
-	}
-
-	/***************************************
 	 * Returns the executor to be used for the execution of the steps of a
 	 * {@link Coroutine}.
 	 *
@@ -214,6 +202,19 @@ public class CoroutineContext extends RelatedObject
 		}
 
 		return rScheduler;
+	}
+
+	/***************************************
+	 * Returns the number of currently active {@link CoroutineScope scopes}.
+	 * This will only be a momentary value as the execution of the coroutines in
+	 * the scopes happens asynchronously and some coroutines may finish while
+	 * querying this count.
+	 *
+	 * @return The number of running coroutines
+	 */
+	public long getScopeCount()
+	{
+		return nRunningScopes.get();
 	}
 
 	/***************************************
@@ -246,36 +247,36 @@ public class CoroutineContext extends RelatedObject
 	}
 
 	/***************************************
-	 * Notifies this context that a coroutine execution has been finished
-	 * (either regularly or by canceling).
+	 * Notifies this context that a {@link CoroutineScope} has finished
+	 * executing all coroutines.
 	 *
-	 * @param rContinuation The continuation of the execution
+	 * @param rScope The finished scope
 	 */
-	void coroutineFinished(Continuation<?> rContinuation)
+	void scopeFinished(CoroutineScope rScope)
 	{
-		if (nRunningCoroutines.decrementAndGet() == 0)
+		if (nRunningScopes.decrementAndGet() == 0)
 		{
-			aCoroutineLock.runLocked(() -> aAllFinishedSignal.countDown());
+			aScopeLock.runLocked(() -> aScopesFinishedSignal.countDown());
 		}
 	}
 
 	/***************************************
-	 * Notifies this context that a coroutine has been started in it.
+	 * Notifies this context that a {@link CoroutineScope} has been launched.
 	 *
-	 * @param rContinuation The continuation of the execution
+	 * @param rScope The launched scope
 	 */
-	void coroutineStarted(Continuation<?> rContinuation)
+	void scopeLaunched(CoroutineScope rScope)
 	{
-		if (nRunningCoroutines.incrementAndGet() == 1)
+		if (nRunningScopes.incrementAndGet() == 1)
 		{
-			aCoroutineLock.runLocked(
+			aScopeLock.runLocked(
 				() ->
+			{
+				if (aScopesFinishedSignal.getCount() == 0)
 				{
-					if (aAllFinishedSignal.getCount() == 0)
-					{
-						aAllFinishedSignal = new CountDownLatch(1);
-					}
-				});
+					aScopesFinishedSignal = new CountDownLatch(1);
+				}
+			});
 		}
 	}
 }
