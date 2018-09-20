@@ -17,7 +17,7 @@
 package de.esoco.lib.concurrent.coroutine.step;
 
 import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.Step;
+import de.esoco.lib.concurrent.coroutine.CoroutineStep;
 import de.esoco.lib.expression.Functions;
 
 import java.util.Objects;
@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  *
  * @author eso
  */
-public class CodeExecution<I, O> extends Step<I, O>
+public class CodeExecution<I, O> extends CoroutineStep<I, O>
 {
 	//~ Instance fields --------------------------------------------------------
 

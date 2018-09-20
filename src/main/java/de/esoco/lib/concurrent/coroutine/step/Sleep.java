@@ -18,7 +18,7 @@ package de.esoco.lib.concurrent.coroutine.step;
 
 import de.esoco.lib.concurrent.coroutine.Continuation;
 import de.esoco.lib.concurrent.coroutine.Coroutine;
-import de.esoco.lib.concurrent.coroutine.Step;
+import de.esoco.lib.concurrent.coroutine.CoroutineStep;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author eso
  */
-public class Sleep<T> extends Step<T, T>
+public class Sleep<T> extends CoroutineStep<T, T>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -112,7 +112,7 @@ public class Sleep<T> extends Step<T, T>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<T> fPreviousExecution,
-						 Step<T, ?>			  rNextStep,
+						 CoroutineStep<T, ?>			  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		fPreviousExecution.thenAcceptAsync(

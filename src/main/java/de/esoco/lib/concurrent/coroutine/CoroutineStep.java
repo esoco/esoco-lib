@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  * steps it is sufficient to implement the single abstract method {@link
  * #execute(Object, Continuation)} which must perform the actual code execution.
  * The default implementations of {@link #runBlocking(Object, Continuation)} and
- * {@link #runAsync(CompletableFuture, Step, Continuation)} then invoke this
+ * {@link #runAsync(CompletableFuture, CoroutineStep, Continuation)} then invoke this
  * method as needed.
  *
  * <p>In most cases it is not necessary to subclass this class because the
@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>Creating a new step subclass is only needed to implement advanced
  * coroutine suspensions that are not already provided by existing steps. In
  * such a case it is typically also necessary to override the method {@link
- * #runAsync(CompletableFuture, Step, Continuation)} to check for the suspension
+ * #runAsync(CompletableFuture, CoroutineStep, Continuation)} to check for the suspension
  * condition. If a suspension is necessary a {@link Suspension} object can be
  * created by invoking a {@link #suspend(Object, Continuation)} method. The
  * object can then be used by code that waits for some external condition to
@@ -49,7 +49,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author eso
  */
-public abstract class Step<I, O>
+public abstract class CoroutineStep<I, O>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -60,7 +60,7 @@ public abstract class Step<I, O>
 	/***************************************
 	 * Creates a new instance.
 	 */
-	protected Step()
+	protected CoroutineStep()
 	{
 		sLabel = getClass().getSimpleName();
 	}
@@ -70,7 +70,7 @@ public abstract class Step<I, O>
 	 *
 	 * @param sLabel A label that identifies this step in it's coroutine
 	 */
-	protected Step(String sLabel)
+	protected CoroutineStep(String sLabel)
 	{
 		this.sLabel = sLabel;
 	}
@@ -92,7 +92,7 @@ public abstract class Step<I, O>
 	 * @param rContinuation      The continuation of the execution
 	 */
 	public void runAsync(CompletableFuture<I> fPreviousExecution,
-						 Step<O, ?>			  rNextStep,
+						 CoroutineStep<O, ?>			  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		CompletableFuture<O> fExecution =

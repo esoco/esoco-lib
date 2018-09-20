@@ -18,7 +18,7 @@ package de.esoco.lib.concurrent.coroutine.step;
 
 import de.esoco.lib.concurrent.coroutine.ChannelId;
 import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.Step;
+import de.esoco.lib.concurrent.coroutine.CoroutineStep;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author eso
  */
-public class ChannelSend<T> extends Step<T, T>
+public class ChannelSend<T> extends CoroutineStep<T, T>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -74,7 +74,7 @@ public class ChannelSend<T> extends Step<T, T>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<T> fPreviousExecution,
-						 Step<T, ?>			  rNextStep,
+						 CoroutineStep<T, ?>			  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		fPreviousExecution.thenAcceptAsync(

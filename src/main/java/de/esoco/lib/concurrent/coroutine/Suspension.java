@@ -30,7 +30,7 @@ public class Suspension<T>
 	//~ Instance fields --------------------------------------------------------
 
 	private final T				  rInput;
-	private final Step<T, ?>	  rStep;
+	private final CoroutineStep<T, ?>	  rStep;
 	private final Continuation<?> rContinuation;
 
 	//~ Constructors -----------------------------------------------------------
@@ -48,7 +48,7 @@ public class Suspension<T>
 	 * @param rStep         The coroutine step to be invoked when resuming
 	 * @param rContinuation The continuation of the execution
 	 */
-	public Suspension(T rInput, Step<T, ?> rStep, Continuation<?> rContinuation)
+	public Suspension(T rInput, CoroutineStep<T, ?> rStep, Continuation<?> rContinuation)
 	{
 		this.rInput		   = rInput;
 		this.rStep		   = rStep;
@@ -91,7 +91,7 @@ public class Suspension<T>
 	/***************************************
 	 * Resumes the execution of the suspended coroutine with an explicit input
 	 * value. The default implementation invokes the method {@link
-	 * Step#runAsync(CompletableFuture, Step, Continuation)} in a new {@link
+	 * CoroutineStep#runAsync(CompletableFuture, CoroutineStep, Continuation)} in a new {@link
 	 * CompletableFuture} that is executed in the executor of the continuation.
 	 *
 	 * @param rStepInput The input value to the step
@@ -112,7 +112,7 @@ public class Suspension<T>
 	 *
 	 * @return The step
 	 */
-	public final Step<T, ?> step()
+	public final CoroutineStep<T, ?> step()
 	{
 		return rStep;
 	}

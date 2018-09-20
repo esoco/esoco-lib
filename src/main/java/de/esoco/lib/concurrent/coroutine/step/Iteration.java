@@ -17,7 +17,7 @@
 package de.esoco.lib.concurrent.coroutine.step;
 
 import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.Step;
+import de.esoco.lib.concurrent.coroutine.CoroutineStep;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,17 +32,17 @@ import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.consume;
  * value. Each value returned by the iterator will be processed with a separate
  * execution, allowing steps from other coroutines to run in parallel. The
  * processed values can either be discarded or collected for further processing.
- * The static factory methods {@link #forEach(Step)} and {@link #forEach(Step,
+ * The static factory methods {@link #forEach(CoroutineStep)} and {@link #forEach(CoroutineStep,
  * Supplier)} create instances for both scenarios.
  *
  * @author eso
  */
 public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
-	extends Step<I, C>
+	extends CoroutineStep<I, C>
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final Step<T, R>  rProcessingStep;
+	private final CoroutineStep<T, R>  rProcessingStep;
 	private final Supplier<C> fCollectionFactory;
 
 	//~ Constructors -----------------------------------------------------------
@@ -55,7 +55,7 @@ public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
 	 * @param fCollectionFactory A supplier that returns a collection of the
 	 *                           target type to store the processed values in
 	 */
-	public Iteration(Step<T, R>  rProcessingStep,
+	public Iteration(CoroutineStep<T, R>  rProcessingStep,
 					 Supplier<C> fCollectionFactory)
 	{
 		this.rProcessingStep    = rProcessingStep;
@@ -68,7 +68,7 @@ public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
 	 * Iterates over each element in the {@link Iterator} of an {@link Iterable}
 	 * input value and processes the element with another step. The processed
 	 * values will be discarded, the returned step will always have a result of
-	 * NULL. The method {@link #forEach(Step, Supplier)} can be used to collect
+	 * NULL. The method {@link #forEach(CoroutineStep, Supplier)} can be used to collect
 	 * the processed values.
 	 *
 	 * @param  rProcessingStep The step to process each value
@@ -77,7 +77,7 @@ public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
 	 */
 	public static <T, R, I extends Collection<T>, C extends Collection<R>> Iteration<T, R,
 																					 I, C>
-	forEach(Step<T, R> rProcessingStep)
+	forEach(CoroutineStep<T, R> rProcessingStep)
 	{
 		return new Iteration<>(rProcessingStep, null);
 	}
@@ -99,7 +99,7 @@ public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
 	 */
 	public static <T, R, I extends Iterable<T>, C extends Collection<R>> Iteration<T, R,
 																				   I, C>
-	forEach(Step<T, R> rProcessingStep, Supplier<C> fCollectionFactory)
+	forEach(CoroutineStep<T, R> rProcessingStep, Supplier<C> fCollectionFactory)
 	{
 		return new Iteration<>(rProcessingStep, fCollectionFactory);
 	}
@@ -111,7 +111,7 @@ public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<I> fPreviousExecution,
-						 Step<C, ?>			  rNextStep,
+						 CoroutineStep<C, ?>			  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		C aResults =
@@ -154,7 +154,7 @@ public class Iteration<T, R, I extends Iterable<T>, C extends Collection<R>>
 	 */
 	private void iterateAsync(Iterator<T>	  rIterator,
 							  C				  rResults,
-							  Step<C, ?>	  rNextStep,
+							  CoroutineStep<C, ?>	  rNextStep,
 							  Continuation<?> rContinuation)
 	{
 		if (rIterator.hasNext())

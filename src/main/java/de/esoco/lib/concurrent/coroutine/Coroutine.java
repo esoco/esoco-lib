@@ -80,7 +80,7 @@ import static org.obrel.type.StandardTypes.NAME;
  *     steps of a coroutine can use the continuation to share state between them
  *     which or deliver complex results which otherwise could be carried through
  *     the input and output values easily.</li>
- *   <li>{@link Step}: This inner class is the base for all steps that can be
+ *   <li>{@link CoroutineStep}: This inner class is the base for all steps that can be
  *     executed in a coroutine. Like the coroutine itself it basically is a
  *     function that receives and input value (and a {@link Continuation}) and
  *     produces a result. There are additional methods to support the
@@ -103,14 +103,14 @@ import static org.obrel.type.StandardTypes.NAME;
  *     suspension to resume the execution when the condition is fulfilled.</li>
  * </ul>
  *
- * <p>A coroutine can either be created by invoking the {@link #Coroutine(Step)
- * constructor} with the first {@link Step} to execute or by invoking the
- * factory method {@link #first(Step)}. The latter allows to declare a coroutine
+ * <p>A coroutine can either be created by invoking the {@link #Coroutine(CoroutineStep)
+ * constructor} with the first {@link CoroutineStep} to execute or by invoking the
+ * factory method {@link #first(CoroutineStep)}. The latter allows to declare a coroutine
  * in a fluent way with better readability. There is a slight limitation caused
- * by the generic type system of Java: if the result of {@link #first(Step)
+ * by the generic type system of Java: if the result of {@link #first(CoroutineStep)
  * first()} is assigned to a variable with a specific input type it may be
  * necessary to declare the input type explicitly in a lambda expression. For
- * example, the following example (using a static import of {@link #first(Step)
+ * example, the following example (using a static import of {@link #first(CoroutineStep)
  * first()}) may cause a compiler error:</p>
  * <code>Coroutine&lt;String, String&gt; toUpper = first(s ->
  * s.toUpperCase());</code>
@@ -121,14 +121,14 @@ import static org.obrel.type.StandardTypes.NAME;
  * s.toUpperCase());</code>
  *
  * <p>After a coroutine has been created it can be extended with additional
- * steps by invoking {@link #then(Step)}. This method takes the next step to be
+ * steps by invoking {@link #then(CoroutineStep)}. This method takes the next step to be
  * executed and <b>returns a new coroutine instance</b>. This means that
  * coroutines are <b>effectively immutable</b>, i.e. they cannot be modified
  * after they have been created. Only new coroutines can be created from them.
  * This allows to build coroutine templates that can be extended by adding
- * additional processing steps without changing them. The {@link #then(Step)
+ * additional processing steps without changing them. The {@link #then(CoroutineStep)
  * then()} methods implement a builder pattern. Together with the {@link
- * #first(Step) first()} method and the builder methods of the step
+ * #first(CoroutineStep) first()} method and the builder methods of the step
  * implementations this forms a set of fluent API methods to create
  * coroutines.</p>
  *
@@ -198,7 +198,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @param rFirstStep The first step to execute
 	 */
-	public Coroutine(Step<I, O> rFirstStep)
+	public Coroutine(CoroutineStep<I, O> rFirstStep)
 	{
 		Objects.requireNonNull(rFirstStep);
 
@@ -225,7 +225,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 * @param rOther    The other coroutine
 	 * @param rNextStep The code to execute after that of the other coroutine
 	 */
-	private <T> Coroutine(Coroutine<I, T> rOther, Step<T, O> rNextStep)
+	private <T> Coroutine(Coroutine<I, T> rOther, CoroutineStep<T, O> rNextStep)
 	{
 		Objects.requireNonNull(rNextStep);
 
@@ -244,7 +244,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @return A new coroutine instance
 	 */
-	public static <I, O> Coroutine<I, O> first(Step<I, O> rStep)
+	public static <I, O> Coroutine<I, O> first(CoroutineStep<I, O> rStep)
 	{
 		return new Coroutine<>(rStep);
 	}
@@ -279,13 +279,13 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @return The new coroutine
 	 */
-	public <T> Coroutine<I, T> then(Step<O, T> rStep)
+	public <T> Coroutine<I, T> then(CoroutineStep<O, T> rStep)
 	{
 		return new Coroutine<>(this, rStep);
 	}
 
 	/***************************************
-	 * A variant of {@link #then(Step)} that also sets a step label. Labeling
+	 * A variant of {@link #then(CoroutineStep)} that also sets a step label. Labeling
 	 * steps is used for branching and can help during the debugging of
 	 * Coroutines.
 	 *
@@ -294,9 +294,9 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @return The new coroutine
 	 *
-	 * @see    #then(Step)
+	 * @see    #then(CoroutineStep)
 	 */
-	public <T> Coroutine<I, T> then(String sStepLabel, Step<O, T> rStep)
+	public <T> Coroutine<I, T> then(String sStepLabel, CoroutineStep<O, T> rStep)
 	{
 		rStep.sLabel = sStepLabel;
 
@@ -401,7 +401,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @author eso
 	 */
-	static class FinishStep<T> extends Step<T, T>
+	static class FinishStep<T> extends CoroutineStep<T, T>
 	{
 		//~ Methods ------------------------------------------------------------
 
@@ -426,12 +426,12 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @author eso
 	 */
-	static class StepChain<I, T, O> extends Step<I, O>
+	static class StepChain<I, T, O> extends CoroutineStep<I, O>
 	{
 		//~ Instance fields ----------------------------------------------------
 
-		Step<I, T> rFirstStep;
-		Step<T, O> rNextStep;
+		CoroutineStep<I, T> rFirstStep;
+		CoroutineStep<T, O> rNextStep;
 
 		//~ Constructors -------------------------------------------------------
 
@@ -441,7 +441,7 @@ public class Coroutine<I, O> extends RelatedObject
 		 * @param rCode The first execution
 		 * @param rNext The second execution
 		 */
-		private StepChain(Step<I, T> rCode, Step<T, O> rNext)
+		private StepChain(CoroutineStep<I, T> rCode, CoroutineStep<T, O> rNext)
 		{
 			this.rFirstStep = rCode;
 			this.rNextStep  = rNext;
@@ -454,7 +454,7 @@ public class Coroutine<I, O> extends RelatedObject
 		 */
 		@Override
 		public void runAsync(CompletableFuture<I> fPreviousExecution,
-							 Step<O, ?>			  rIgnored,
+							 CoroutineStep<O, ?>			  rIgnored,
 							 Continuation<?>	  rContinuation)
 		{
 			if (rContinuation.isCancelled())
@@ -512,7 +512,7 @@ public class Coroutine<I, O> extends RelatedObject
 		 * @return The new invocation
 		 */
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		<R> StepChain<I, T, R> then(Step<O, R> rStep)
+		<R> StepChain<I, T, R> then(CoroutineStep<O, R> rStep)
 		{
 			StepChain<I, T, R> aChainedInvocation =
 				new StepChain<>(rFirstStep, null);
