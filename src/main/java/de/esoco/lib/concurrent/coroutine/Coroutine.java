@@ -252,8 +252,9 @@ public class Coroutine<I, O> extends RelatedObject
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
-	 * Asynchronously runs this coroutine with a NULL input value. This is
-	 * typically used to start coroutines with a Void input type.
+	 * Asynchronously runs this coroutine with a NULL input value in the default
+	 * context. This is typically used to start coroutines with a Void input
+	 * type.
 	 *
 	 * @return A {@link Continuation} that provides access to the execution
 	 *         result
@@ -266,12 +267,12 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * Runs a copy of this coroutine asynchronously in a default context. This
-	 * method can be used if no explicit context is needed for an execution. A
-	 * default context will be created automatically. The returned {@link
-	 * Continuation} provides access to the context and can then be used to
-	 * execute additional coroutines in it if necessary (e.g. for channel-based
-	 * communication between coroutines).
+	 * Runs a copy of this coroutine asynchronously in the {@link
+	 * Coroutines#getDefaultContext() default context}. If the default context
+	 * is NULL a new context instance is used. The returned {@link Continuation}
+	 * provides access to the context and can be used to execute additional
+	 * coroutines in it if necessary (e.g. for channel-based communication
+	 * between coroutines).
 	 *
 	 * <p>If multiple coroutines need to communicate through {@link Channel
 	 * channels} they must run in the same context because channels are managed
@@ -288,7 +289,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	public Continuation<O> runAsync(I rInput)
 	{
-		return runAsync(null, rInput);
+		return runAsync(Coroutines.getDefaultContext(), rInput);
 	}
 
 	/***************************************
@@ -348,8 +349,10 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * Runs a copy of this coroutine on the current thread in a default context
-	 * and returns after the execution finishes.
+	 * Runs a copy of this coroutine on the current thread in the {@link
+	 * Coroutines#getDefaultContext() default context} and returns after the
+	 * execution finishes. If the default context is NULL a new context instance
+	 * is used.
 	 *
 	 * @param  rInput The input value
 	 *
@@ -359,7 +362,7 @@ public class Coroutine<I, O> extends RelatedObject
 	 */
 	public Continuation<O> runBlocking(I rInput)
 	{
-		return runBlocking(null, rInput);
+		return runBlocking(Coroutines.getDefaultContext(), rInput);
 	}
 
 	/***************************************
@@ -372,7 +375,8 @@ public class Coroutine<I, O> extends RelatedObject
 	 * through {@link Channel channels} they must also run in the same context
 	 * (see {@link #runAsync(CoroutineContext, Object)} for details).
 	 *
-	 * @param  rContext The context to run this coroutine in
+	 * @param  rContext The context to run this coroutine in or NULL to use a
+	 *                  new context instance
 	 * @param  rInput   The input value
 	 *
 	 * @return The result of the execution
