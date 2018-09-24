@@ -18,6 +18,8 @@ package de.esoco.lib.concurrent.coroutine;
 
 import de.esoco.lib.concurrent.RunLock;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,10 +28,11 @@ import org.obrel.core.RelatedObject;
 
 
 /********************************************************************
- * A scope that manages running coroutines and blocks the invoking thread until
- * all contained routines have finished execution. This allows to apply
- * "structured concurrency" by wrapping a set of coroutine executions in a
- * scope.
+ * A scope that manages one or more running coroutines. A new scope is created
+ * through the factory method {@link #launch(CoroutineContext, ScopeBuilder)}.
+ * It receives an instance of the functional interface {@link ScopeBuilder} and
+ * blocks the invoking thread until all started coroutines have finished
+ * execution (either successfully or with an exception).
  *
  * @author eso
  */
@@ -39,10 +42,15 @@ public class CoroutineScope extends RelatedObject
 
 	private CoroutineContext rContext;
 
-	private boolean			 bCancelled		    = false;
 	private final AtomicLong nRunningCoroutines = new AtomicLong();
-	private final RunLock    aCoroutineLock     = new RunLock();
+	private final RunLock    aScopeLock		    = new RunLock();
 	private CountDownLatch   aFinishedSignal    = new CountDownLatch(1);
+
+	private boolean bCancelOnError = true;
+	private boolean bCancelled     = false;
+
+	private Collection<Continuation<?>> aFailedContinuations =
+		new LinkedHashSet<>();
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -60,38 +68,58 @@ public class CoroutineScope extends RelatedObject
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * Creates a new scope for the launching of coroutine executions.
+	 * Creates a new scope for the launching of coroutines in the {@link
+	 * Coroutines#getDefaultContext() default context}.
 	 *
 	 * @param  rBuilder The builder to invoke the launching methods
 	 *
 	 * @return The finished scope
+	 *
+	 * @see    #launch(CoroutineContext, ScopeBuilder)
 	 */
-	public static CoroutineScope launch(Builder rBuilder)
+	public static CoroutineScope launch(ScopeBuilder rBuilder)
 	{
 		return launch(null, rBuilder);
 	}
 
 	/***************************************
 	 * Creates a new scope for the launching of coroutine executions in a
-	 * certain context.
+	 * specific context. This method will block the invoking thread until all
+	 * coroutines launched by the argument builder have terminated.
+	 *
+	 * <p>If one or more of the coroutines do not complete successfully by
+	 * throwing an exception this method will also throw a {@link
+	 * CoroutineScopeException} as soon as all other coroutines have terminated.
+	 * By default an error causes all other coroutines to be cancelled but that
+	 * can be changed with {@link #setCancelOnError(boolean)}. If any other
+	 * coroutines fail after the first error their continuations will also be
+	 * added to the exception.</p>
 	 *
 	 * @param  rContext The coroutine context for the scope
-	 * @param  rBuilder The builder to invoke the launching methods
+	 * @param  rBuilder The builder that invokes the launching methods
 	 *
-	 * @return The finished scope
+	 * @return The finished scope, to allow querying state from the executions
+	 *
+	 * @throws CoroutineScopeException If one or more of the executed coroutines
+	 *                                 failed
 	 */
 	public static CoroutineScope launch(
 		CoroutineContext rContext,
-		Builder			 rBuilder)
+		ScopeBuilder	 rBuilder)
 	{
 		CoroutineScope rScope = new CoroutineScope(rContext);
 
 		rScope.getContext().scopeLaunched(rScope);
 
-		rBuilder.build(rScope);
+		rBuilder.buildScope(rScope);
 		rScope.await();
 
 		rScope.getContext().scopeFinished(rScope);
+
+		if (rScope.aFailedContinuations.size() > 0)
+		{
+			throw new CoroutineScopeException(rScope.aFailedContinuations);
+		}
 
 		return rScope;
 	}
@@ -195,6 +223,34 @@ public class CoroutineScope extends RelatedObject
 	}
 
 	/***************************************
+	 * Checks whether the execution of the other coroutines in this scope is
+	 * canceled if an exception occurs in a coroutine. Can be changed with
+	 * {@link #setCancelOnError(boolean)}.
+	 *
+	 * @return TRUE if all coroutines are cancelled if a coroutine fails
+	 */
+	public boolean isCancelOnError()
+	{
+		return bCancelOnError;
+	}
+
+	/***************************************
+	 * Sets the behavior on coroutine errors in the scope. If set to TRUE (which
+	 * is the default) any exception in a coroutine will cancel the execution of
+	 * this scope. If FALSE all other coroutines are allowed to finish execution
+	 * (or fail too) before the scope's execution is finished. In any case the
+	 * scope will throw a {@link CoroutineScopeException} if one or more errors
+	 * occurred.
+	 *
+	 * @param bCancel TRUE to cancel running coroutine if an error occurs; FALSE
+	 *                to let them finish
+	 */
+	public void setCancelOnError(boolean bCancel)
+	{
+		bCancelOnError = bCancel;
+	}
+
+	/***************************************
 	 * Blocks until the coroutines of all {@link CoroutineScope scopes} in this
 	 * context have finished execution. If no coroutines are running or all have
 	 * finished execution already this method returns immediately.
@@ -224,7 +280,7 @@ public class CoroutineScope extends RelatedObject
 	{
 		if (nRunningCoroutines.decrementAndGet() == 0)
 		{
-			aCoroutineLock.runLocked(() -> aFinishedSignal.countDown());
+			aFinishedSignal.countDown();
 		}
 	}
 
@@ -235,36 +291,57 @@ public class CoroutineScope extends RelatedObject
 	 */
 	void coroutineStarted(Continuation<?> rContinuation)
 	{
-		if (nRunningCoroutines.incrementAndGet() == 1)
+		if (nRunningCoroutines.incrementAndGet() == 1 &&
+			aFinishedSignal.getCount() == 0)
 		{
-			aCoroutineLock.runLocked(
-				() ->
+			aFinishedSignal = new CountDownLatch(1);
+		}
+	}
+
+	/***************************************
+	 * Signals this scope that an error occurred during a certain coroutine
+	 * execution. This will cancel the execution of all coroutines in this scope
+	 * and throw a {@link CoroutineScopeException} from the {@link
+	 * #launch(ScopeBuilder)} methods.
+	 *
+	 * @param rContinuation The continuation that failed with an exception
+	 */
+	void fail(Continuation<?> rContinuation)
+	{
+		aScopeLock.runLocked(
+			() ->
 			{
-				if (aFinishedSignal.getCount() == 0)
+				aFailedContinuations.add(rContinuation);
+
+				if (bCancelOnError && !bCancelled)
 				{
-					aFinishedSignal = new CountDownLatch(1);
+					cancel();
 				}
 			});
-		}
 	}
 
 	//~ Inner Interfaces -------------------------------------------------------
 
 	/********************************************************************
-	 * TODO: DOCUMENT ME!
+	 * A functional interface that will be invoked to add coroutine invocations
+	 * when creating a new scope with {@link
+	 * CoroutineScope#launch(ScopeBuilder)}. Typically used in form of a lambda
+	 * expression or method reference.
 	 *
 	 * @author eso
 	 */
 	@FunctionalInterface
-	public interface Builder
+	public interface ScopeBuilder
 	{
 		//~ Methods ------------------------------------------------------------
 
 		/***************************************
-		 * TODO: DOCUMENT ME!
+		 * Builds the {@link Coroutine} invocations in a {@link CoroutineScope}
+		 * by invoking methods like {@link CoroutineScope#async(Coroutine)} on
+		 * the argument scope.
 		 *
-		 * @param rScope TODO: DOCUMENT ME!
+		 * @param rScope The scope to build
 		 */
-		public void build(CoroutineScope rScope);
+		public void buildScope(CoroutineScope rScope);
 	}
 }

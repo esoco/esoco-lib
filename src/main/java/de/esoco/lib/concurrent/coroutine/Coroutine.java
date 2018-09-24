@@ -80,9 +80,9 @@ import static org.obrel.type.StandardTypes.NAME;
  *     steps of a coroutine can use the continuation to share state between them
  *     which or deliver complex results which otherwise could be carried through
  *     the input and output values easily.</li>
- *   <li>{@link CoroutineStep}: This inner class is the base for all steps that can be
- *     executed in a coroutine. Like the coroutine itself it basically is a
- *     function that receives and input value (and a {@link Continuation}) and
+ *   <li>{@link CoroutineStep}: This inner class is the base for all steps that
+ *     can be executed in a coroutine. Like the coroutine itself it basically is
+ *     a function that receives and input value (and a {@link Continuation}) and
  *     produces a result. There are additional methods to support the
  *     asynchronous execution and specialized steps use these to implement
  *     features like suspension in these. Several standard steps are defined in
@@ -103,15 +103,16 @@ import static org.obrel.type.StandardTypes.NAME;
  *     suspension to resume the execution when the condition is fulfilled.</li>
  * </ul>
  *
- * <p>A coroutine can either be created by invoking the {@link #Coroutine(CoroutineStep)
- * constructor} with the first {@link CoroutineStep} to execute or by invoking the
- * factory method {@link #first(CoroutineStep)}. The latter allows to declare a coroutine
- * in a fluent way with better readability. There is a slight limitation caused
- * by the generic type system of Java: if the result of {@link #first(CoroutineStep)
- * first()} is assigned to a variable with a specific input type it may be
- * necessary to declare the input type explicitly in a lambda expression. For
- * example, the following example (using a static import of {@link #first(CoroutineStep)
- * first()}) may cause a compiler error:</p>
+ * <p>A coroutine can either be created by invoking the {@link
+ * #Coroutine(CoroutineStep) constructor} with the first {@link CoroutineStep}
+ * to execute or by invoking the factory method {@link #first(CoroutineStep)}.
+ * The latter allows to declare a coroutine in a fluent way with better
+ * readability. There is a slight limitation caused by the generic type system
+ * of Java: if the result of {@link #first(CoroutineStep) first()} is assigned
+ * to a variable with a specific input type it may be necessary to declare the
+ * input type explicitly in a lambda expression. For example, the following
+ * example (using a static import of {@link #first(CoroutineStep) first()}) may
+ * cause a compiler error:</p>
  * <code>Coroutine&lt;String, String&gt; toUpper = first(s ->
  * s.toUpperCase());</code>
  *
@@ -121,15 +122,15 @@ import static org.obrel.type.StandardTypes.NAME;
  * s.toUpperCase());</code>
  *
  * <p>After a coroutine has been created it can be extended with additional
- * steps by invoking {@link #then(CoroutineStep)}. This method takes the next step to be
- * executed and <b>returns a new coroutine instance</b>. This means that
- * coroutines are <b>effectively immutable</b>, i.e. they cannot be modified
- * after they have been created. Only new coroutines can be created from them.
- * This allows to build coroutine templates that can be extended by adding
- * additional processing steps without changing them. The {@link #then(CoroutineStep)
- * then()} methods implement a builder pattern. Together with the {@link
- * #first(CoroutineStep) first()} method and the builder methods of the step
- * implementations this forms a set of fluent API methods to create
+ * steps by invoking {@link #then(CoroutineStep)}. This method takes the next
+ * step to be executed and <b>returns a new coroutine instance</b>. This means
+ * that coroutines are <b>effectively immutable</b>, i.e. they cannot be
+ * modified after they have been created. Only new coroutines can be created
+ * from them. This allows to build coroutine templates that can be extended by
+ * adding additional processing steps without changing them. The {@link
+ * #then(CoroutineStep) then()} methods implement a builder pattern. Together
+ * with the {@link #first(CoroutineStep) first()} method and the builder methods
+ * of the step implementations this forms a set of fluent API methods to create
  * coroutines.</p>
  *
  * <p>The immutability of coroutines only covers the "explicit" internal state
@@ -225,7 +226,8 @@ public class Coroutine<I, O> extends RelatedObject
 	 * @param rOther    The other coroutine
 	 * @param rNextStep The code to execute after that of the other coroutine
 	 */
-	private <T> Coroutine(Coroutine<I, T> rOther, CoroutineStep<T, O> rNextStep)
+	private <T> Coroutine(Coroutine<I, T>	  rOther,
+						  CoroutineStep<T, O> rNextStep)
 	{
 		Objects.requireNonNull(rNextStep);
 
@@ -285,8 +287,8 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * A variant of {@link #then(CoroutineStep)} that also sets a step label. Labeling
-	 * steps is used for branching and can help during the debugging of
+	 * A variant of {@link #then(CoroutineStep)} that also sets a step label.
+	 * Labeling steps is used for branching and can help during the debugging of
 	 * Coroutines.
 	 *
 	 * @param  sLabel A label that identifies this step in this coroutine
@@ -296,7 +298,9 @@ public class Coroutine<I, O> extends RelatedObject
 	 *
 	 * @see    #then(CoroutineStep)
 	 */
-	public <T> Coroutine<I, T> then(String sStepLabel, CoroutineStep<O, T> rStep)
+	public <T> Coroutine<I, T> then(
+		String				sStepLabel,
+		CoroutineStep<O, T> rStep)
 	{
 		rStep.sLabel = sStepLabel;
 
@@ -454,7 +458,7 @@ public class Coroutine<I, O> extends RelatedObject
 		 */
 		@Override
 		public void runAsync(CompletableFuture<I> fPreviousExecution,
-							 CoroutineStep<O, ?>			  rIgnored,
+							 CoroutineStep<O, ?>  rAlwaysNull,
 							 Continuation<?>	  rContinuation)
 		{
 			if (rContinuation.isCancelled())
@@ -463,14 +467,20 @@ public class Coroutine<I, O> extends RelatedObject
 			}
 			else
 			{
-				// a step chain will always be the second step in the preceding
-				// chain step and therefore the ignored step argument will
-				// always be null; therefore use rNextStep instead which will
-				// either be another chain or the finish step
-				rFirstStep.runAsync(
-					fPreviousExecution,
-					rNextStep,
-					rContinuation);
+				try
+				{
+					// A step chain will always be a second step and is therefore
+					// invoked with a next step argument of NULL. Therefore the next
+					// step of the chain is used here.
+					rFirstStep.runAsync(
+						fPreviousExecution,
+						rNextStep,
+						rContinuation);
+				}
+				catch (Throwable e)
+				{
+					rContinuation.fail(e);
+				}
 			}
 		}
 
@@ -497,9 +507,18 @@ public class Coroutine<I, O> extends RelatedObject
 			}
 			else
 			{
-				return rNextStep.execute(
-					rFirstStep.execute(rInput, rContinuation),
-					rContinuation);
+				try
+				{
+					return rNextStep.execute(
+						rFirstStep.execute(rInput, rContinuation),
+						rContinuation);
+				}
+				catch (Throwable e)
+				{
+					rContinuation.fail(e);
+
+					return null;
+				}
 			}
 		}
 

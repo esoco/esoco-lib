@@ -55,15 +55,15 @@ public class Continuation<T> extends RelatedObject implements Executor,
 
 	private final CoroutineScope  rScope;
 	private final Coroutine<?, T> rCoroutine;
+	private Function<T, ?>		  fRunWhenDone;
 
-	private T	    rResult    = null;
-	private boolean bCancelled = false;
-	private boolean bFinished  = false;
+	private T		  rResult    = null;
+	private boolean   bCancelled = false;
+	private boolean   bFinished  = false;
+	private Throwable eError     = null;
 
 	private final CountDownLatch aFinishSignal		 = new CountDownLatch(1);
 	private final RunLock		 aPostProcessingLock = new RunLock();
-
-	private Function<T, ?> fRunWhenDone;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -136,6 +136,25 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	}
 
 	/***************************************
+	 * Signals that an error occurred during the coroutine execution. This will
+	 * set this continuation to canceled and makes the error exception available
+	 * through {@link #getError()}. It will also invoke {@link
+	 * CoroutineScope#fail(Continuation)} on the scope this continuation runs
+	 * in.
+	 *
+	 * @param eError The exception that caused the error
+	 */
+	public void fail(Throwable eError)
+	{
+		if (!bFinished)
+		{
+			this.eError = eError;
+			cancel(false);
+			rScope.fail(this);
+		}
+	}
+
+	/***************************************
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -198,6 +217,16 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	}
 
 	/***************************************
+	 * Returns the error exception that caused a coroutine cancelation.
+	 *
+	 * @return The error or NULL for none
+	 */
+	public Throwable getError()
+	{
+		return eError;
+	}
+
+	/***************************************
 	 * A variant of {@link #get()} to access the coroutine execution result
 	 * without throwing a checked exception. If an {@link InterruptedException}
 	 * occurs it will be mapped to a {@link CompletionException}.
@@ -232,7 +261,7 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	@Override
 	public boolean isCancelled()
 	{
-		return bCancelled;
+		return bCancelled || rScope.isCancelled();
 	}
 
 	/***************************************
