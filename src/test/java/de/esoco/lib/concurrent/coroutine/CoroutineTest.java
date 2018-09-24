@@ -22,6 +22,7 @@ import de.esoco.lib.concurrent.coroutine.step.Iteration;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import org.junit.Test;
 
@@ -53,28 +54,65 @@ public class CoroutineTest
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
+	 * Test of coroutines with a single step.
+	 */
+	@Test
+	public void testCancelSuspension()
+	{
+		ChannelId<String> ch = stringChannel("TEST_SUSP");
+
+		Coroutine<?, ?> cr = Coroutine.first(receive(ch));
+
+		launch(
+			run ->
+			{
+				// this will block because the channel is never sent to
+				Continuation<?> ca = run.async(cr);
+
+				// cancel the receive
+				run.cancel();
+
+				// await async receive so that states can be checked
+				run.await();
+
+				assertTrue(ca.isCancelled());
+				assertTrue(ca.isFinished());
+
+				try
+				{
+					ca.getResult();
+					fail();
+				}
+				catch (CancellationException e)
+				{
+					// expected
+				}
+			});
+	}
+
+	/***************************************
 	 * Test of asynchronous channel communication.
 	 */
 	@Test
 	public void testChannel()
 	{
+		ChannelId<String> ch = stringChannel("TEST_CH");
+
+		Coroutine<String, String> cs =
+			Coroutine.first(apply((String s) -> s + "test"))
+					 .then(send(ch))
+					 .with(NAME, "Send");
+
+		Coroutine<?, String> cr1 =
+			Coroutine.first(receive(ch))
+					 .with(NAME, "Receive")
+					 .then(apply(s -> s.toUpperCase()));
+		Coroutine<?, String> cr2 =
+			cr1.then(apply((String s) -> s.toLowerCase()));
+
 		launch(
 			run ->
 			{
-				ChannelId<String> ch = stringChannel("TEST");
-
-				Coroutine<String, String> cs =
-					Coroutine.first(apply((String s) -> s + "test"))
-					.then(send(ch))
-					.with(NAME, "Send");
-
-				Coroutine<?, String> cr1 =
-					Coroutine.first(receive(ch))
-					.with(NAME, "Receive")
-					.then(apply(s -> s.toUpperCase()));
-				Coroutine<?, String> cr2 =
-					cr1.then(apply((String s) -> s.toLowerCase()));
-
 				Continuation<String> r1 = run.async(cr1);
 				Continuation<String> r2 = run.async(cr2);
 
@@ -95,10 +133,10 @@ public class CoroutineTest
 				assertTrue(
 					"123test".equalsIgnoreCase(r2v) ||
 					"456test".equalsIgnoreCase(r2v));
-				assertTrue(s1.isDone());
-				assertTrue(s2.isDone());
-				assertTrue(r1.isDone());
-				assertTrue(r2.isDone());
+				assertTrue(s1.isFinished());
+				assertTrue(s2.isFinished());
+				assertTrue(r1.isFinished());
+				assertTrue(r2.isFinished());
 			});
 	}
 
@@ -169,15 +207,15 @@ public class CoroutineTest
 			Coroutine.first(
 				run(() -> { throw new RuntimeException("TEST ERROR"); }));
 
-//		try
-//		{
-//			launch(run -> run.blocking(ce));
-//			fail();
-//		}
-//		catch (CoroutineScopeException e)
-//		{
-//			assertEquals(1, e.getFailedContinuations().size());
-//		}
+		try
+		{
+			launch(run -> run.blocking(ce));
+			fail();
+		}
+		catch (CoroutineScopeException e)
+		{
+			assertEquals(1, e.getFailedContinuations().size());
+		}
 
 		try
 		{
@@ -196,17 +234,17 @@ public class CoroutineTest
 	@Test
 	public void testIteration()
 	{
+		Coroutine<String, List<String>> cr =
+			Coroutine.first(apply((String s) ->
+		 						Arrays.asList(s.split(","))))
+					 .then(
+		 				forEach(
+		 					apply((String s) -> s.toUpperCase()),
+		 					() -> new LinkedList<>()));
+
 		launch(
 			run ->
 			{
-				Coroutine<String, List<String>> cr =
-					Coroutine.first(
-						apply((String s) -> Arrays.asList(s.split(","))))
-					.then(
-						forEach(
-							apply((String s) -> s.toUpperCase()),
-							() -> new LinkedList<>()));
-
 				Continuation<?> ca = run.async(cr, "a,b,c,d");
 				Continuation<?> cb = run.blocking(cr, "a,b,c,d");
 
@@ -221,21 +259,21 @@ public class CoroutineTest
 	@Test
 	public void testMultiStep()
 	{
+		Coroutine<String, Integer> cr =
+			Coroutine.first(apply((String s) -> s + 5))
+					 .then(apply(s -> s.replaceAll("\\D", "")))
+					 .then(apply(s -> Integer.valueOf(s)));
+
 		launch(
 			run ->
 			{
-				Coroutine<String, Integer> cr =
-					Coroutine.first(apply((String s) -> s + 5))
-					.then(apply(s -> s.replaceAll("\\D", "")))
-					.then(apply(s -> Integer.valueOf(s)));
-
 				Continuation<Integer> ca = run.async(cr, "test1234");
 				Continuation<Integer> cb = run.blocking(cr, "test1234");
 
 				assertEquals(Integer.valueOf(12345), ca.getResult());
 				assertEquals(Integer.valueOf(12345), cb.getResult());
-				assertTrue(ca.isDone());
-				assertTrue(cb.isDone());
+				assertTrue(ca.isFinished());
+				assertTrue(cb.isFinished());
 			});
 	}
 
@@ -245,19 +283,19 @@ public class CoroutineTest
 	@Test
 	public void testSingleStep()
 	{
+		Coroutine<String, String> cr =
+			Coroutine.first(apply((String s) -> s.toUpperCase()));
+
 		launch(
 			run ->
 			{
-				Coroutine<String, String> cr =
-					Coroutine.first(apply((String s) -> s.toUpperCase()));
-
 				Continuation<String> ca = run.async(cr, "test");
 				Continuation<String> cb = run.blocking(cr, "test");
 
 				assertEquals("TEST", ca.getResult());
 				assertEquals("TEST", cb.getResult());
-				assertTrue(ca.isDone());
-				assertTrue(cb.isDone());
+				assertTrue(ca.isFinished());
+				assertTrue(cb.isFinished());
 			});
 	}
 
@@ -284,9 +322,9 @@ public class CoroutineTest
 		assertEquals(sTrueResult, cbt.getResult());
 		assertEquals(sFalseResult, caf.getResult());
 		assertEquals(sFalseResult, cbf.getResult());
-		assertTrue(cat.isDone());
-		assertTrue(caf.isDone());
-		assertTrue(cbt.isDone());
-		assertTrue(cbf.isDone());
+		assertTrue(cat.isFinished());
+		assertTrue(caf.isFinished());
+		assertTrue(cbt.isFinished());
+		assertTrue(cbf.isFinished());
 	}
 }

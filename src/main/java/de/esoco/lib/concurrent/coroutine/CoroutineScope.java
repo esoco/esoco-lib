@@ -44,10 +44,12 @@ public class CoroutineScope extends RelatedObject
 
 	private final AtomicLong nRunningCoroutines = new AtomicLong();
 	private final RunLock    aScopeLock		    = new RunLock();
-	private CountDownLatch   aFinishedSignal    = new CountDownLatch(1);
+	private CountDownLatch   aFinishSignal	    = new CountDownLatch(1);
 
 	private boolean bCancelOnError = true;
 	private boolean bCancelled     = false;
+
+	private Collection<Suspension<?>> aSuspensions = new LinkedHashSet<>();
 
 	private Collection<Continuation<?>> aFailedContinuations =
 		new LinkedHashSet<>();
@@ -71,15 +73,13 @@ public class CoroutineScope extends RelatedObject
 	 * Creates a new scope for the launching of coroutines in the {@link
 	 * Coroutines#getDefaultContext() default context}.
 	 *
-	 * @param  rBuilder The builder to invoke the launching methods
+	 * @param rBuilder The builder to invoke the launching methods
 	 *
-	 * @return The finished scope
-	 *
-	 * @see    #launch(CoroutineContext, ScopeBuilder)
+	 * @see   #launch(CoroutineContext, ScopeBuilder)
 	 */
-	public static CoroutineScope launch(ScopeBuilder rBuilder)
+	public static void launch(ScopeBuilder rBuilder)
 	{
-		return launch(null, rBuilder);
+		launch(null, rBuilder);
 	}
 
 	/***************************************
@@ -96,32 +96,26 @@ public class CoroutineScope extends RelatedObject
 	 * added to the exception.</p>
 	 *
 	 * @param  rContext The coroutine context for the scope
-	 * @param  rBuilder The builder that invokes the launching methods
-	 *
-	 * @return The finished scope, to allow querying state from the executions
+	 * @param  rBuilder The builder that starts the coroutines
 	 *
 	 * @throws CoroutineScopeException If one or more of the executed coroutines
 	 *                                 failed
 	 */
-	public static CoroutineScope launch(
-		CoroutineContext rContext,
-		ScopeBuilder	 rBuilder)
+	public static void launch(CoroutineContext rContext, ScopeBuilder rBuilder)
 	{
 		CoroutineScope rScope = new CoroutineScope(rContext);
 
-		rScope.getContext().scopeLaunched(rScope);
+		rScope.context().scopeLaunched(rScope);
 
 		rBuilder.buildScope(rScope);
 		rScope.await();
 
-		rScope.getContext().scopeFinished(rScope);
+		rScope.context().scopeFinished(rScope);
 
 		if (rScope.aFailedContinuations.size() > 0)
 		{
 			throw new CoroutineScopeException(rScope.aFailedContinuations);
 		}
-
-		return rScope;
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -151,6 +145,23 @@ public class CoroutineScope extends RelatedObject
 	public <I, O> Continuation<O> async(Coroutine<I, O> rCoroutine, I rInput)
 	{
 		return rCoroutine.runAsync(this, rInput);
+	}
+
+	/***************************************
+	 * Blocks until the coroutines of all {@link CoroutineScope scopes} in this
+	 * context have finished execution. If no coroutines are running or all have
+	 * finished execution already this method returns immediately.
+	 */
+	public void await()
+	{
+		try
+		{
+			aFinishSignal.await();
+		}
+		catch (InterruptedException e)
+		{
+			throw new CompletionException(e);
+		}
 	}
 
 	/***************************************
@@ -187,7 +198,18 @@ public class CoroutineScope extends RelatedObject
 	 */
 	public void cancel()
 	{
-		bCancelled = true;
+		aScopeLock.runLocked(
+			() ->
+			{
+				bCancelled = true;
+
+				for (Suspension<?> rSuspension : aSuspensions)
+				{
+					rSuspension.cancel();
+				}
+
+				aSuspensions.clear();
+			});
 	}
 
 	/***************************************
@@ -195,7 +217,7 @@ public class CoroutineScope extends RelatedObject
 	 *
 	 * @return The coroutine context
 	 */
-	public CoroutineContext getContext()
+	public CoroutineContext context()
 	{
 		return rContext;
 	}
@@ -215,7 +237,7 @@ public class CoroutineScope extends RelatedObject
 	/***************************************
 	 * Checks whether this scope has been cancelled.
 	 *
-	 * @return The canceled
+	 * @return TRUE if cancelled
 	 */
 	public boolean isCancelled()
 	{
@@ -251,23 +273,24 @@ public class CoroutineScope extends RelatedObject
 	}
 
 	/***************************************
-	 * Blocks until the coroutines of all {@link CoroutineScope scopes} in this
-	 * context have finished execution. If no coroutines are running or all have
-	 * finished execution already this method returns immediately.
+	 * Adds a suspension of a coroutine in this scope.
+	 *
+	 * @param rSuspension The suspension to add
 	 */
-	void await()
+	void addSuspension(Suspension<?> rSuspension)
 	{
-		if (aFinishedSignal != null)
+		aScopeLock.runLocked(
+			() ->
 		{
-			try
+			if (bCancelled)
 			{
-				aFinishedSignal.await();
+				rSuspension.cancel();
 			}
-			catch (InterruptedException e)
+			else
 			{
-				throw new CompletionException(e);
+				aSuspensions.add(rSuspension);
 			}
-		}
+		});
 	}
 
 	/***************************************
@@ -280,7 +303,7 @@ public class CoroutineScope extends RelatedObject
 	{
 		if (nRunningCoroutines.decrementAndGet() == 0)
 		{
-			aFinishedSignal.countDown();
+			aFinishSignal.countDown();
 		}
 	}
 
@@ -292,9 +315,9 @@ public class CoroutineScope extends RelatedObject
 	void coroutineStarted(Continuation<?> rContinuation)
 	{
 		if (nRunningCoroutines.incrementAndGet() == 1 &&
-			aFinishedSignal.getCount() == 0)
+			aFinishSignal.getCount() == 0)
 		{
-			aFinishedSignal = new CountDownLatch(1);
+			aFinishSignal = new CountDownLatch(1);
 		}
 	}
 
@@ -320,6 +343,23 @@ public class CoroutineScope extends RelatedObject
 
 				coroutineFinished(rContinuation);
 			});
+	}
+
+	/***************************************
+	 * Adds a suspension of a coroutine in this scope.
+	 *
+	 * @param rSuspension The suspension to add
+	 */
+	void removeSuspension(Suspension<?> rSuspension)
+	{
+		aScopeLock.runLocked(
+			() ->
+		{
+			if (!bCancelled)
+			{
+				aSuspensions.remove(rSuspension);
+			}
+		});
 	}
 
 	//~ Inner Interfaces -------------------------------------------------------

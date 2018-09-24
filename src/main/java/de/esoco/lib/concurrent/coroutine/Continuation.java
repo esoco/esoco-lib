@@ -24,7 +24,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.obrel.core.RelatedObject;
@@ -48,8 +47,7 @@ import org.obrel.core.RelatedObject;
  *
  * @author eso
  */
-public class Continuation<T> extends RelatedObject implements Executor,
-															  Future<T>
+public class Continuation<T> extends RelatedObject implements Executor
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -103,25 +101,34 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	 * coroutines there is no guarantee as to when the cancellation will occur.
 	 * The bMayInterruptIfRunning parameter is ignored because the thread on
 	 * which the current step is running is not known.
-	 *
-	 * @param  bMayInterruptIfRunning This parameter is ignored
-	 *
-	 * @return TRUE if the execution has been canceled, FALSE if it is already
-	 *         finished (either regularly or by a previous canceling)
 	 */
-	@Override
-	public boolean cancel(boolean bMayInterruptIfRunning)
+	public void cancel()
 	{
 		if (!bFinished)
 		{
 			bCancelled = true;
+			finish(null);
+		}
+	}
 
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+	/***************************************
+	 * Returns the context of the executed coroutine.
+	 *
+	 * @return The coroutine context
+	 */
+	public final CoroutineContext context()
+	{
+		return rScope.context();
+	}
+
+	/***************************************
+	 * Returns the executed coroutine.
+	 *
+	 * @return The coroutine
+	 */
+	public final Coroutine<?, T> coroutine()
+	{
+		return rCoroutine;
 	}
 
 	/***************************************
@@ -132,7 +139,7 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	@Override
 	public void execute(Runnable rCommand)
 	{
-		getContext().getExecutor().execute(rCommand);
+		context().getExecutor().execute(rCommand);
 	}
 
 	/***************************************
@@ -149,41 +156,9 @@ public class Continuation<T> extends RelatedObject implements Executor,
 		if (!bFinished)
 		{
 			this.eError = eError;
-			cancel(false);
+			cancel();
 			rScope.fail(this);
 		}
-	}
-
-	/***************************************
-	 * {@inheritDoc}
-	 */
-	@Override
-	public T get() throws InterruptedException
-	{
-		aFinishSignal.await();
-
-		if (bCancelled)
-		{
-			throw new CancellationException();
-		}
-
-		return rResult;
-	}
-
-	/***************************************
-	 * {@inheritDoc}
-	 */
-	@Override
-	public T get(long rTimeout, TimeUnit eUnit) throws InterruptedException
-	{
-		aFinishSignal.await(rTimeout, eUnit);
-
-		if (bCancelled)
-		{
-			throw new CancellationException();
-		}
-
-		return rResult;
 	}
 
 	/***************************************
@@ -193,27 +168,7 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	 */
 	public final <C> Channel<C> getChannel(ChannelId<C> rId)
 	{
-		return getContext().getChannel(rId);
-	}
-
-	/***************************************
-	 * Returns the context of the executed coroutine.
-	 *
-	 * @return The coroutine context
-	 */
-	public final CoroutineContext getContext()
-	{
-		return rScope.getContext();
-	}
-
-	/***************************************
-	 * Returns the executed coroutine.
-	 *
-	 * @return The coroutine
-	 */
-	public final Coroutine<?, T> getCoroutine()
-	{
-		return rCoroutine;
+		return context().getChannel(rId);
 	}
 
 	/***************************************
@@ -228,8 +183,8 @@ public class Continuation<T> extends RelatedObject implements Executor,
 
 	/***************************************
 	 * A variant of {@link #get()} to access the coroutine execution result
-	 * without throwing a checked exception. If an {@link InterruptedException}
-	 * occurs it will be mapped to a {@link CompletionException}.
+	 * without throwing a checked exception. If this continuation has been
+	 * cancelled a {@link CancellationException} will be thrown.
 	 *
 	 * @return The result
 	 */
@@ -237,7 +192,14 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	{
 		try
 		{
-			return get();
+			aFinishSignal.await();
+
+			if (bCancelled)
+			{
+				throw new CancellationException();
+			}
+
+			return rResult;
 		}
 		catch (InterruptedException e)
 		{
@@ -246,19 +208,8 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	}
 
 	/***************************************
-	 * Returns the scope in which the coroutine is executed.
-	 *
-	 * @return The coroutine scope
-	 */
-	public final CoroutineScope getScope()
-	{
-		return rScope;
-	}
-
-	/***************************************
 	 * {@inheritDoc}
 	 */
-	@Override
 	public boolean isCancelled()
 	{
 		return bCancelled || rScope.isCancelled();
@@ -267,10 +218,19 @@ public class Continuation<T> extends RelatedObject implements Executor,
 	/***************************************
 	 * {@inheritDoc}
 	 */
-	@Override
-	public boolean isDone()
+	public boolean isFinished()
 	{
 		return bFinished;
+	}
+
+	/***************************************
+	 * Returns the scope in which the coroutine is executed.
+	 *
+	 * @return The coroutine scope
+	 */
+	public final CoroutineScope scope()
+	{
+		return rScope;
 	}
 
 	/***************************************

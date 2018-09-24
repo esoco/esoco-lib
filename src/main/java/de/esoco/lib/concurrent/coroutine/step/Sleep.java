@@ -121,7 +121,7 @@ public class Sleep<T> extends CoroutineStep<T, T>
 		fPreviousExecution.thenAcceptAsync(
 			i ->
 		{
-			rContinuation.getContext()
+			rContinuation.context()
 			.getScheduler()
 			.schedule(() -> rSuspension.resume(i), nDuration, eTimeUnit);
 		},

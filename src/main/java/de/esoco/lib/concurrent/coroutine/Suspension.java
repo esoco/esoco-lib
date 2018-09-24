@@ -29,9 +29,9 @@ public class Suspension<T>
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private final T				  rInput;
-	private final CoroutineStep<T, ?>	  rStep;
-	private final Continuation<?> rContinuation;
+	private final T					  rInput;
+	private final CoroutineStep<T, ?> rStep;
+	private final Continuation<?>     rContinuation;
 
 	//~ Constructors -----------------------------------------------------------
 
@@ -48,14 +48,27 @@ public class Suspension<T>
 	 * @param rStep         The coroutine step to be invoked when resuming
 	 * @param rContinuation The continuation of the execution
 	 */
-	public Suspension(T rInput, CoroutineStep<T, ?> rStep, Continuation<?> rContinuation)
+	public Suspension(T					  rInput,
+					  CoroutineStep<T, ?> rStep,
+					  Continuation<?>	  rContinuation)
 	{
 		this.rInput		   = rInput;
 		this.rStep		   = rStep;
 		this.rContinuation = rContinuation;
+
+		rContinuation.scope().addSuspension(this);
 	}
 
 	//~ Methods ----------------------------------------------------------------
+
+	/***************************************
+	 * Cancels this suspension by canceling the continuation. Resuming a
+	 * cancelled suspension will be ignored.
+	 */
+	public void cancel()
+	{
+		rContinuation.cancel();
+	}
 
 	/***************************************
 	 * Returns the continuation of the suspended coroutine.
@@ -68,7 +81,7 @@ public class Suspension<T>
 	}
 
 	/***************************************
-	 * Returns the input value of the curr.
+	 * Returns the input value.
 	 *
 	 * @return The input
 	 */
@@ -89,22 +102,26 @@ public class Suspension<T>
 	}
 
 	/***************************************
-	 * Resumes the execution of the suspended coroutine with an explicit input
-	 * value. The default implementation invokes the method {@link
-	 * CoroutineStep#runAsync(CompletableFuture, CoroutineStep, Continuation)} in a new {@link
-	 * CompletableFuture} that is executed in the executor of the continuation.
+	 * Asynchronously resumes the execution of the suspended coroutine with an
+	 * explicit input value unless the coroutine has been cancelled by a call to
+	 * {@link #cancel()}.
 	 *
 	 * @param rStepInput The input value to the step
 	 */
 	public void resume(T rStepInput)
 	{
-		CompletableFuture<T> fResume =
-			CompletableFuture.supplyAsync(() -> rStepInput, rContinuation);
+		if (!rContinuation.isCancelled())
+		{
+			CompletableFuture<T> fResume =
+				CompletableFuture.supplyAsync(() -> rStepInput, rContinuation);
 
-		// the resume step is always either a StepChain which contains it's own
-		// next step or the final step in a coroutine and therefore rNextStep
-		// can be NULL
-		rStep.runAsync(fResume, null, rContinuation);
+			// the resume step is always either a StepChain which contains it's own
+			// next step or the final step in a coroutine and therefore rNextStep
+			// can be NULL
+			rStep.runAsync(fResume, null, rContinuation);
+		}
+
+		rContinuation.scope().removeSuspension(this);
 	}
 
 	/***************************************

@@ -461,11 +461,7 @@ public class Coroutine<I, O> extends RelatedObject
 							 CoroutineStep<O, ?>  rAlwaysNull,
 							 Continuation<?>	  rContinuation)
 		{
-			if (rContinuation.isCancelled())
-			{
-				rContinuation.finish(null);
-			}
-			else
+			if (!rContinuation.isCancelled())
 			{
 				try
 				{
@@ -501,8 +497,6 @@ public class Coroutine<I, O> extends RelatedObject
 		{
 			if (rContinuation.isCancelled())
 			{
-				rContinuation.finish(null);
-
 				return null;
 			}
 			else
