@@ -52,8 +52,8 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 * @param rRunIfFalse The step to run if the condition is FALSE
 	 */
 	public Condition(BiPredicate<? super I, Continuation<?>> fCondition,
-					 CoroutineStep<I, O>								 rRunIfTrue,
-					 CoroutineStep<I, O>								 rRunIfFalse)
+					 CoroutineStep<I, O>					 rRunIfTrue,
+					 CoroutineStep<I, O>					 rRunIfFalse)
 	{
 		Objects.requireNonNull(fCondition);
 		Objects.requireNonNull(rRunIfTrue);
@@ -69,9 +69,9 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 * Tests a logical condition and executes a certain step if the condition is
 	 * TRUE. To create a condition that also runs a step if the condition is
 	 * FALSE either a subsequent call to {@link #orElse(CoroutineStep)} or the
-	 * alternative method {@link #doIfElse(Predicate, CoroutineStep, CoroutineStep)}can be used.
-	 * If no 'else' step is set the coroutine will terminate if the condition is
-	 * not met.
+	 * alternative method {@link #doIfElse(Predicate, CoroutineStep,
+	 * CoroutineStep)}can be used. If no 'else' step is set the coroutine will
+	 * terminate if the condition is not met.
 	 *
 	 * <p>This variant expects a unary predicate that only receives the input
 	 * value. If the {@link Continuation} needs to be tested too the method
@@ -84,7 +84,7 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 */
 	public static <I, O> Condition<I, O> doIf(
 		Predicate<? super I> fCondition,
-		CoroutineStep<I, O>			 rRunIfTrue)
+		CoroutineStep<I, O>  rRunIfTrue)
 	{
 		return new Condition<>((i, c) -> fCondition.test(i), rRunIfTrue, null);
 	}
@@ -93,9 +93,9 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 * Tests a logical condition and executes a certain step if the condition is
 	 * TRUE. To create a condition that also runs a step if the condition is
 	 * FALSE either a subsequent call to {@link #orElse(CoroutineStep)} or the
-	 * alternative method {@link #doIfElse(Predicate, CoroutineStep, CoroutineStep)}can be used.
-	 * If no 'else' step is set the coroutine will terminate if the condition is
-	 * not met.
+	 * alternative method {@link #doIfElse(Predicate, CoroutineStep,
+	 * CoroutineStep)}can be used. If no 'else' step is set the coroutine will
+	 * terminate if the condition is not met.
 	 *
 	 * <p>This variant expects a binary predicate that also receives the current
 	 * {@link Continuation}. If a test of the input value is sufficient the
@@ -108,7 +108,7 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 */
 	public static <I, O> Condition<I, O> doIf(
 		BiPredicate<? super I, Continuation<?>> fCondition,
-		CoroutineStep<I, O>								rRunIfTrue)
+		CoroutineStep<I, O>						rRunIfTrue)
 	{
 		return new Condition<>(fCondition, rRunIfTrue, null);
 	}
@@ -116,12 +116,13 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	/***************************************
 	 * Tests a logical condition and executes certain steps if the condition is
 	 * either TRUE or FALSE. A semantic alternative is the factory method {@link
-	 * #doIf(BiPredicate, CoroutineStep)} in conjunction with the instance method {@link
-	 * #orElse(CoroutineStep)}.
+	 * #doIf(BiPredicate, CoroutineStep)} in conjunction with the instance
+	 * method {@link #orElse(CoroutineStep)}.
 	 *
 	 * <p>This variant expects a binary predicate that also receives the current
 	 * {@link Continuation}. If a test of the input value is sufficient the
-	 * method {@link #doIfElse(Predicate, CoroutineStep, CoroutineStep)} can be used instead.</p>
+	 * method {@link #doIfElse(Predicate, CoroutineStep, CoroutineStep)} can be
+	 * used instead.</p>
 	 *
 	 * @param  fCondition  The condition to test
 	 * @param  rRunIfTrue  The step to run if the condition is TRUE
@@ -131,8 +132,8 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 */
 	public static <I, O> Condition<I, O> doIfElse(
 		BiPredicate<? super I, Continuation<?>> fCondition,
-		CoroutineStep<I, O>								rRunIfTrue,
-		CoroutineStep<I, O>								rRunIfFalse)
+		CoroutineStep<I, O>						rRunIfTrue,
+		CoroutineStep<I, O>						rRunIfFalse)
 	{
 		return new Condition<>(fCondition, rRunIfTrue, rRunIfFalse);
 	}
@@ -140,8 +141,8 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	/***************************************
 	 * Tests a logical condition and executes certain steps if the condition is
 	 * either TRUE or FALSE. A semantic alternative is the factory method {@link
-	 * #doIf(BiPredicate, CoroutineStep)} in conjunction with the instance method {@link
-	 * #orElse(CoroutineStep)}.
+	 * #doIf(BiPredicate, CoroutineStep)} in conjunction with the instance
+	 * method {@link #orElse(CoroutineStep)}.
 	 *
 	 * <p>This variant expects a unary predicate that only receives the input
 	 * value. If the {@link Continuation} needs to be tested too the method
@@ -155,8 +156,8 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 */
 	public static <I, O> Condition<I, O> doIfElse(
 		Predicate<? super I> fCondition,
-		CoroutineStep<I, O>			 rRunIfTrue,
-		CoroutineStep<I, O>			 rRunIfFalse)
+		CoroutineStep<I, O>  rRunIfTrue,
+		CoroutineStep<I, O>  rRunIfFalse)
 	{
 		return new Condition<>(
 			(i, c) -> fCondition.test(i),
@@ -169,7 +170,8 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	/***************************************
 	 * Returns a new instance with the condition and TRUE step of this and a
 	 * certain step to execute if the condition is FALSE. This is just a
-	 * semantic alternative to {@link #doIfElse(BiPredicate, CoroutineStep, CoroutineStep)}.
+	 * semantic alternative to {@link #doIfElse(BiPredicate, CoroutineStep,
+	 * CoroutineStep)}.
 	 *
 	 * @param  rRunIfFalse The step to run if the condition is FALSE
 	 *
@@ -185,7 +187,7 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<I> fPreviousExecution,
-						 CoroutineStep<O, ?>			  rNextStep,
+						 CoroutineStep<O, ?>  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		fPreviousExecution.thenAcceptAsync(
@@ -197,6 +199,7 @@ public class Condition<I, O> extends CoroutineStep<I, O>
 
 				if (rStep != null)
 				{
+					// forward to rStep which handles future chaining and errors
 					rStep.runAsync(fPreviousExecution, rNextStep, rContinuation);
 				}
 				else

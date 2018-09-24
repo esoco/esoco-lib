@@ -26,8 +26,8 @@ import java.util.concurrent.CompletableFuture;
  * steps it is sufficient to implement the single abstract method {@link
  * #execute(Object, Continuation)} which must perform the actual code execution.
  * The default implementations of {@link #runBlocking(Object, Continuation)} and
- * {@link #runAsync(CompletableFuture, CoroutineStep, Continuation)} then invoke this
- * method as needed.
+ * {@link #runAsync(CompletableFuture, CoroutineStep, Continuation)} then invoke
+ * this method as needed.
  *
  * <p>In most cases it is not necessary to subclass this class because the
  * 'step' sub-package already contains implementations of commons steps. For
@@ -37,11 +37,11 @@ import java.util.concurrent.CompletableFuture;
  * <p>Creating a new step subclass is only needed to implement advanced
  * coroutine suspensions that are not already provided by existing steps. In
  * such a case it is typically also necessary to override the method {@link
- * #runAsync(CompletableFuture, CoroutineStep, Continuation)} to check for the suspension
- * condition. If a suspension is necessary a {@link Suspension} object can be
- * created by invoking a {@link #suspend(Object, Continuation)} method. The
- * object can then be used by code that waits for some external condition to
- * resume the coroutine when appropriate.</p>
+ * #runAsync(CompletableFuture, CoroutineStep, Continuation)} to check for the
+ * suspension condition. If a suspension is necessary a {@link Suspension}
+ * object can be created by invoking a {@link #suspend(Object, Continuation)}
+ * method. The object can then be used by code that waits for some external
+ * condition to resume the coroutine when appropriate.</p>
  *
  * <p>It is recommended that a step implementation provides one or more static
  * factory methods alongside the constructor(s). These factory methods can then
@@ -87,12 +87,15 @@ public abstract class CoroutineStep<I, O>
 	 * to override this method and call {@link #resume(Object, Continuation)} on
 	 * the next step if the suspension ends.</p>
 	 *
+	 * <p>Subclasses that override this method also need to handle errors by
+	 * forwarding any exceptions to {@link Continuation#fail(Throwable)}.</p>
+	 *
 	 * @param fPreviousExecution The future of the previous code execution
 	 * @param rNextStep          The next step to execute or NULL for none
 	 * @param rContinuation      The continuation of the execution
 	 */
 	public void runAsync(CompletableFuture<I> fPreviousExecution,
-						 CoroutineStep<O, ?>			  rNextStep,
+						 CoroutineStep<O, ?>  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		CompletableFuture<O> fExecution =
@@ -106,6 +109,11 @@ public abstract class CoroutineStep<I, O>
 			// next step or the final step in a coroutine and therefore the
 			// rNextStep argument can be NULL
 			rNextStep.runAsync(fExecution, null, rContinuation);
+		}
+		else
+		{
+			// only add exception handler to the end of a chain, i.e. next == null
+			fExecution.exceptionally(e -> fail(e, rContinuation));
 		}
 	}
 
@@ -175,6 +183,25 @@ public abstract class CoroutineStep<I, O>
 	 * @return The result of the execution
 	 */
 	protected abstract O execute(I rInput, Continuation<?> rContinuation);
+
+	/***************************************
+	 * Signals an execution failure to the given continuation. This method
+	 * should be invoked by subclasses the encounter an exception during
+	 * execution. The return value is always NULL but the method signature is
+	 * suitable to be used for invocation in a lambda expression as the argument
+	 * to {@link CompletableFuture#exceptionally(java.util.function.Function)}.
+	 *
+	 * @param  eError        The exception that occurred
+	 * @param  rContinuation The continuation
+	 *
+	 * @return Always NULL, but with the type of the coroutine result
+	 */
+	protected O fail(Throwable eError, Continuation<?> rContinuation)
+	{
+		rContinuation.fail(eError);
+
+		return null;
+	}
 
 	/***************************************
 	 * Allows subclasses to regularly terminate the coroutine that is executed

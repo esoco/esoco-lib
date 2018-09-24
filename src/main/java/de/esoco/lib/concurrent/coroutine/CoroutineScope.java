@@ -317,6 +317,8 @@ public class CoroutineScope extends RelatedObject
 				{
 					cancel();
 				}
+
+				coroutineFinished(rContinuation);
 			});
 	}
 

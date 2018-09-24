@@ -30,6 +30,7 @@ import static de.esoco.lib.concurrent.coroutine.CoroutineScope.launch;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelReceive.receive;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelSend.send;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.apply;
+import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.run;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.supply;
 import static de.esoco.lib.concurrent.coroutine.step.Condition.doIf;
 import static de.esoco.lib.concurrent.coroutine.step.Condition.doIfElse;
@@ -37,6 +38,7 @@ import static de.esoco.lib.concurrent.coroutine.step.Iteration.forEach;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import static org.obrel.type.StandardTypes.NAME;
 
@@ -155,6 +157,37 @@ public class CoroutineTest
 					run,
 					Coroutine.first(doIf(b -> b, supply(() -> "true"))));
 			});
+	}
+
+	/***************************************
+	 * Test of coroutine error handling.
+	 */
+	@Test
+	public void testErrorHandling()
+	{
+		Coroutine<?, ?> ce =
+			Coroutine.first(
+				run(() -> { throw new RuntimeException("TEST ERROR"); }));
+
+//		try
+//		{
+//			launch(run -> run.blocking(ce));
+//			fail();
+//		}
+//		catch (CoroutineScopeException e)
+//		{
+//			assertEquals(1, e.getFailedContinuations().size());
+//		}
+
+		try
+		{
+			launch(run -> run.async(ce));
+			fail();
+		}
+		catch (CoroutineScopeException e)
+		{
+			assertEquals(1, e.getFailedContinuations().size());
+		}
 	}
 
 	/***************************************

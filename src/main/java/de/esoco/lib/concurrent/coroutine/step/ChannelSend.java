@@ -74,7 +74,7 @@ public class ChannelSend<T> extends CoroutineStep<T, T>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<T> fPreviousExecution,
-						 CoroutineStep<T, ?>			  rNextStep,
+						 CoroutineStep<T, ?>  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		fPreviousExecution.thenAcceptAsync(

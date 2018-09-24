@@ -75,7 +75,7 @@ public class ChannelReceive<I, O> extends CoroutineStep<I, O>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<I> fPreviousExecution,
-						 CoroutineStep<O, ?>			  rNextStep,
+						 CoroutineStep<O, ?>  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
 		fPreviousExecution.thenAcceptAsync(

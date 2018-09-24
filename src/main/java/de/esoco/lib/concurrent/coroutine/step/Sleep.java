@@ -19,6 +19,7 @@ package de.esoco.lib.concurrent.coroutine.step;
 import de.esoco.lib.concurrent.coroutine.Continuation;
 import de.esoco.lib.concurrent.coroutine.Coroutine;
 import de.esoco.lib.concurrent.coroutine.CoroutineStep;
+import de.esoco.lib.concurrent.coroutine.Suspension;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -112,19 +113,18 @@ public class Sleep<T> extends CoroutineStep<T, T>
 	 */
 	@Override
 	public void runAsync(CompletableFuture<T> fPreviousExecution,
-						 CoroutineStep<T, ?>			  rNextStep,
+						 CoroutineStep<T, ?>  rNextStep,
 						 Continuation<?>	  rContinuation)
 	{
+		Suspension<T> rSuspension = rNextStep.suspend(rContinuation);
+
 		fPreviousExecution.thenAcceptAsync(
 			i ->
-			{
-				rContinuation.getContext()
-				.getScheduler()
-				.schedule(
-					() -> rNextStep.suspend(rContinuation).resume(i),
-					nDuration,
-					eTimeUnit);
-			},
-			rContinuation);
+		{
+			rContinuation.getContext()
+			.getScheduler()
+			.schedule(() -> rSuspension.resume(i), nDuration, eTimeUnit);
+		},
+		rContinuation);
 	}
 }

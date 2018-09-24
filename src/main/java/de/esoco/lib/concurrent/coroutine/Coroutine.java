@@ -515,9 +515,7 @@ public class Coroutine<I, O> extends RelatedObject
 				}
 				catch (Throwable e)
 				{
-					rContinuation.fail(e);
-
-					return null;
+					return fail(e, rContinuation);
 				}
 			}
 		}
