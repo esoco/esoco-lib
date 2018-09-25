@@ -103,20 +103,3 @@ bintray {
 	    }
     }
 }
-
-task buildSyncServiceTool(type: Jar) {
-    archiveName = 'mss.jar'
-
-    manifest {
-        attributes 'Main-Class': 'de.esoco.lib.service.ModificationSyncServiceTool',
-                   'Implementation-Title': 'ModificationSyncService Command Line Tool',
-	        	   'Implementation-Version': project.version,
-	               'Built-Date': new Date(),
-                   'Built-JDK': System.getProperty('java.version')
-    }
-
-	from { configurations.compile.collect
-		{ it.isDirectory() ? it : zipTree(it) }
-	}
-    with jar
-}
