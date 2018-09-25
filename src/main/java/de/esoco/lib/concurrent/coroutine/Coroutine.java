@@ -34,11 +34,11 @@ import static org.obrel.type.StandardTypes.NAME;
 /********************************************************************
  * A pure Java implementation of cooperative concurrency, also known as
  * coroutines. Coroutines implement lightweight multiprocessing, where all
- * running coroutines share the available execution threads, yielding on each
- * processing steps to give other coroutines the chance to execute. Furthermore
- * coroutines can suspend their execution when waiting for other coroutines or
- * external resources (e.g. data to be sent or received), giving other code the
- * chance to use the available threads.
+ * running coroutines share the available execution threads, shortly suspending
+ * execution between processing steps to give other coroutines the chance to
+ * execute. Furthermore coroutines can suspend their execution indefinitely when
+ * waiting for other coroutines or external resources (e.g. data to be sent or
+ * received), giving other code the chance to use the available threads.
  *
  * <p>To achieve this functionality, the implementation makes use of modern Java
  * features that are available since Java 8. The execution of coroutine steps is
@@ -110,16 +110,16 @@ import static org.obrel.type.StandardTypes.NAME;
  * readability. There is a slight limitation caused by the generic type system
  * of Java: if the result of {@link #first(CoroutineStep) first()} is assigned
  * to a variable with a specific input type it may be necessary to declare the
- * input type explicitly in a lambda expression. For example, the following
- * example (using a static import of {@link #first(CoroutineStep) first()}) may
- * cause a compiler error:</p>
- * <code>Coroutine&lt;String, String&gt; toUpper = first(s ->
- * s.toUpperCase());</code>
+ * input type explicitly in the parameters of a lambda expression. For example,
+ * the following example (using a static import of {@link #first(CoroutineStep)
+ * first()}) may cause a compiler error:</p>
+ * <code>Coroutine&lt;String, String&gt; toUpper = first(apply(s ->
+ * s.toUpperCase()));</code>
  *
  * <p>To make the code compile, the type of the lambda argument needs to be
  * declared explicitly:</p>
- * <code>Coroutine&lt;String, String&gt; toUpper = first((String s) ->
- * s.toUpperCase());</code>
+ * <code>Coroutine&lt;String, String&gt; toUpper = first(apply((String s) ->
+ * s.toUpperCase()));</code>
  *
  * <p>After a coroutine has been created it can be extended with additional
  * steps by invoking {@link #then(CoroutineStep)}. This method takes the next
@@ -184,10 +184,6 @@ import static org.obrel.type.StandardTypes.NAME;
 public class Coroutine<I, O> extends RelatedObject
 	implements FluentRelatable<Coroutine<I, O>>
 {
-	//~ Static fields/initializers ---------------------------------------------
-
-	private static int nNextCoroutineId = 1;
-
 	//~ Instance fields --------------------------------------------------------
 
 	private StepChain<I, ?, O> aCode;
@@ -207,6 +203,13 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
+	 * Creates a new uninitialized instance.
+	 */
+	Coroutine()
+	{
+	}
+
+	/***************************************
 	 * Copies a coroutine for execution.
 	 *
 	 * @param rOther The coroutine to copy the definition from
@@ -215,8 +218,6 @@ public class Coroutine<I, O> extends RelatedObject
 	{
 		init(rOther.aCode);
 		ObjectRelations.copyRelations(rOther, this, true);
-
-		set(NAME, get(NAME) + "-" + nNextCoroutineId++);
 	}
 
 	/***************************************
@@ -287,11 +288,10 @@ public class Coroutine<I, O> extends RelatedObject
 	}
 
 	/***************************************
-	 * A variant of {@link #then(CoroutineStep)} that also sets a step label.
-	 * Labeling steps is used for branching and can help during the debugging of
-	 * Coroutines.
+	 * A variant of {@link #then(CoroutineStep)} that also sets an explicit step
+	 * name. Naming steps can help debugging coroutines.
 	 *
-	 * @param  sLabel A label that identifies this step in this coroutine
+	 * @param  sLabel A name that identifies this step in this coroutine
 	 * @param  rStep  The step to execute
 	 *
 	 * @return The new coroutine
@@ -302,7 +302,7 @@ public class Coroutine<I, O> extends RelatedObject
 		String				sStepLabel,
 		CoroutineStep<O, T> rStep)
 	{
-		rStep.sLabel = sStepLabel;
+		rStep.sName = sStepLabel;
 
 		return then(rStep);
 	}
@@ -314,6 +314,28 @@ public class Coroutine<I, O> extends RelatedObject
 	public String toString()
 	{
 		return String.format("%s[%s]", get(NAME), aCode);
+	}
+
+	/***************************************
+	 * Returns the code.
+	 *
+	 * @return The code
+	 */
+	StepChain<I, ?, O> getCode()
+	{
+		return aCode;
+	}
+
+	/***************************************
+	 * Initializes a new instance. Invoked from the constructors.
+	 *
+	 * @param rCode The code to be executed
+	 */
+	void init(StepChain<I, ?, O> rCode)
+	{
+		aCode = rCode;
+
+		set(NAME, getClass().getSimpleName());
 	}
 
 	/***************************************
@@ -382,26 +404,68 @@ public class Coroutine<I, O> extends RelatedObject
 		return aContinuation;
 	}
 
-	/***************************************
-	 * Initializes a new instance. Invoked from the constructors.
-	 *
-	 * @param rCode The code to be executed
-	 */
-	private void init(StepChain<I, ?, O> rCode)
-	{
-		aCode = rCode;
-
-		set(NAME, getClass().getSimpleName());
-	}
-
 	//~ Inner Classes ----------------------------------------------------------
+
+	/********************************************************************
+	 * A coroutine subclass for the invocation of coroutines as subroutines in
+	 * the context of another execution.
+	 *
+	 * @author eso
+	 */
+	public static class Subroutine<I, T, O> extends Coroutine<I, O>
+	{
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Creates a new instance that invokes another coroutine as a subroutine
+		 * and then returns the control flow to another step.
+		 *
+		 * @param rCoroutine  The coroutine to invoke as a subroutine
+		 * @param rReturnStep The step to return to after the subroutine
+		 *                    execution
+		 */
+		public Subroutine(
+			Coroutine<I, T>		rCoroutine,
+			CoroutineStep<T, O> rReturnStep)
+		{
+			init(
+				rCoroutine.aCode.withLastStep(
+					new SubroutineReturn<>(rReturnStep)));
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * Executes this subroutine asynchronously in the given future and
+		 * continuation.
+		 *
+		 * @param fExecution    The execution future
+		 * @param rContinuation The continuation of the execution
+		 */
+		public void runAsync(
+			CompletableFuture<I> fExecution,
+			Continuation<?>		 rContinuation)
+		{
+			getCode().runAsync(fExecution, null, rContinuation);
+		}
+
+		/***************************************
+		 * Executes this subroutine synchronously in the given continuation.
+		 *
+		 * @param  rInput        The input value
+		 * @param  rContinuation The continuation of the execution
+		 *
+		 * @return The result of the execution
+		 */
+		public O runBlocking(I rInput, Continuation<?> rContinuation)
+		{
+			return getCode().runBlocking(rInput, rContinuation);
+		}
+	}
 
 	/********************************************************************
 	 * The final step of a coroutine execution that updates the state of the
 	 * corresponding {@link Continuation}.
-	 *
-	 * @param  rResult       The result of the execution
-	 * @param  rContinuation The continuation of the execution
 	 *
 	 * @author eso
 	 */
@@ -515,8 +579,8 @@ public class Coroutine<I, O> extends RelatedObject
 		}
 
 		/***************************************
-		 * Returns a new {@link StepChain} that invokes a certain step as the
-		 * last step of the execution chain.
+		 * Returns an extended {@link StepChain} that invokes a certain step at
+		 * the end.
 		 *
 		 * @param  rStep rStep The next step to invoke
 		 *
@@ -545,6 +609,84 @@ public class Coroutine<I, O> extends RelatedObject
 			}
 
 			return aChainedInvocation;
+		}
+
+		/***************************************
+		 * Returns a copy of this {@link StepChain} with the last (finish) step
+		 * replaced with the argument step.
+		 *
+		 * @param  rStep rStep The last step to invoke
+		 *
+		 * @return The new invocation
+		 */
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		<R> StepChain<I, T, R> withLastStep(CoroutineStep<?, R> rStep)
+		{
+			StepChain<I, T, R> aChainedInvocation =
+				new StepChain<>(rFirstStep, null);
+
+			if (rNextStep instanceof StepChain)
+			{
+				// Chains need to be accessed as raw types because the
+				// intermediate type of the chain in rNextStep is unknown
+				aChainedInvocation.rNextStep =
+					((StepChain) rNextStep).then(rStep);
+			}
+			else
+			{
+				// step needs to be cast because the actual types at the end of
+				// the chain are not known here
+				aChainedInvocation.rNextStep = (CoroutineStep<T, R>) rStep;
+			}
+
+			return aChainedInvocation;
+		}
+	}
+
+	/********************************************************************
+	 * The final step of a coroutine execution inside another coroutine.
+	 *
+	 * @author eso
+	 */
+	static class SubroutineReturn<I, O> extends CoroutineStep<I, O>
+	{
+		//~ Instance fields ----------------------------------------------------
+
+		private CoroutineStep<I, O> rReturnStep;
+
+		//~ Constructors -------------------------------------------------------
+
+		/***************************************
+		 * Sets the return step.
+		 *
+		 * @param rReturnStep The new return step
+		 */
+		public SubroutineReturn(CoroutineStep<I, O> rReturnStep)
+		{
+			this.rReturnStep = rReturnStep;
+		}
+
+		//~ Methods ------------------------------------------------------------
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		public void runAsync(CompletableFuture<I> fPreviousExecution,
+							 CoroutineStep<O, ?>  rNextStep,
+							 Continuation<?>	  rContinuation)
+		{
+			rReturnStep.runAsync(fPreviousExecution, rNextStep, rContinuation);
+		}
+
+		/***************************************
+		 * {@inheritDoc}
+		 */
+		@Override
+		@SuppressWarnings("unchecked")
+		protected O execute(I rResult, Continuation<?> rContinuation)
+		{
+			return rReturnStep.execute(rResult, rContinuation);
 		}
 	}
 }

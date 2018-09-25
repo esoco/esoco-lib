@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import static de.esoco.lib.concurrent.coroutine.ChannelId.stringChannel;
 import static de.esoco.lib.concurrent.coroutine.CoroutineScope.launch;
+import static de.esoco.lib.concurrent.coroutine.step.CallSubroutine.call;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelReceive.receive;
 import static de.esoco.lib.concurrent.coroutine.step.ChannelSend.send;
 import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.apply;
@@ -51,6 +52,13 @@ import static org.obrel.type.StandardTypes.NAME;
  */
 public class CoroutineTest
 {
+	//~ Static fields/initializers ---------------------------------------------
+
+	private static Coroutine<String, Integer> PARSE_INT =
+		Coroutine.first(apply((String s) -> s + 5))
+				 .then(apply(s -> s.replaceAll("\\D", "")))
+				 .then(apply(s -> Integer.valueOf(s)));
+
 	//~ Methods ----------------------------------------------------------------
 
 	/***************************************
@@ -259,16 +267,11 @@ public class CoroutineTest
 	@Test
 	public void testMultiStep()
 	{
-		Coroutine<String, Integer> cr =
-			Coroutine.first(apply((String s) -> s + 5))
-					 .then(apply(s -> s.replaceAll("\\D", "")))
-					 .then(apply(s -> Integer.valueOf(s)));
-
 		launch(
 			run ->
 			{
-				Continuation<Integer> ca = run.async(cr, "test1234");
-				Continuation<Integer> cb = run.blocking(cr, "test1234");
+				Continuation<Integer> ca = run.async(PARSE_INT, "test1234");
+				Continuation<Integer> cb = run.blocking(PARSE_INT, "test1234");
 
 				assertEquals(Integer.valueOf(12345), ca.getResult());
 				assertEquals(Integer.valueOf(12345), cb.getResult());
@@ -294,6 +297,28 @@ public class CoroutineTest
 
 				assertEquals("TEST", ca.getResult());
 				assertEquals("TEST", cb.getResult());
+				assertTrue(ca.isFinished());
+				assertTrue(cb.isFinished());
+			});
+	}
+
+	/***************************************
+	 * Test of coroutines with a single step.
+	 */
+	@Test
+	public void testSubroutine()
+	{
+		Coroutine<String, Integer> cr =
+			Coroutine.first(call(PARSE_INT)).then(apply(i -> i + 10));
+
+		launch(
+			run ->
+			{
+				Continuation<Integer> ca = run.async(cr, "test1234");
+				Continuation<Integer> cb = run.blocking(cr, "test1234");
+
+				assertEquals(Integer.valueOf(12355), ca.getResult());
+				assertEquals(Integer.valueOf(12355), cb.getResult());
 				assertTrue(ca.isFinished());
 				assertTrue(cb.isFinished());
 			});
