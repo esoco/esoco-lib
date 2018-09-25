@@ -16,8 +16,13 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
-import de.esoco.lib.concurrent.coroutine.step.Condition;
-import de.esoco.lib.concurrent.coroutine.step.Iteration;
+import de.esoco.coroutine.ChannelId;
+import de.esoco.coroutine.Continuation;
+import de.esoco.coroutine.Coroutine;
+import de.esoco.coroutine.CoroutineScope;
+import de.esoco.coroutine.CoroutineScopeException;
+import de.esoco.coroutine.step.Condition;
+import de.esoco.coroutine.step.Iteration;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -26,17 +31,17 @@ import java.util.concurrent.CancellationException;
 
 import org.junit.Test;
 
-import static de.esoco.lib.concurrent.coroutine.ChannelId.stringChannel;
-import static de.esoco.lib.concurrent.coroutine.CoroutineScope.launch;
-import static de.esoco.lib.concurrent.coroutine.step.CallSubroutine.call;
-import static de.esoco.lib.concurrent.coroutine.step.ChannelReceive.receive;
-import static de.esoco.lib.concurrent.coroutine.step.ChannelSend.send;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.apply;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.run;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.supply;
-import static de.esoco.lib.concurrent.coroutine.step.Condition.doIf;
-import static de.esoco.lib.concurrent.coroutine.step.Condition.doIfElse;
-import static de.esoco.lib.concurrent.coroutine.step.Iteration.forEach;
+import static de.esoco.coroutine.ChannelId.stringChannel;
+import static de.esoco.coroutine.CoroutineScope.launch;
+import static de.esoco.coroutine.step.CallSubroutine.call;
+import static de.esoco.coroutine.step.ChannelReceive.receive;
+import static de.esoco.coroutine.step.ChannelSend.send;
+import static de.esoco.coroutine.step.CodeExecution.apply;
+import static de.esoco.coroutine.step.CodeExecution.run;
+import static de.esoco.coroutine.step.CodeExecution.supply;
+import static de.esoco.coroutine.step.Condition.doIf;
+import static de.esoco.coroutine.step.Condition.doIfElse;
+import static de.esoco.coroutine.step.Iteration.forEach;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

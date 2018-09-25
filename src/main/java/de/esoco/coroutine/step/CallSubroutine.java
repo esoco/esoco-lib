@@ -14,57 +14,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.concurrent.coroutine.step;
+package de.esoco.coroutine.step;
 
-import de.esoco.lib.concurrent.coroutine.ChannelId;
-import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.CoroutineStep;
+import de.esoco.coroutine.Continuation;
+import de.esoco.coroutine.Coroutine;
+import de.esoco.coroutine.CoroutineStep;
+import de.esoco.coroutine.Coroutine.Subroutine;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
+import static de.esoco.coroutine.step.CodeExecution.apply;
 
 
 /********************************************************************
- * A coroutine step that sends a value into a channel. If the channel capacity
- * has been reached at the time of this step's invocation the coroutine
- * execution will be suspended until channel capacity becomes available.
- *
- * <p>A send step returns the input value it sends so that it ca be processed
- * further in subsequent steps if needed.</p>
+ * A {@link Coroutine} step that executes another coroutine in the context of
+ * the parent routine.
  *
  * @author eso
  */
-public class ChannelSend<T> extends CoroutineStep<T, T>
+public class CallSubroutine<I, O> extends CoroutineStep<I, O>
 {
 	//~ Instance fields --------------------------------------------------------
 
-	private ChannelId<T> rChannelId;
+	private final Coroutine<I, O> rCoroutine;
 
 	//~ Constructors -----------------------------------------------------------
 
 	/***************************************
 	 * Creates a new instance.
 	 *
-	 * @param rId The ID of the channel to send to
+	 * @param rCoroutine The sub-coroutine
 	 */
-	public ChannelSend(ChannelId<T> rId)
+	public CallSubroutine(Coroutine<I, O> rCoroutine)
 	{
-		Objects.requireNonNull(rId);
-		this.rChannelId = rId;
+		this.rCoroutine = rCoroutine;
 	}
 
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * Suspends until a value can be sent to a channel.
+	 * Calls a coroutine as a subroutine of the coroutine this step is added to.
 	 *
-	 * @param  rId The ID of the channel to send to
+	 * @param  rCoroutine The coroutine to invoke as a subroutine
 	 *
-	 * @return A new instance of this class
+	 * @return The new coroutine step
 	 */
-	public static <T> ChannelSend<T> send(ChannelId<T> rId)
+	public static <I, O> CallSubroutine<I, O> call(Coroutine<I, O> rCoroutine)
 	{
-		return new ChannelSend<>(rId);
+		return new CallSubroutine<>(rCoroutine);
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -73,13 +71,14 @@ public class ChannelSend<T> extends CoroutineStep<T, T>
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void runAsync(CompletableFuture<T> fPreviousExecution,
-						 CoroutineStep<T, ?>  rNextStep,
+	public void runAsync(CompletableFuture<I> fPreviousExecution,
+						 CoroutineStep<O, ?>  rReturnStep,
 						 Continuation<?>	  rContinuation)
 	{
-		fPreviousExecution.thenAcceptAsync(
-			v -> rContinuation.getChannel(rChannelId)
-				.sendSuspending(rNextStep.suspend(v, rContinuation)),
+		// subroutine needs to be created on invocation because the return step
+		// may change between invocations
+		new Subroutine<>(rCoroutine, rReturnStep).runAsync(
+			fPreviousExecution,
 			rContinuation);
 	}
 
@@ -87,10 +86,9 @@ public class ChannelSend<T> extends CoroutineStep<T, T>
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected T execute(T rInput, Continuation<?> rContinuation)
+	protected O execute(I rInput, Continuation<?> rContinuation)
 	{
-		rContinuation.getChannel(rChannelId).sendBlocking(rInput);
-
-		return rInput;
+		return new Subroutine<>(rCoroutine, apply(Function.identity()))
+			   .runBlocking(rInput, rContinuation);
 	}
 }

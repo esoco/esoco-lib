@@ -14,10 +14,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.concurrent.coroutine.step;
+package de.esoco.coroutine.step;
 
-import de.esoco.lib.concurrent.coroutine.Continuation;
-import de.esoco.lib.concurrent.coroutine.CoroutineStep;
+import de.esoco.coroutine.Continuation;
+import de.esoco.coroutine.CoroutineStep;
 import de.esoco.lib.expression.Functions;
 
 import java.util.Objects;

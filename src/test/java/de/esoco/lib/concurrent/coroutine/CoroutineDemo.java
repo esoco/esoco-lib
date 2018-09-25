@@ -16,13 +16,14 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent.coroutine;
 
+import de.esoco.coroutine.Coroutine;
 import de.esoco.lib.logging.Profiler;
 
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 
-import static de.esoco.lib.concurrent.coroutine.CoroutineScope.launch;
-import static de.esoco.lib.concurrent.coroutine.step.CodeExecution.run;
+import static de.esoco.coroutine.CoroutineScope.launch;
+import static de.esoco.coroutine.step.CodeExecution.run;
 import static de.esoco.lib.datatype.Range.from;
 
 

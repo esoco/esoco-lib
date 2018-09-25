@@ -14,9 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-package de.esoco.lib.concurrent.coroutine;
+package de.esoco.coroutine;
 
-import de.esoco.lib.concurrent.coroutine.step.CodeExecution;
+import de.esoco.coroutine.step.CodeExecution;
 
 import java.util.concurrent.CompletableFuture;
 
