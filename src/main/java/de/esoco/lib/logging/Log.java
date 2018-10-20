@@ -16,9 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.logging;
 
-import de.esoco.lib.expression.Function;
-import de.esoco.lib.expression.Functions;
-import de.esoco.lib.expression.function.FunctionGroup;
+import de.esoco.lib.expression.function.Group;
 import de.esoco.lib.reflect.ReflectUtil;
 
 import java.io.FileWriter;
@@ -30,10 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
+import static de.esoco.lib.expression.Functions.asConsumer;
 import static de.esoco.lib.expression.Functions.doIf;
 import static de.esoco.lib.expression.Functions.doIfElse;
 import static de.esoco.lib.expression.Functions.println;
@@ -102,7 +102,8 @@ public final class Log
 
 	/** The default log string transformation for log output */
 	public static final LogRecordFormat DEFAULT_FORMAT =
-		new LogRecordFormat("[{level:F%-5s}]{t:Dyyyy.MM.dd-HH:mm:ss}: {message}  [{package}.{class}.{method}() [{line}]]");
+		new LogRecordFormat(
+			"[{level:F%-5s}]{t:Dyyyy.MM.dd-HH:mm:ss}: {message}  [{package}.{class}.{method}() [{line}]]");
 
 	/**
 	 * A log string transformation for the full exception stacktrace, including
@@ -114,13 +115,13 @@ public final class Log
 
 	private static final Object[] NO_ARGS = null;
 
-	private static Map<String, Function<? super LogRecord, ?>> aLogHandlerRegistry =
-		new HashMap<String, Function<? super LogRecord, ?>>();
-	private static Map<String, Function<? super LogRecord, ?>> aLogHandlerCache    =
-		new HashMap<String, Function<? super LogRecord, ?>>();
+	private static Map<String, Consumer<? super LogRecord>> aLogHandlerRegistry =
+		new HashMap<>();
+	private static Map<String, Consumer<? super LogRecord>> aLogHandlerCache    =
+		new HashMap<>();
 
-	private static Function<LogRecord, ?>   aStandardLogHandler;
-	private static FunctionGroup<LogRecord> aDefaultLogHandlers;
+	private static Consumer<LogRecord> aStandardLogHandler;
+	private static Group<LogRecord>    aDefaultLogHandlers;
 
 	private static LogLevelFilter aGlobalLevelFilter =
 		LogLevelFilter.startingAt(ERROR);
@@ -156,17 +157,17 @@ public final class Log
 	 * @throws NullPointerException If the argument is NULL
 	 */
 	public static void addDefaultLogHandler(
-		Function<? super LogRecord, ?> rHandler)
+		Consumer<? super LogRecord> rHandler)
 	{
 		Objects.requireNonNull(rHandler);
 
 		synchronized (aLogHandlerCache)
 		{
-			List<Function<? super LogRecord, ?>> rFunctions =
-				aDefaultLogHandlers.getFunctions();
+			List<Consumer<? super LogRecord>> rFunctions =
+				aDefaultLogHandlers.getMembers();
 
 			rFunctions.add(rHandler);
-			aDefaultLogHandlers = new FunctionGroup<>(rFunctions);
+			aDefaultLogHandlers = new Group<>(rFunctions);
 
 			aLogHandlerCache.clear();
 		}
@@ -349,7 +350,7 @@ public final class Log
 	 *
 	 * @return The log handler for the given name or NULL for none
 	 */
-	public static Function<? super LogRecord, ?> getRegisteredLogHandler(
+	public static Consumer<? super LogRecord> getRegisteredLogHandler(
 		String sPackageOrClass)
 	{
 		return aLogHandlerRegistry.get(sPackageOrClass);
@@ -362,7 +363,7 @@ public final class Log
 	 *
 	 * @return The standard log handler
 	 */
-	public static Function<LogRecord, ?> getStandardLogHandler()
+	public static Consumer<LogRecord> getStandardLogHandler()
 	{
 		return aStandardLogHandler;
 	}
@@ -488,8 +489,8 @@ public final class Log
 	 *                    handler for the given class
 	 */
 	public static void registerLogHandler(
-		Class<?>					   rClass,
-		Function<? super LogRecord, ?> rNewHandler)
+		Class<?>					rClass,
+		Consumer<? super LogRecord> rNewHandler)
 	{
 		registerLogHandler(rClass.getName(), rNewHandler);
 	}
@@ -504,8 +505,8 @@ public final class Log
 	 *                    handler for the given package
 	 */
 	public static void registerLogHandler(
-		Package						   rPackage,
-		Function<? super LogRecord, ?> rNewHandler)
+		Package						rPackage,
+		Consumer<? super LogRecord> rNewHandler)
 	{
 		registerLogHandler(rPackage.getName(), rNewHandler);
 	}
@@ -516,15 +517,15 @@ public final class Log
 	 * @param rHandler The default log handler to remove
 	 */
 	public static void removeDefaultLogHandler(
-		Function<? super LogRecord, ?> rHandler)
+		Consumer<? super LogRecord> rHandler)
 	{
 		synchronized (aLogHandlerCache)
 		{
-			List<Function<? super LogRecord, ?>> rFunctions =
-				aDefaultLogHandlers.getFunctions();
+			List<Consumer<? super LogRecord>> rFunctions =
+				aDefaultLogHandlers.getMembers();
 
 			rFunctions.remove(rHandler);
-			aDefaultLogHandlers = new FunctionGroup<>(rFunctions);
+			aDefaultLogHandlers = new Group<>(rFunctions);
 			aLogHandlerCache.clear();
 		}
 	}
@@ -606,9 +607,11 @@ public final class Log
 
 		if (eLevel != null)
 		{
-			registerLogHandler(sPackageOrClass,
-							   Functions.doIf(LogLevelFilter.startingAt(eLevel),
-											  findLogHandler(sPackageOrClass)));
+			registerLogHandler(
+				sPackageOrClass,
+				doIf(
+					LogLevelFilter.startingAt(eLevel),
+					findLogHandler(sPackageOrClass)));
 		}
 	}
 
@@ -712,10 +715,10 @@ public final class Log
 	 *
 	 * @return The handler to be used to perform logging from the given package
 	 */
-	private static Function<? super LogRecord, ?> findLogHandler(
+	private static Consumer<? super LogRecord> findLogHandler(
 		String sPackageOrClass)
 	{
-		Function<? super LogRecord, ?> rHandler = aDefaultLogHandlers;
+		Consumer<? super LogRecord> rHandler;
 
 		if (sPackageOrClass != null)
 		{
@@ -726,6 +729,10 @@ public final class Log
 				sPackageOrClass = ReflectUtil.getNamespace(sPackageOrClass);
 				rHandler	    = findLogHandler(sPackageOrClass);
 			}
+		}
+		else
+		{
+			rHandler = asConsumer(aDefaultLogHandlers);
 		}
 
 		return rHandler;
@@ -740,12 +747,11 @@ public final class Log
 	 *
 	 * @return The log handler
 	 */
-	private static Function<? super LogRecord, ?> getLogHandler(
-		LogRecord rRecord)
+	private static Consumer<? super LogRecord> getLogHandler(LogRecord rRecord)
 	{
 		String sClassName = rRecord.getLogClass().getName();
 
-		Function<? super LogRecord, ?> rLogHandler = null;
+		Consumer<? super LogRecord> rLogHandler = null;
 
 		synchronized (aLogHandlerCache)
 		{
@@ -784,15 +790,14 @@ public final class Log
 			aLogRecord =
 				new LogRecord(eLevel, rCause, sMessageFormat, rMessageValues);
 
-			Function<? super LogRecord, ?> rLogHandler =
-				getLogHandler(aLogRecord);
+			Consumer<? super LogRecord> rLogHandler = getLogHandler(aLogRecord);
 
 			if (rLogHandler != null)
 			{
 				// synchronize on log handler to process requests sequentially
 				synchronized (rLogHandler)
 				{
-					rLogHandler.evaluate(aLogRecord);
+					rLogHandler.accept(aLogRecord);
 				}
 			}
 		}
@@ -810,8 +815,8 @@ public final class Log
 	 *                        the current log handler for the given name
 	 */
 	private static void registerLogHandler(
-		String						   sPackageOrClass,
-		Function<? super LogRecord, ?> rNewHandler)
+		String						sPackageOrClass,
+		Consumer<? super LogRecord> rNewHandler)
 	{
 		synchronized (aLogHandlerCache)
 		{
@@ -846,8 +851,9 @@ public final class Log
 
 				if (aPackageLevel.length != 2)
 				{
-					throw new IllegalArgumentException("Invalid package log level: " +
-													   sPackageLevel);
+					throw new IllegalArgumentException(
+						"Invalid package log level: " +
+						sPackageLevel);
 				}
 
 				String   sPackageOrClass = aPackageLevel[0];
@@ -855,8 +861,10 @@ public final class Log
 
 				if (sPackageOrClass == null || eLevel == null)
 				{
-					throw new IllegalArgumentException(String.format("Invalid log package definition: %s",
-																	 sPackageLevel));
+					throw new IllegalArgumentException(
+						String.format(
+							"Invalid log package definition: %s",
+							sPackageLevel));
 				}
 
 				setLogLevel(sPackageOrClass, eLevel);
@@ -881,26 +889,30 @@ public final class Log
 			}
 			catch (IOException e)
 			{
-				System.err.println("Log file not found, reverting to System.out");
+				System.err.println(
+					"Log file not found, reverting to System.out");
 				e.printStackTrace();
 			}
 		}
 
 		LogRecordFormat aStackTop = new LogRecordFormat("  at {stacktop}");
 
-		Function<LogRecord, Object> aStandardLog =
-			println(rOut, "%s").from(DEFAULT_FORMAT);
+		Consumer<LogRecord> fStandardLog =
+			asConsumer(println(rOut, "%s").from(DEFAULT_FORMAT));
 
-		Function<LogRecord, Object> aTraceLog =
-			doIf(isLevel(TRACE), println(rOut, "%s").from(aStackTop));
+		Consumer<LogRecord> fTraceLog =
+			doIf(
+				isLevel(TRACE),
+				asConsumer(println(rOut, "%s").from(aStackTop)));
 
-		Function<LogRecord, ?> aCauseLog =
-			doIfElse(LogRecord.HAS_CAUSE,
-					 println(rOut, "%s").from(CAUSE_TRACE),
-					 aTraceLog);
+		Consumer<LogRecord> fCauseLog =
+			doIfElse(
+				LogRecord.HAS_CAUSE,
+				asConsumer(println(rOut, "%s").from(CAUSE_TRACE)),
+				fTraceLog);
 
-		aStandardLogHandler = Functions.doAll(aStandardLog, aCauseLog);
-		aDefaultLogHandlers = FunctionGroup.of(aStandardLogHandler);
+		aStandardLogHandler = asConsumer(Group.of(fStandardLog, fCauseLog));
+		aDefaultLogHandlers = Group.of(aStandardLogHandler);
 
 		if (sLevel != null)
 		{
