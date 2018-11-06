@@ -115,10 +115,11 @@ public class Security
 			KeyStore aKeyStore = KeyStore.getInstance("JKS");
 
 			aKeyStore.load(null);
-			aKeyStore.setKeyEntry(sAlias,
-								  rPrivateKey,
-								  sPassword.toCharArray(),
-								  rCertChain);
+			aKeyStore.setKeyEntry(
+				sAlias,
+				rPrivateKey,
+				sPassword.toCharArray(),
+				rCertChain);
 
 			return aKeyStore;
 		}
@@ -165,7 +166,8 @@ public class Security
 			ByteArrayInputStream aData = new ByteArrayInputStream(rCertData);
 
 			return (X509Certificate) CertificateFactory.getInstance("X.509")
-													   .generateCertificate(aData);
+													   .generateCertificate(
+										   				aData);
 		}
 		catch (Exception e)
 		{
@@ -216,8 +218,9 @@ public class Security
 
 			aCipher.init(Cipher.DECRYPT_MODE, aKey);
 
-			return new String(aCipher.doFinal(rData),
-							  StandardCharsets.UTF_8.name());
+			return new String(
+				aCipher.doFinal(rData),
+				StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e)
 		{
@@ -245,10 +248,11 @@ public class Security
 		try
 		{
 			byte[] aKeyHash =
-				Arrays.copyOf(MessageDigest.getInstance("SHA-256")
-							  .digest(sPassphrase.getBytes(StandardCharsets
-														   .UTF_8.name())),
-							  nBitLength / 8);
+				Arrays.copyOf(
+					MessageDigest.getInstance("SHA-256")
+					.digest(
+						sPassphrase.getBytes(StandardCharsets.UTF_8.name())),
+					nBitLength / 8);
 
 			return new SecretKeySpec(aKeyHash, sAlgorithm);
 		}
@@ -283,16 +287,18 @@ public class Security
 			Field rModifiersField = Field.class.getDeclaredField("modifiers");
 
 			rModifiersField.setAccessible(true);
-			rModifiersField.setInt(rField,
-								   rField.getModifiers() & ~Modifier.FINAL);
+			rModifiersField.setInt(
+				rField,
+				rField.getModifiers() & ~Modifier.FINAL);
 
 			rField.set(null, Boolean.FALSE);
 		}
 		catch (Exception e)
 		{
-			Log.error("Unable to enable Java Cryptographic Extensions. " +
-					  "Some ciphers may be unavailable in the current JRE.",
-					  e);
+			Log.error(
+				"Unable to enable Java Cryptographic Extensions. " +
+				"Some ciphers may be unavailable in the current JRE.",
+				e);
 		}
 	}
 
@@ -358,8 +364,9 @@ public class Security
 	/***************************************
 	 * Generates a random ID based by applying a certain hash algorithm. This is
 	 * done by hashing a random UUID (see {@link UUID#randomUUID()}) and
-	 * returning the resulting hash as a hexadecimal string with the length of
-	 * the algorithms hash size (e.g. 32 bytes for the SHA-256 algorithm).
+	 * returning the resulting hash as an uppercase hexadecimal string with the
+	 * length of the algorithms hash size (e.g. 32 bytes = 64 characters for the
+	 * SHA-256 algorithm).
 	 *
 	 * @param  sAlgorithm The name of the hash algorithm to apply
 	 *
@@ -369,19 +376,7 @@ public class Security
 	 */
 	public static String generateHashId(String sAlgorithm)
 	{
-		try
-		{
-			MessageDigest rDigest     = MessageDigest.getInstance(sAlgorithm);
-			byte[]		  aRandomData = UUID.randomUUID().toString().getBytes();
-
-			return TextUtil.hexString(rDigest.digest(aRandomData), "");
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			throw new IllegalArgumentException("Unkown hash algorithm: " +
-											   sAlgorithm,
-											   e);
-		}
+		return hash(sAlgorithm, UUID.randomUUID().toString().getBytes());
 	}
 
 	/***************************************
@@ -418,8 +413,8 @@ public class Security
 	/***************************************
 	 * Generates a random ID based on the SHA-256 hash algorithm. This is done
 	 * by hashing a random UUID (see {@link UUID#randomUUID()}) and returning
-	 * the resulting hash as a hexadecimal string with 32 characters (= 256
-	 * bits).
+	 * the resulting hash as a hexadecimal string with 64 characters (= 32
+	 * bytes).
 	 *
 	 * @return The random SHA-256 ID
 	 */
@@ -458,15 +453,45 @@ public class Security
 			TrustManager[] rTrustManagers =
 				aTrustManagerFactory.getTrustManagers();
 
-			aSslContext.init(aKeyManagerFactory.getKeyManagers(),
-							 rTrustManagers,
-							 null);
+			aSslContext.init(
+				aKeyManagerFactory.getKeyManagers(),
+				rTrustManagers,
+				null);
 
 			return aSslContext;
 		}
 		catch (Exception e)
 		{
 			throw new IllegalArgumentException(e);
+		}
+	}
+
+	/***************************************
+	 * Creates the hash of an input value with a certain hash algorithm. The
+	 * returned value is an uppercase hexadecimal string of the resulting hash
+	 * value.
+	 *
+	 * @param  sAlgorithm The name of the hash algorithm to apply
+	 * @param  rData      The data to hash
+	 *
+	 * @return The hexadecimal hash value (uppercase)
+	 *
+	 * @throws IllegalArgumentException If the hash algorithm cannot be found
+	 */
+	public static String hash(String sAlgorithm, byte[] rData)
+	{
+		try
+		{
+			return TextUtil.hexString(
+				MessageDigest.getInstance(sAlgorithm).digest(rData),
+				"");
+		}
+		catch (NoSuchAlgorithmException e)
+		{
+			throw new IllegalArgumentException(
+				"Unkown hash algorithm: " +
+				sAlgorithm,
+				e);
 		}
 	}
 }
