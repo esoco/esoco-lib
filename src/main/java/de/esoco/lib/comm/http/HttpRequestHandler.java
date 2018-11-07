@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -192,9 +192,10 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 				if (!bEmptyRequest)
 				{
-					Log.infof("HTTP status exception (%s): %s",
-							  eStatus,
-							  sMessage);
+					Log.infof(
+						"HTTP status exception (%s): %s",
+						eStatus,
+						sMessage);
 				}
 			}
 			else
@@ -213,8 +214,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 					for (Entry<HttpHeaderField, String> rHeader :
 						 rResponseHeaders.entrySet())
 					{
-						aErrorResponse.setHeader(rHeader.getKey(),
-												 rHeader.getValue());
+						aErrorResponse.setHeader(
+							rHeader.getKey(),
+							rHeader.getValue());
 					}
 				}
 
@@ -261,9 +263,10 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 			if (sAuth == null)
 			{
-				throw new HttpStatusException(HttpStatusCode.UNAUTHORIZED,
-											  "Authentication required",
-											  getAuthErrorHeader());
+				throw new HttpStatusException(
+					HttpStatusCode.UNAUTHORIZED,
+					"Authentication required",
+					getAuthErrorHeader());
 			}
 
 			String[] aAuthHeader = sAuth.trim().split(" ");
@@ -275,8 +278,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				if (SUPPORTED_AUTH_METHODS.contains(sMethod))
 				{
 					String[] aCredential =
-						new String(Base64.getDecoder().decode(aAuthHeader[1]),
-								   StandardCharsets.UTF_8).split(":");
+						new String(
+							Base64.getDecoder().decode(aAuthHeader[1]),
+							StandardCharsets.UTF_8).split(":");
 
 					if (aCredential.length == 2)
 					{
@@ -284,7 +288,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 						aAuthData.set(AUTHENTICATION_METHOD, sMethod);
 						aAuthData.set(LOGIN_NAME, aCredential[0]);
-						aAuthData.set(PASSWORD, aCredential[1]);
+						aAuthData.set(PASSWORD, aCredential[1].toCharArray());
 						bAuthenticated = rAuthService.authenticate(aAuthData);
 					}
 				}
@@ -292,9 +296,10 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 			if (!bAuthenticated)
 			{
-				throw new HttpStatusException(HttpStatusCode.UNAUTHORIZED,
-											  "Authentication invalid",
-											  getAuthErrorHeader());
+				throw new HttpStatusException(
+					HttpStatusCode.UNAUTHORIZED,
+					"Authentication invalid",
+					getAuthErrorHeader());
 			}
 		}
 	}
@@ -325,9 +330,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 */
 	protected Pair<HttpHeaderField, String> getAuthErrorHeader()
 	{
-		return new Pair<>(HttpHeaderField.WWW_AUTHENTICATE,
-						  String.format("Basic realm=\"%s\"",
-										getContext().get(NAME)));
+		return new Pair<>(
+			HttpHeaderField.WWW_AUTHENTICATE,
+			String.format("Basic realm=\"%s\"", getContext().get(NAME)));
 	}
 
 	/***************************************
@@ -449,8 +454,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		default HttpResponse doDelete(HttpRequest rRequest)
 			throws HttpStatusException
 		{
-			throw new HttpStatusException(HttpStatusCode.NOT_IMPLEMENTED,
-										  "DELETE not supported");
+			throw new HttpStatusException(
+				HttpStatusCode.NOT_IMPLEMENTED,
+				"DELETE not supported");
 		}
 
 		/***************************************
@@ -467,8 +473,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		default HttpResponse doPost(HttpRequest rRequest)
 			throws HttpStatusException
 		{
-			throw new HttpStatusException(HttpStatusCode.NOT_IMPLEMENTED,
-										  "POST not supported");
+			throw new HttpStatusException(
+				HttpStatusCode.NOT_IMPLEMENTED,
+				"POST not supported");
 		}
 
 		/***************************************
@@ -485,8 +492,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		default HttpResponse doPut(HttpRequest rRequest)
 			throws HttpStatusException
 		{
-			throw new HttpStatusException(HttpStatusCode.NOT_IMPLEMENTED,
-										  "PUT not supported");
+			throw new HttpStatusException(
+				HttpStatusCode.NOT_IMPLEMENTED,
+				"PUT not supported");
 		}
 
 		/***************************************
@@ -525,8 +533,9 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 					break;
 
 				default:
-					badRequest("Unsupported request method: " +
-							   rRequest.getMethod());
+					badRequest(
+						"Unsupported request method: " +
+						rRequest.getMethod());
 			}
 
 			return rResponse;

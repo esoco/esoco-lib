@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,13 +44,13 @@ public class SecurityRelationTypes
 	public static final RelationType<String> AUTHENTICATION_METHOD = newType();
 
 	/** An authentication password. */
-	public static final RelationType<String> PASSWORD = newType();
+	public static final RelationType<char[]> PASSWORD = newType();
 
 	/**
 	 * An authentication credential in text form (e.g. the text representation
 	 * of a certificate).
 	 */
-	public static final RelationType<String> CREDENTIAL = newType();
+	public static final RelationType<char[]> CREDENTIAL = newType();
 
 	/** An alias name for a cryptographic element. */
 	public static final RelationType<String> ALIAS = newType();
