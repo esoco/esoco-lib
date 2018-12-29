@@ -133,7 +133,7 @@ public class ResultRunner<T> implements Runnable
 	{
 		try
 		{
-			rResult = fCreateResult.getWithException();
+			rResult = fCreateResult.tryGet();
 		}
 		catch (Throwable t)
 		{

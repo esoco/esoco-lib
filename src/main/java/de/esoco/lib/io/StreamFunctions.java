@@ -151,7 +151,7 @@ public class StreamFunctions
 		return new ExceptionMappingFunction<InputStream, byte[]>("ReadAll")
 		{
 			@Override
-			public byte[] evaluateWithException(InputStream rInput)
+			public byte[] tryApply(InputStream rInput)
 				throws IOException
 			{
 				return StreamUtil.readAll(rInput, nBufferSize, nMaxLength);
