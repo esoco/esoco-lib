@@ -188,9 +188,11 @@ public class JsonRpcEndpoint extends Endpoint
 
 			// create endpoint from URL without path
 			rTransportEndpoint =
-				Endpoint.at(HttpEndpoint.url(aUrl.getHost(),
-											 aUrl.getPort(),
-											 aUrl.getProtocol().endsWith("s")));
+				Endpoint.at(
+					HttpEndpoint.url(
+						aUrl.getHost(),
+						aUrl.getPort(),
+						aUrl.getProtocol().endsWith("s")));
 			rTransportMethod   = HttpEndpoint.httpPost(aUrl.getPath(), null);
 		}
 		else if (sTargetUrl.startsWith("pipe"))
@@ -200,8 +202,9 @@ public class JsonRpcEndpoint extends Endpoint
 		}
 		else
 		{
-			throw new CommunicationException("Unsupported JSON RPC transport: " +
-											 sTargetUrl);
+			throw new CommunicationException(
+				"Unsupported JSON RPC transport: " +
+				sTargetUrl);
 		}
 
 		Connection rTransportConnection =
@@ -211,8 +214,9 @@ public class JsonRpcEndpoint extends Endpoint
 		rConnection.set(RPC_SERVER_METHOD, rTransportMethod);
 
 		rTransportConnection.get(HTTP_REQUEST_HEADERS)
-							.put("Content-Type",
-								 Arrays.asList("application/json"));
+							.put(
+								"Content-Type",
+								Arrays.asList("application/json"));
 	}
 
 	//~ Inner Classes ----------------------------------------------------------
@@ -283,10 +287,12 @@ public class JsonRpcEndpoint extends Endpoint
 			return Json.parseArray(sRawResponse, 1)
 					   .stream()
 					   .map(o -> Json.parseObject(o.toString(), 1))
-					   .sorted((j1, j2) ->
-							   j1.getInt("id", 0) - j2.getInt("id", 0))
-					   .map(aResponse ->
-							parseMethodResponse(aResponse, rInputs))
+					   .sorted(
+		   				(j1, j2) ->
+		   					j1.getInt("id", 0) - j2.getInt("id", 0))
+					   .map(
+		   				aResponse ->
+		   					parseMethodResponse(aResponse, rInputs))
 					   .collect(Collectors.toList());
 		}
 
@@ -363,8 +369,9 @@ public class JsonRpcEndpoint extends Endpoint
 			Object aRequest = buildRequest(rInput, 1);
 
 			String sRawResponse =
-				rTransportMethod.evaluate(Json.toCompactJson(aRequest),
-										  rTransportConnection);
+				rTransportMethod.evaluate(
+					Json.toCompactJson(aRequest),
+					rTransportConnection);
 
 			return parseRawResponse(sRawResponse, rInput);
 		}
@@ -418,9 +425,11 @@ public class JsonRpcEndpoint extends Endpoint
 				JsonObject aError =
 					new JsonParser().parseObject(aRawError.toString());
 
-				throw new CommunicationException(String.format("JSON RPC Error %s: %s",
-															   aError.get("code"),
-															   aError.get("message")));
+				throw new CommunicationException(
+					String.format(
+						"JSON RPC Error %s: %s",
+						aError.get("code"),
+						aError.get("message")));
 			}
 		}
 	}
@@ -449,8 +458,9 @@ public class JsonRpcEndpoint extends Endpoint
 		 */
 		public JsonRpcBatchCall()
 		{
-			super(JsonRpcBatchCall.class.getSimpleName(),
-				  Collections.emptyList());
+			super(
+				JsonRpcBatchCall.class.getSimpleName(),
+				Collections.emptyList());
 		}
 
 		//~ Methods ------------------------------------------------------------
@@ -483,9 +493,9 @@ public class JsonRpcEndpoint extends Endpoint
 				}
 				else
 				{
-					throw new IllegalArgumentException("Unsupported batch " +
-													   "request data from " +
-													   rCall.rRequest);
+					throw new IllegalArgumentException(
+						"Unsupported batch " +
+						"request data from " + rCall.rRequest);
 				}
 			}
 
@@ -562,8 +572,9 @@ public class JsonRpcEndpoint extends Endpoint
 			}
 			else
 			{
-				throw new CommunicationException("No method to parse response ID" +
-												 nId);
+				throw new CommunicationException(
+					"No method to parse response ID" +
+					nId);
 			}
 		}
 	}
@@ -653,9 +664,9 @@ public class JsonRpcEndpoint extends Endpoint
 	{
 		//~ Instance fields ----------------------------------------------------
 
-		private final String			  sMethod;
-		private final Function<String, R> fParseResponse;
-		private final Function<P, ?>	  fConvertInput;
+		private final String				 sMethod;
+		private final Function<String, R>    fParseResponse;
+		private final Function<? super P, ?> fConvertInput;
 
 		//~ Constructors -------------------------------------------------------
 
@@ -671,10 +682,11 @@ public class JsonRpcEndpoint extends Endpoint
 							 P		  rDefaultParams,
 							 Class<R> rResponseType)
 		{
-			this(sMethod,
-				 rDefaultParams,
-				 Functions.identity(),
-				 JsonParser.parseJson(rResponseType));
+			this(
+				sMethod,
+				rDefaultParams,
+				Functions.identity(),
+				JsonParser.parseJson(rResponseType));
 		}
 
 		/***************************************
@@ -694,8 +706,8 @@ public class JsonRpcEndpoint extends Endpoint
 		}
 
 		/***************************************
-		 * Creates a new instance that converts input values into before using
-		 * them as RPC call parameters.
+		 * Creates a new instance that converts input values into the actual
+		 * input value before using them as RPC call parameters.
 		 *
 		 * @param sMethod        The name of the RPC method to invoke
 		 * @param rDefaultParams Default parameters for the method invocation
@@ -704,10 +716,10 @@ public class JsonRpcEndpoint extends Endpoint
 		 * @param fParseResponse A function that parses the JSON response string
 		 *                       into the result type
 		 */
-		public JsonRpcMethod(String				 sMethod,
-							 P					 rDefaultParams,
-							 Function<P, ?>		 fConvertInput,
-							 Function<String, R> fParseResponse)
+		public JsonRpcMethod(String					sMethod,
+							 P						rDefaultParams,
+							 Function<? super P, ?> fConvertInput,
+							 Function<String, R>    fParseResponse)
 		{
 			super(sMethod, rDefaultParams);
 
@@ -747,7 +759,7 @@ public class JsonRpcEndpoint extends Endpoint
 		 *
 		 * @return The input conversion function
 		 */
-		public Function<P, ?> getInputConversion()
+		public Function<? super P, ?> getInputConversion()
 		{
 			return fConvertInput;
 		}
