@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 // limitations under the License.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
+
+import de.esoco.lib.expression.Predicates;
+
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 
 /********************************************************************
  * A dynamic array of integers that can grow and shrink to hold an arbitrary
@@ -75,8 +81,9 @@ public class IntArray
 	{
 		if (nCapacity < 0)
 		{
-			throw new IllegalArgumentException("Invalid capacity: " +
-											   nCapacity);
+			throw new IllegalArgumentException(
+				"Invalid capacity: " +
+				nCapacity);
 		}
 
 		aData			   = new int[nCapacity];
@@ -272,6 +279,35 @@ public class IntArray
 	}
 
 	/***************************************
+	 * Converts this instance into a new array defined by the given predicate
+	 * and mapping function.
+	 *
+	 * @param  pInclude A predicate that returns TRUE if a value should be
+	 *                  included in the new array
+	 * @param  fMap     The mapping function
+	 *
+	 * @return The new array
+	 */
+	public IntArray map(
+		Predicate<Integer>		   pInclude,
+		Function<Integer, Integer> fMap)
+	{
+		IntArray aResult = new IntArray(nSize);
+
+		for (int i = 0; i < nSize; i++)
+		{
+			int nValue = aData[i];
+
+			if (pInclude.test(nValue))
+			{
+				aResult.add(nValue);
+			}
+		}
+
+		return aResult;
+	}
+
+	/***************************************
 	 * Returns the last integer value and removes it from the array.
 	 *
 	 * @return The last integer value in the array
@@ -286,7 +322,8 @@ public class IntArray
 		}
 		else
 		{
-			throw new ArrayIndexOutOfBoundsException("IntArray.pop(): array is empty");
+			throw new ArrayIndexOutOfBoundsException(
+				"IntArray.pop(): array is empty");
 		}
 	}
 
@@ -315,6 +352,22 @@ public class IntArray
 		checkIndex(nIndex);
 		nSize--;
 		System.arraycopy(aData, nIndex + 1, aData, nIndex, nSize - nIndex);
+	}
+
+	/***************************************
+	 * Returns a new array in which all occurrences of a certain value have been
+	 * replaced with another.
+	 *
+	 * @param  nValue       The value to replace
+	 * @param  nReplacement The replacement value
+	 *
+	 * @return The new array
+	 */
+	public IntArray replaceAll(int nValue, int nReplacement)
+	{
+		return map(
+			Predicates.alwaysTrue(),
+			b -> b == nValue ? nReplacement : nValue);
 	}
 
 	/***************************************
@@ -442,8 +495,9 @@ public class IntArray
 	{
 		if ((nIndex < 0) || (nIndex >= nSize))
 		{
-			throw new ArrayIndexOutOfBoundsException("Illegal index: " +
-													 nIndex);
+			throw new ArrayIndexOutOfBoundsException(
+				"Illegal index: " +
+				nIndex);
 		}
 	}
 

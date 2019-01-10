@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,17 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
+import de.esoco.lib.expression.Predicates;
 import de.esoco.lib.json.Json;
 import de.esoco.lib.json.JsonBuilder;
 import de.esoco.lib.json.JsonSerializable;
 import de.esoco.lib.text.TextConvert;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 
 /********************************************************************
@@ -71,8 +78,9 @@ public class ByteArray implements JsonSerializable<ByteArray>
 	{
 		if (nCapacity < 0)
 		{
-			throw new IllegalArgumentException("Invalid capacity: " +
-											   nCapacity);
+			throw new IllegalArgumentException(
+				"Invalid capacity: " +
+				nCapacity);
 		}
 
 		aData			   = new byte[nCapacity];
@@ -89,7 +97,29 @@ public class ByteArray implements JsonSerializable<ByteArray>
 		int l = rData.length;
 
 		aData = new byte[l];
-		System.arraycopy(rData, 0, aData, 0, last());
+		System.arraycopy(rData, 0, aData, 0, l);
+	}
+
+	//~ Static methods ---------------------------------------------------------
+
+	/***************************************
+	 * Returns an instance containing the bytes from a string of hexadecimal
+	 * digits.
+	 *
+	 * @param  sHexValue The hexadecimal string to convert
+	 *
+	 * @return The instance
+	 *
+	 * @throws IllegalArgumentException If the argument string is NULL or has an
+	 *                                  uneven length
+	 * @throws NumberFormatException    If the string contains characters that
+	 *                                  cannot be parsed into bytes
+	 *
+	 * @see    TextConvert#toBytes(String)
+	 */
+	public static ByteArray valueOf(String sHexValue)
+	{
+		return new ByteArray(TextConvert.toBytes(sHexValue));
 	}
 
 	//~ Methods ----------------------------------------------------------------
@@ -106,7 +136,17 @@ public class ByteArray implements JsonSerializable<ByteArray>
 	}
 
 	/***************************************
-	 * Adds byte values from an array to the end of this array.
+	 * Adds all byte values from an array to the end of this array.
+	 *
+	 * @param rValues The array containing the values to add
+	 */
+	public void add(byte[] rValues)
+	{
+		add(rValues, 0, rValues.length);
+	}
+
+	/***************************************
+	 * Adds certain byte values from an array to the end of this array.
 	 *
 	 * @param rValues The array containing the values to add
 	 * @param nOffset The offset from which to copy the bytes
@@ -219,8 +259,9 @@ public class ByteArray implements JsonSerializable<ByteArray>
 		}
 		else if (sData.length() % 2 == 1)
 		{
-			throw new IllegalArgumentException("Invalid byte array data: " +
-											   sData);
+			throw new IllegalArgumentException(
+				"Invalid byte array data: " +
+				sData);
 		}
 		else
 		{
@@ -403,6 +444,33 @@ public class ByteArray implements JsonSerializable<ByteArray>
 	}
 
 	/***************************************
+	 * Converts this instance into a new array defined by the given predicate
+	 * and mapping function.
+	 *
+	 * @param  pInclude A predicate that returns TRUE if a value should be
+	 *                  included in the new array
+	 * @param  fMap     The mapping function
+	 *
+	 * @return The new array
+	 */
+	public ByteArray map(Predicate<Byte> pInclude, Function<Byte, Byte> fMap)
+	{
+		ByteArray aResult = new ByteArray(nSize);
+
+		for (int i = 0; i < nSize; i++)
+		{
+			byte nValue = aData[i];
+
+			if (pInclude.test(nValue))
+			{
+				aResult.add(fMap.apply(nValue));
+			}
+		}
+
+		return aResult;
+	}
+
+	/***************************************
 	 * Returns the last byte value and removes it from the array.
 	 *
 	 * @return The last byte value in the array
@@ -417,7 +485,8 @@ public class ByteArray implements JsonSerializable<ByteArray>
 		}
 		else
 		{
-			throw new ArrayIndexOutOfBoundsException("ByteArray.pop(): array is empty");
+			throw new ArrayIndexOutOfBoundsException(
+				"ByteArray.pop(): array is empty");
 		}
 	}
 
@@ -446,6 +515,22 @@ public class ByteArray implements JsonSerializable<ByteArray>
 		checkIndex(nIndex);
 		nSize--;
 		System.arraycopy(aData, nIndex + 1, aData, nIndex, nSize - nIndex);
+	}
+
+	/***************************************
+	 * Returns a new array in which all occurrences of a certain value have been
+	 * replaced with another.
+	 *
+	 * @param  nValue       The value to replace
+	 * @param  nReplacement The replacement value
+	 *
+	 * @return The new array
+	 */
+	public ByteArray replaceAll(byte nValue, byte nReplacement)
+	{
+		return map(
+			Predicates.alwaysTrue(),
+			b -> b == nValue ? nReplacement : nValue);
 	}
 
 	/***************************************
@@ -488,6 +573,16 @@ public class ByteArray implements JsonSerializable<ByteArray>
 	}
 
 	/***************************************
+	 * Converts the bytes of this instance into an ASCII string.*
+	 *
+	 * @return The resulting string
+	 */
+	public String toAscii()
+	{
+		return toText(StandardCharsets.US_ASCII);
+	}
+
+	/***************************************
 	 * Copies the bytes of this array into a byte array. The length of the new
 	 * array will be exactly the same as the current size (not the capacity) of
 	 * the ByteArray.
@@ -510,6 +605,28 @@ public class ByteArray implements JsonSerializable<ByteArray>
 	public String toString()
 	{
 		return TextConvert.hexString(aData, 0, nSize, "");
+	}
+
+	/***************************************
+	 * Converts the bytes of this instance into a string with the given charset.
+	 *
+	 * @param  rCharset The charset
+	 *
+	 * @return The resulting string
+	 */
+	public String toText(Charset rCharset)
+	{
+		return new String(aData, rCharset);
+	}
+
+	/***************************************
+	 * Converts the bytes of this instance into an UTF-8 string.
+	 *
+	 * @return The resulting string
+	 */
+	public String toUtf8()
+	{
+		return toText(StandardCharsets.UTF_8);
 	}
 
 	/***************************************
@@ -554,8 +671,9 @@ public class ByteArray implements JsonSerializable<ByteArray>
 	{
 		if ((nIndex < 0) || (nIndex >= nSize))
 		{
-			throw new ArrayIndexOutOfBoundsException("Illegal index: " +
-													 nIndex);
+			throw new ArrayIndexOutOfBoundsException(
+				"Illegal index: " +
+				nIndex);
 		}
 	}
 
