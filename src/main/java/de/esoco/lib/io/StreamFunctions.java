@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2017 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,14 +20,12 @@ import de.esoco.lib.expression.BinaryFunction;
 import de.esoco.lib.expression.BinaryPredicate;
 import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.FunctionException;
-import de.esoco.lib.expression.function.AbstractFunction;
-import de.esoco.lib.expression.function.ExceptionMappingBinaryFunction;
-import de.esoco.lib.expression.function.ExceptionMappingFunction;
-import de.esoco.lib.expression.predicate.ExceptionMappingBinaryPredicate;
+import de.esoco.lib.expression.function.ThrowingBinaryFunction;
+import de.esoco.lib.expression.function.ThrowingFunction;
+import de.esoco.lib.expression.monad.Option;
+import de.esoco.lib.expression.predicate.ThrowingBinaryPredicate;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -54,55 +52,26 @@ public class StreamFunctions
 	//~ Static methods ---------------------------------------------------------
 
 	/***************************************
-	 * Returns a new function that creates a new {@link InputStreamReader} from
-	 * an {@link InputStream} input value. The reader will be stored in a field
-	 * of the function instance to prevent it from being closed by garbage
-	 * collection which would cause the underlying stream to be closed too.
-	 *
-	 * @return A new function instance
-	 */
-	public static Function<InputStream, Reader> createReader()
-	{
-		return new AbstractFunction<InputStream, Reader>("createReader")
-		{
-			InputStreamReader rReader;
-
-			@Override
-			public Reader evaluate(InputStream rInputStream)
-			{
-				rReader = new InputStreamReader(rInputStream);
-
-				return rReader;
-			}
-		};
-	}
-
-	/***************************************
 	 * Returns a new binary predicate that invokes {@link
 	 * StreamUtil#find(Reader, String, int, boolean,
 	 * de.esoco.lib.io.StreamUtil.ReadHandler)}.
 	 *
-	 * @param  rToken The token to search
-	 * @param  nMax   The maximum number of characters to read
+	 * @param  rDefaultToken The token to search
+	 * @param  nMax          The maximum number of characters to read
 	 *
 	 * @return A new binary predicate instance
 	 */
 	public static BinaryPredicate<InputStream, byte[]> find(
-		final byte[] rToken,
+		final byte[] rDefaultToken,
 		final int    nMax)
 	{
-		return new ExceptionMappingBinaryPredicate<InputStream, byte[]>(rToken,
-																		"InputStreamFind")
-		{
-			@Override
-			@SuppressWarnings("boxing")
-			public Boolean evaluateWithException(
-				InputStream rInput,
-				byte[]		rToken) throws IOException
-			{
-				return StreamUtil.find(rInput, rToken, nMax, null);
-			}
-		};
+		return ThrowingBinaryPredicate.of(
+			(stream, token) ->
+				StreamUtil.find(
+					stream,
+					Option.of(token).orUse(rDefaultToken),
+					nMax,
+					null));
 	}
 
 	/***************************************
@@ -110,28 +79,25 @@ public class StreamFunctions
 	 * StreamUtil#find(Reader, String, int, boolean,
 	 * de.esoco.lib.io.StreamUtil.ReadHandler)}.
 	 *
-	 * @param  sToken      The token to search
-	 * @param  nMax        The maximum number of characters to read
-	 * @param  bIgnoreCase TRUE if the case of the token should be ignored
+	 * @param  sDefaultToken The token to search
+	 * @param  nMax          The maximum number of characters to read
+	 * @param  bIgnoreCase   TRUE if the case of the token should be ignored
 	 *
 	 * @return A new binary predicate instance
 	 */
 	public static BinaryPredicate<Reader, String> find(
-		final String  sToken,
+		final String  sDefaultToken,
 		final int	  nMax,
 		final boolean bIgnoreCase)
 	{
-		return new ExceptionMappingBinaryPredicate<Reader, String>(sToken,
-																   "ReaderFind")
-		{
-			@Override
-			@SuppressWarnings("boxing")
-			public Boolean evaluateWithException(Reader rInput, String sToken)
-				throws IOException
-			{
-				return StreamUtil.find(rInput, sToken, nMax, bIgnoreCase, null);
-			}
-		};
+		return ThrowingBinaryPredicate.of(
+			(stream, token) ->
+				StreamUtil.find(
+					stream,
+					Option.of(token).orUse(sDefaultToken),
+					nMax,
+					bIgnoreCase,
+					null));
 	}
 
 	/***************************************
@@ -148,15 +114,8 @@ public class StreamFunctions
 		int nBufferSize,
 		int nMaxLength)
 	{
-		return new ExceptionMappingFunction<InputStream, byte[]>("ReadAll")
-		{
-			@Override
-			public byte[] tryApply(InputStream rInput)
-				throws IOException
-			{
-				return StreamUtil.readAll(rInput, nBufferSize, nMaxLength);
-			}
-		};
+		return ThrowingFunction.of(
+			rInput -> StreamUtil.readAll(rInput, nBufferSize, nMaxLength));
 	}
 
 	/***************************************
@@ -165,41 +124,38 @@ public class StreamFunctions
 	 * either the string found or NULL if the given token didn't occur in the
 	 * data that has been read up to the maximum..
 	 *
-	 * @param  sToken      The token to search
-	 * @param  nMax        The maximum number of characters to read
-	 * @param  bIgnoreCase TRUE if the case of the token should be ignored
+	 * @param  sDefaultToken sToken The token to search
+	 * @param  nMax          The maximum number of characters to read
+	 * @param  bIgnoreCase   TRUE if the case of the token should be ignored
 	 *
 	 * @return A new binary function instance
 	 */
 	public static BinaryFunction<Reader, String, String> readUntil(
-		final String  sToken,
+		final String  sDefaultToken,
 		final int	  nMax,
 		final boolean bIgnoreCase)
 	{
-		return new ExceptionMappingBinaryFunction<Reader, String, String>(sToken,
-																		  "ReadUntil")
-		{
-			@Override
-			public String evaluateWithException(Reader rReader, String sToken)
-				throws Exception
+		return ThrowingBinaryFunction.of(
+			(reader, token) ->
 			{
 				Writer aOutput = new StringWriter();
+				String sToken  = Option.of(token).orUse(sDefaultToken);
 				String sResult = null;
 
-				if (StreamUtil.readUntil(rReader,
-										 aOutput,
-										 sToken,
-										 nMax,
-										 bIgnoreCase))
+				if (StreamUtil.readUntil(
+						reader,
+						aOutput,
+						sToken,
+						nMax,
+						bIgnoreCase))
 				{
 					sResult = aOutput.toString();
 					sResult =
-						sResult.substring(0,
-										  sResult.length() - sToken.length());
+						sResult.substring(0, sResult.length() -
+							sToken.length());
 				}
 
 				return sResult;
-			}
-		};
+			});
 	}
 }

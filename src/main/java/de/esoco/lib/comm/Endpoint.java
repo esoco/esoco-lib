@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.Function;
-import de.esoco.lib.expression.function.AbstractFunction;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogExtent;
 import de.esoco.lib.text.TextConvert;
@@ -37,6 +36,7 @@ import org.obrel.core.ObjectRelations;
 import org.obrel.core.Params;
 import org.obrel.core.ProvidesConfiguration;
 import org.obrel.core.Relatable;
+import org.obrel.core.RelatedObject;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
@@ -64,8 +64,8 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * @author eso
  */
-public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
-	implements FluentRelatable<Endpoint>
+public abstract class Endpoint extends RelatedObject
+	implements Function<Relatable, Connection>, FluentRelatable<Endpoint>
 {
 	//~ Enums ------------------------------------------------------------------
 
@@ -125,7 +125,6 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	 */
 	public Endpoint()
 	{
-		super("");
 	}
 
 	//~ Static methods ---------------------------------------------------------
@@ -161,10 +160,12 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 			{
 				aEndpoint = aEndpointClass.newInstance();
 				aEndpoint.set(ENDPOINT_SCHEME, sScheme);
-				aEndpoint.set(USER_NAME,
-							  getUserInfoField(aUri, UserInfoField.USERNAME));
-				aEndpoint.set(PASSWORD,
-							  getUserInfoField(aUri, UserInfoField.PASSWORD));
+				aEndpoint.set(
+					USER_NAME,
+					getUserInfoField(aUri, UserInfoField.USERNAME));
+				aEndpoint.set(
+					PASSWORD,
+					getUserInfoField(aUri, UserInfoField.PASSWORD));
 
 				String sUserInfo = aUri.getUserInfo();
 
@@ -187,15 +188,17 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 			}
 			catch (Exception e)
 			{
-				throw new CommunicationException("Could not create endpoint for scheme " +
-												 sScheme,
-												 e);
+				throw new CommunicationException(
+					"Could not create endpoint for scheme " +
+					sScheme,
+					e);
 			}
 		}
 		else
 		{
-			throw new CommunicationException("No endpoint registered for scheme " +
-											 sScheme);
+			throw new CommunicationException(
+				"No endpoint registered for scheme " +
+				sScheme);
 		}
 
 		return aEndpoint;
@@ -283,8 +286,9 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 		rGlobalConfig = rConfiguration;
 
 		LogExtent eLogExtent =
-			rGlobalConfig.getConfigValue(Log.LOG_EXTENT,
-										 aDefaultParams.get(Log.LOG_EXTENT));
+			rGlobalConfig.getConfigValue(
+				Log.LOG_EXTENT,
+				aDefaultParams.get(Log.LOG_EXTENT));
 
 		aDefaultParams.set(Log.LOG_EXTENT, eLogExtent);
 	}
@@ -357,15 +361,16 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 				Endpoint.class.getSimpleName();
 
 			aEndpointClass =
-				(Class<? extends Endpoint>) Class.forName(sPackage + "." +
-														  sDefaultName);
+				(Class<? extends Endpoint>) Class.forName(
+					sPackage + "." + sDefaultName);
 
 			registerEndpointType(aEndpointClass, sPrefix, sPrefix + "s");
 		}
 		catch (ClassNotFoundException e)
 		{
-			throw new CommunicationException("No endpoint for scheme " +
-											 sScheme);
+			throw new CommunicationException(
+				"No endpoint for scheme " +
+				sScheme);
 		}
 
 		return aEndpointClass;
@@ -464,20 +469,9 @@ public abstract class Endpoint extends AbstractFunction<Relatable, Connection>
 	}
 
 	/***************************************
-	 * Overridden to return an endpoint-specific function token.
-	 *
-	 * @see AbstractFunction#getToken()
-	 */
-	@Override
-	public String getToken()
-	{
-		return get(ENDPOINT_SCHEME);
-	}
-
-	/***************************************
 	 * Overridden to create a communication chain.
 	 *
-	 * @see AbstractFunction#then(Function)
+	 * @see Function#then(Function)
 	 */
 	public <I, O> EndpointFunction<I, O> then(CommunicationMethod<I, O> fMethod)
 	{

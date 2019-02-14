@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package de.esoco.lib.io;
 
 import de.esoco.lib.expression.Predicate;
-import de.esoco.lib.expression.predicate.AbstractPredicate;
 import de.esoco.lib.text.TextUtil;
 
 import java.io.File;
@@ -60,7 +59,7 @@ public class IOFunctions
 		Pattern aPattern =
 			Pattern.compile(TextUtil.simplePatternToRegEx(sPattern));
 
-		return new PatternFilenameFilter("PatternFilenameFilter", aPattern);
+		return new PatternFilenameFilter(aPattern);
 	}
 
 	/***************************************
@@ -73,8 +72,7 @@ public class IOFunctions
 	 */
 	public static PatternFilenameFilter ifFilenameMatches(String sRegex)
 	{
-		return new PatternFilenameFilter("RegexFilenameFilter",
-										 Pattern.compile(sRegex));
+		return new PatternFilenameFilter(Pattern.compile(sRegex));
 	}
 
 	//~ Inner Classes ----------------------------------------------------------
@@ -86,8 +84,8 @@ public class IOFunctions
 	 *
 	 * @author eso
 	 */
-	public static class PatternFilenameFilter extends AbstractPredicate<File>
-		implements FilenameFilter
+	public static class PatternFilenameFilter implements Predicate<File>,
+														 FilenameFilter
 	{
 		//~ Instance fields ----------------------------------------------------
 
@@ -98,13 +96,10 @@ public class IOFunctions
 		/***************************************
 		 * Creates a new FileFilter object.
 		 *
-		 * @param sName    A description of the filter
 		 * @param rPattern The file pattern
 		 */
-		private PatternFilenameFilter(String sName, Pattern rPattern)
+		private PatternFilenameFilter(Pattern rPattern)
 		{
-			super(sName);
-
 			this.rPattern = rPattern;
 		}
 

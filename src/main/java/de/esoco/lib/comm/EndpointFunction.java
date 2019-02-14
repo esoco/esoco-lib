@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
+import de.esoco.lib.expression.BinaryFunction;
 import de.esoco.lib.expression.Function;
-import de.esoco.lib.expression.function.AbstractBinaryFunction;
-import de.esoco.lib.expression.function.AbstractFunction;
 
 import org.obrel.core.Relatable;
+import org.obrel.core.RelatedObject;
 
 
 /********************************************************************
@@ -30,8 +30,8 @@ import org.obrel.core.Relatable;
  *
  * @author eso
  */
-public class EndpointFunction<I, O>
-	extends AbstractBinaryFunction<I, Relatable, O>
+public class EndpointFunction<I, O> extends RelatedObject
+	implements BinaryFunction<I, Relatable, O>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -50,8 +50,6 @@ public class EndpointFunction<I, O>
 		Endpoint				  rEndpoint,
 		CommunicationMethod<I, O> fMethod)
 	{
-		super(null);
-
 		this.rEndpoint = rEndpoint;
 		this.fMethod   = fMethod;
 	}
@@ -110,13 +108,13 @@ public class EndpointFunction<I, O>
 	/***************************************
 	 * Overridden to create a new endpoint chain.
 	 *
-	 * @see AbstractFunction#then(Function)
+	 * @see Function#then(Function)
 	 */
 	@Override
 	public <T> EndpointFunction<I, T> then(Function<? super O, T> fOther)
 	{
-		return new EndpointFunction<>(rEndpoint,
-									  new CommunicationChain<>(fMethod,
-															   fOther));
+		return new EndpointFunction<>(
+			rEndpoint,
+			new CommunicationChain<>(fMethod, fOther));
 	}
 }

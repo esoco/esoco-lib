@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import de.esoco.lib.app.Service;
 import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.comm.Endpoint;
 import de.esoco.lib.comm.EndpointFunction;
+import de.esoco.lib.expression.monad.Option;
 import de.esoco.lib.json.Json;
 import de.esoco.lib.json.JsonObject;
-import de.esoco.lib.json.JsonParser;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogExtent;
 import de.esoco.lib.logging.LogLevel;
@@ -143,17 +143,21 @@ public class ModificationSyncServiceTool extends Application
 
 			aCommandLineOptions.put("h", sHelpInfo);
 			aCommandLineOptions.put("-help", sHelpInfo);
-			aCommandLineOptions.put("url",
-									"The URL of the sync service (mandatory)");
-			aCommandLineOptions.put("context",
-									"The context to which to apply a command");
-			aCommandLineOptions.put("target",
-									"The target to which to apply a command (in a certain context)");
+			aCommandLineOptions.put(
+				"url",
+				"The URL of the sync service (mandatory)");
+			aCommandLineOptions.put(
+				"context",
+				"The context to which to apply a command");
+			aCommandLineOptions.put(
+				"target",
+				"The target to which to apply a command (in a certain context)");
 
 			for (Command eCommand : Command.values())
 			{
-				aCommandLineOptions.put(eCommand.name().toLowerCase(),
-										eCommand.getHelpText());
+				aCommandLineOptions.put(
+					eCommand.name().toLowerCase(),
+					eCommand.getHelpText());
 			}
 		}
 
@@ -177,9 +181,10 @@ public class ModificationSyncServiceTool extends Application
 
 			if (rCommandLine.hasOption(sCommand))
 			{
-				System.out.printf("Applying %s to %s\n",
-								  eCommand,
-								  aSyncService.get(ENDPOINT_ADDRESS));
+				System.out.printf(
+					"Applying %s to %s\n",
+					eCommand,
+					aSyncService.get(ENDPOINT_ADDRESS));
 
 				switch (eCommand)
 				{
@@ -189,7 +194,8 @@ public class ModificationSyncServiceTool extends Application
 						break;
 
 					case LOGLEVEL:
-						handleGetAndSetLogLevel(rCommandLine.getString(sCommand));
+						handleGetAndSetLogLevel(
+							rCommandLine.getString(sCommand));
 						break;
 
 					case LOCK:
@@ -245,13 +251,7 @@ public class ModificationSyncServiceTool extends Application
 	 */
 	private JsonObject getLocks()
 	{
-		EndpointFunction<SyncData, String> fGetLocks =
-			getCurrentLocks().from(aSyncService);
-
-		@SuppressWarnings("unchecked")
-		JsonObject aLocks = new JsonParser().parseObject(fGetLocks.receive());
-
-		return aLocks;
+		return Json.parseObject(getCurrentLocks().from(aSyncService).receive());
 	}
 
 	/***************************************
@@ -267,9 +267,9 @@ public class ModificationSyncServiceTool extends Application
 		}
 		else
 		{
-			System.out.printf("Current log level: %s\n",
-							  Service.GET_LOG_LEVEL.from(aSyncService)
-							  .receive());
+			System.out.printf(
+				"Current log level: %s\n",
+				Service.GET_LOG_LEVEL.from(aSyncService).receive());
 		}
 	}
 
@@ -289,16 +289,15 @@ public class ModificationSyncServiceTool extends Application
 		}
 		else if (rContext != null)
 		{
-			String     sContext		 = rContext;
-			JsonObject rContextLocks = aLocks.get(sContext, new JsonObject());
+			String sContext = rContext;
 
 			if (eCommand == Command.RESET)
 			{
-				unlockAll(sContext, rContextLocks);
+				unlockAll(sContext, aLocks.getObject(sContext));
 			}
 			else
 			{
-				printLocks(sContext, rContextLocks);
+				printLocks(sContext, aLocks.getObject(sContext));
 			}
 		}
 		else
@@ -307,15 +306,14 @@ public class ModificationSyncServiceTool extends Application
 			{
 				for (String sContext : aLocks.getProperties().keySet())
 				{
-					unlockAll(sContext, aLocks.get(sContext, new JsonObject()));
+					unlockAll(sContext, aLocks.getObject(sContext));
 				}
 			}
 			else
 			{
 				for (String sContext : aLocks.getPropertyNames())
 				{
-					printLocks(sContext,
-							   aLocks.get(sContext, new JsonObject()));
+					printLocks(sContext, aLocks.getObject(sContext));
 				}
 			}
 		}
@@ -334,11 +332,13 @@ public class ModificationSyncServiceTool extends Application
 	{
 		if (rContext == null)
 		{
-			System.out.printf("Sync context must be provided (-context <context>)\n");
+			System.out.printf(
+				"Sync context must be provided (-context <context>)\n");
 		}
 		else if (rTarget == null)
 		{
-			System.out.printf("Sync target must be provided (-target <target>)\n");
+			System.out.printf(
+				"Sync target must be provided (-target <target>)\n");
 		}
 		else
 		{
@@ -360,43 +360,54 @@ public class ModificationSyncServiceTool extends Application
 	 * Prints out the locks of a certain context.
 	 *
 	 * @param sContext
-	 * @param rContextLocks
+	 * @param oContextLocks
 	 */
-	private void printLocks(String sContext, JsonObject rContextLocks)
+	private void printLocks(String sContext, Option<JsonObject> oContextLocks)
 	{
-		if (rContextLocks.isEmpty())
+		oContextLocks.ifExists(
+			rLocks ->
 		{
-			System.out.printf("No locks in existing context %s\n", sContext);
-		}
-		else
-		{
-			System.out.printf("Locks for context %s:\n  %s\n",
-							  sContext,
-							  CollectionUtil.toString(rContextLocks
-													  .getProperties(),
-													  ": ",
-													  "\n  "));
-		}
+			if (rLocks.isEmpty())
+			{
+				System.out.printf("No locks in existing context %s\n", sContext);
+			}
+			else
+			{
+				System.out.printf(
+					"Locks for context %s:\n  %s\n",
+					sContext,
+					CollectionUtil.toString(
+						rLocks.getProperties(),
+						": ",
+						"\n  "));
+			}
+		});
 	}
 
 	/***************************************
 	 * Unlocks all targets in a certain modification context.
 	 *
-	 * @param sContext The modification context
-	 * @param rLocks   The mapping from target IDs to lock holders
+	 * @param sContext      The modification context
+	 * @param oContextLocks The mapping from target IDs to lock holders
 	 */
-	private void unlockAll(String sContext, JsonObject rLocks)
+	private void unlockAll(String sContext, Option<JsonObject> oContextLocks)
 	{
 		String sClientId = getClientId();
 
-		for (String sTarget : rLocks.getProperties().keySet())
+		oContextLocks.ifExists(
+			rLocks ->
 		{
-			fReleaseLock.send(new SyncData(sClientId, sContext, sTarget, true));
+			for (String sTarget : rLocks.getProperties().keySet())
+			{
+				fReleaseLock.send(
+					new SyncData(sClientId, sContext, sTarget, true));
 
-			System.out.printf("Removed lock on %s from context %s (acquired by %s)\n",
-							  sTarget,
-							  sContext,
-							  rLocks.get(sTarget, ""));
-		}
+				System.out.printf(
+					"Removed lock on %s from context %s (acquired by %s)\n",
+					sTarget,
+					sContext,
+					rLocks.getString(sTarget).orUse("unknown"));
+			}
+		});
 	}
 }

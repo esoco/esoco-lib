@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -72,5 +72,19 @@ public class CommunicationException extends RuntimeException
 	public CommunicationException(String sMessage, Exception eCause)
 	{
 		super(sMessage, eCause);
+	}
+
+	/***************************************
+	 * Creates a new instance with a formatted message and a causing exception.
+	 *
+	 * @param eCause         The causing exception
+	 * @param sMessageFormat The message format
+	 * @param rFormatArgs    The format arguments
+	 */
+	public CommunicationException(Throwable eCause,
+								  String    sMessageFormat,
+								  Object... rFormatArgs)
+	{
+		this(String.format(sMessageFormat, rFormatArgs), eCause);
 	}
 }

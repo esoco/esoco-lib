@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.logging;
 
-import de.esoco.lib.expression.predicate.AbstractPredicate;
+import de.esoco.lib.expression.Predicate;
 
 import java.text.DateFormat;
 
@@ -37,16 +37,8 @@ public final class LogRecord
 	/**
 	 * Filter that returns TRUE if the evaluated record has the cause field set
 	 */
-	public static final AbstractPredicate<LogRecord> HAS_CAUSE =
-		new AbstractPredicate<LogRecord>("LogRecord.Cause not NULL")
-		{
-			@Override
-			@SuppressWarnings("boxing")
-			public Boolean evaluate(LogRecord rRecord)
-			{
-				return (rRecord.getCause() != null);
-			}
-		};
+	public static final Predicate<LogRecord> HAS_CAUSE =
+		r -> r.getCause() != null;
 
 	// stack frames to be omitted from returned stacks
 	private static int nStackOverhead = -1;

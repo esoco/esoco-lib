@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -414,23 +414,20 @@ public class JsonRpcEndpoint extends Endpoint
 		 */
 		protected R parseResponse(JsonObject rResponse)
 		{
-			Object aRawError = rResponse.get("error");
+			rResponse.getString("error")
+					 .ifExists(
+		 				sError ->
+		 				{
+		 					JsonObject aError = Json.parseObject(sError);
 
-			if (aRawError == null)
-			{
-				return parseResult(rResponse.get("result").toString());
-			}
-			else
-			{
-				JsonObject aError =
-					new JsonParser().parseObject(aRawError.toString());
+		 					throw new CommunicationException(
+		 						String.format(
+		 							"JSON RPC Error %s: %s",
+		 							aError.getString("code"),
+		 							aError.getString("message")));
+		 				});
 
-				throw new CommunicationException(
-					String.format(
-						"JSON RPC Error %s: %s",
-						aError.get("code"),
-						aError.get("message")));
-			}
+			return parseResult(rResponse.getString("result").orFail());
 		}
 	}
 
@@ -736,20 +733,8 @@ public class JsonRpcEndpoint extends Endpoint
 		@Override
 		public JsonObject buildRequest(P rInput, int nId)
 		{
-			JsonObject aRequest = new JsonObject();
-
-			aRequest.set("jsonrpc", "2.0");
-			aRequest.set("id", nId);
-			aRequest.set("method", sMethod);
-
-			Object rRequestParams = getRequestParams(rInput);
-
-			if (rRequestParams != null)
-			{
-				aRequest.set("params", rRequestParams);
-			}
-
-			return aRequest;
+			return new JsonRpcRequestData(nId, sMethod).withParams(
+				getRequestParams(rInput));
 		}
 
 		/***************************************

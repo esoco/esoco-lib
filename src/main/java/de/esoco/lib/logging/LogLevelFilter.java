@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package de.esoco.lib.logging;
 
 import de.esoco.lib.collection.CollectionUtil;
 import de.esoco.lib.expression.Predicate;
-import de.esoco.lib.expression.predicate.AbstractPredicate;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +33,7 @@ import static de.esoco.lib.logging.LogLevel.FATAL;
  *
  * @author eso
  */
-public class LogLevelFilter extends AbstractPredicate<LogRecord>
+public class LogLevelFilter implements Predicate<LogRecord>
 {
 	//~ Instance fields --------------------------------------------------------
 
@@ -49,8 +48,6 @@ public class LogLevelFilter extends AbstractPredicate<LogRecord>
 	 */
 	private LogLevelFilter(Set<LogLevel> rLevels)
 	{
-		super(String.format("is LogLevel in %s", rLevels));
-
 		aLogLevels = rLevels;
 
 		// always add FATAL log level

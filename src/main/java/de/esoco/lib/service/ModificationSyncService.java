@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import de.esoco.lib.comm.Server;
 import de.esoco.lib.comm.http.HttpRequestHandler;
 import de.esoco.lib.comm.http.HttpStatusCode;
 import de.esoco.lib.comm.http.HttpStatusException;
+import de.esoco.lib.expression.monad.Option;
 import de.esoco.lib.json.JsonObject;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.logging.LogLevel;
@@ -200,8 +201,9 @@ public class ModificationSyncService extends RestService
 			aContextLocks.containsKey(sContext) &&
 			aContextLocks.get(sContext).containsKey(sTargetId);
 
-		throw new HttpStatusException(HttpStatusCode.OK,
-									  Boolean.toString(bHasLock));
+		throw new HttpStatusException(
+			HttpStatusCode.OK,
+			Boolean.toString(bHasLock));
 	}
 
 	/***************************************
@@ -238,9 +240,10 @@ public class ModificationSyncService extends RestService
 			{
 				if (bForceRequest && !bLockedByClient)
 				{
-					Log.warnf("Locked by %s, release forced by %s",
-							  rCurrentLock.getClientInfo(),
-							  sClient);
+					Log.warnf(
+						"Locked by %s, release forced by %s",
+						rCurrentLock.getClientInfo(),
+						sClient);
 				}
 
 				aLocks.remove(sTargetId);
@@ -291,9 +294,10 @@ public class ModificationSyncService extends RestService
 
 			if (bForceRequest && rCurrentLock != null)
 			{
-				Log.warnf("Locked by %s, forcing lock to %s",
-						  rCurrentLock.getClientInfo(),
-						  aNewLock);
+				Log.warnf(
+					"Locked by %s, forcing lock to %s",
+					rCurrentLock.getClientInfo(),
+					aNewLock);
 			}
 
 			aLocks.put(sTargetId, aNewLock);
@@ -324,27 +328,25 @@ public class ModificationSyncService extends RestService
 	{
 		try
 		{
-			Object sClientId  = rRequest.get(JSON_REQUEST_CLIENT);
-			Object sContext   = rRequest.get(JSON_REQUEST_CONTEXT);
-			Object sGlobalId  = rRequest.get(JSON_REQUEST_TARGET_ID);
-			Object rForceFlag = rRequest.get(JSON_REQUEST_FORCE_FLAG);
+			Option<?> oClientId = rRequest.getProperty(JSON_REQUEST_CLIENT);
+			Option<?> oContext  = rRequest.getProperty(JSON_REQUEST_CONTEXT);
+			Option<?> oGlobalId = rRequest.getProperty(JSON_REQUEST_TARGET_ID);
+			Option<?> oForce    = rRequest.getProperty(JSON_REQUEST_FORCE_FLAG);
 
-			if (sClientId == null ||
-				sContext == null ||
-				sGlobalId == null ||
-				(rForceFlag != null && !(rForceFlag instanceof Boolean)))
+			if (!oClientId.is(String.class) ||
+				!oContext.is(String.class) ||
+				!oGlobalId.is(String.class) ||
+				!oForce.is(Boolean.class))
 			{
 				respond(HttpStatusCode.BAD_REQUEST, rRequest.toString());
 			}
 
-			boolean bForceRequest =
-				rForceFlag != null ? ((Boolean) rForceFlag).booleanValue()
-								   : false;
-
-			rRequestHandler.handleRequest(sClientId.toString(),
-										  sContext.toString(),
-										  sGlobalId.toString(),
-										  bForceRequest);
+			// orFail() won't occur as the is(...) tests above ensures existence
+			rRequestHandler.handleRequest(
+				oClientId.map(Object::toString).orFail(),
+				oContext.map(Object::toString).orFail(),
+				oGlobalId.map(Object::toString).orFail(),
+				oForce.map(Boolean.class::cast).orFail());
 		}
 		catch (HttpStatusException e)
 		{
@@ -399,8 +401,9 @@ public class ModificationSyncService extends RestService
 	 */
 	private void updateLocks(Map<?, ?> aNewLocks)
 	{
-		respond(HttpStatusCode.METHOD_NOT_ALLOWED,
-				"Setting all locks is not supported");
+		respond(
+			HttpStatusCode.METHOD_NOT_ALLOWED,
+			"Setting all locks is not supported");
 	}
 
 	//~ Inner Interfaces -------------------------------------------------------
@@ -488,10 +491,11 @@ public class ModificationSyncService extends RestService
 		@Override
 		public String toString()
 		{
-			return String.format("%s[%s] (%3$tF %3$tT.%3$tL)",
-								 sClientId,
-								 sClientAddress,
-								 aLockTime);
+			return String.format(
+				"%s[%s] (%3$tF %3$tT.%3$tL)",
+				sClientId,
+				sClientAddress,
+				aLockTime);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -194,8 +194,9 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 
 		if (bRunning)
 		{
-			throw new IllegalStateException(getServerName() +
-											" already started");
+			throw new IllegalStateException(
+				getServerName() +
+				" already started");
 		}
 
 		Log.infof("%s started", getServerName());
@@ -262,13 +263,16 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 			if (rCertificate != null)
 			{
 				aServerSocketFactory =
-					Security.getSslContext(rCertificate, get(KEY_PASSWORD, ""))
+					Security.getSslContext(
+								rCertificate,
+								getOption(KEY_PASSWORD).orUse(""))
 							.getServerSocketFactory();
 			}
 			else
 			{
-				throw new IllegalStateException(CERTIFICATE.getSimpleName() +
-												" parameter missing to enable SSL");
+				throw new IllegalStateException(
+					CERTIFICATE.getSimpleName() +
+					" parameter missing to enable SSL");
 			}
 		}
 		else
@@ -304,9 +308,10 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 			OutputStream rClientOut     = rClientSocket.getOutputStream();
 			InetAddress  rClientAddress = rClientSocket.getInetAddress();
 
-			Log.infof("%s: handling request from %s",
-					  getServerName(),
-					  rClientAddress.getHostAddress());
+			Log.infof(
+				"%s: handling request from %s",
+				getServerName(),
+				rClientAddress.getHostAddress());
 
 			rRequestHandler.set(IP_ADDRESS, rClientAddress);
 
@@ -329,7 +334,8 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 			try
 			{
 				set(LAST_REQUEST, sRequest);
-				set(REQUEST_HANDLING_TIME,
+				set(
+					REQUEST_HANDLING_TIME,
 					rRequestHandler.get(TIMER).intValue());
 
 				if (!bRunning)
@@ -376,7 +382,7 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 		Relatable aRequestContext = createRequestContext();
 
 		int nMaxConnections =
-			get(MAX_CONNECTIONS,
+			getOption(MAX_CONNECTIONS).orUse(
 				Math.max(4, ForkJoinPool.commonPool().getParallelism()));
 
 		Queue<CompletableFuture<Void>> aRequestHandlers =
@@ -406,16 +412,19 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 				if (aRequestHandlers.size() < nMaxConnections)
 				{
 					CompletableFuture<Void> aRequestHandler =
-						CompletableFuture.runAsync(() ->
-												   handleClientRequest(rClientSocket,
-																	   aRequestContext));
+						CompletableFuture.runAsync(
+							() ->
+								handleClientRequest(
+									rClientSocket,
+									aRequestContext));
 
 					aRequestHandlers.add(aRequestHandler);
 				}
 				else
 				{
-					Log.warn("Maximum connections reached, rejecting connection from " +
-							 rClientSocket.getInetAddress());
+					Log.warn(
+						"Maximum connections reached, rejecting connection from " +
+						rClientSocket.getInetAddress());
 
 					try
 					{
@@ -423,7 +432,8 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 					}
 					catch (IOException e)
 					{
-						Log.error("Closing rejected connection failed, continuing");
+						Log.error(
+							"Closing rejected connection failed, continuing");
 					}
 				}
 			}
