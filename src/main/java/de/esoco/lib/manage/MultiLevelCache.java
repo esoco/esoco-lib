@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,9 +34,15 @@ import java.util.Map.Entry;
  * it's capacity to zero) is a permanent cache that holds strong references to
  * it's elements. The second level uses {@link SoftReference soft references} to
  * store it' values and the third level keeps values with {@link WeakReference
- * weak references}. This means that values can be garbage collected by the VM
- * if required. If a discarded reference value is queried from the cache the
- * method {@link #get(Object)} will return NULL.
+ * weak references}.
+ *
+ * <p>This means that values in the second and third cache level can be garbage
+ * collected by the VM if required. If a discarded reference value is queried
+ * from the cache the method {@link #get(Object)} will return NULL. Whether
+ * there's a difference between soft and weak references depends on the actual
+ * JVM that is used. In a typical server VM it can be expected that weak
+ * references are cleared earlier than soft references, but it is not
+ * guaranteed.</p>
  *
  * <p>If a new value is added through the method {@link #put(Object, Object)}
  * and the capacity of the first level is exceeded the least recently accessed
@@ -160,13 +166,14 @@ public class MultiLevelCache<K, V>
 	@SuppressWarnings("boxing")
 	public String getUsage()
 	{
-		return String.format("%d/%d, %d/%d, %s/%d",
-							 aFirstLevelMap.size(),
-							 aFirstLevelMap.getCapacity(),
-							 aSecondLevelMap.size(),
-							 aSecondLevelMap.getCapacity(),
-							 aThirdLevelMap.size(),
-							 aThirdLevelMap.getCapacity());
+		return String.format(
+			"%d/%d, %d/%d, %s/%d",
+			aFirstLevelMap.size(),
+			aFirstLevelMap.getCapacity(),
+			aSecondLevelMap.size(),
+			aSecondLevelMap.getCapacity(),
+			aThirdLevelMap.size(),
+			aThirdLevelMap.getCapacity());
 	}
 
 	/***************************************
