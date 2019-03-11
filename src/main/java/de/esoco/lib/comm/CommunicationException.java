@@ -50,7 +50,7 @@ public class CommunicationException extends RuntimeException
 	/***************************************
 	 * @see RuntimeException#RuntimeException(Throwable)
 	 */
-	public CommunicationException(Exception eCause)
+	public CommunicationException(Throwable eCause)
 	{
 		super(eCause);
 	}
@@ -69,7 +69,7 @@ public class CommunicationException extends RuntimeException
 	/***************************************
 	 * @see RuntimeException#RuntimeException(String, Throwable)
 	 */
-	public CommunicationException(String sMessage, Exception eCause)
+	public CommunicationException(String sMessage, Throwable eCause)
 	{
 		super(sMessage, eCause);
 	}
