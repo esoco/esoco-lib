@@ -126,14 +126,6 @@ public class ModificationSyncService extends RestService
 	}
 
 	/***************************************
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void stop()
-	{
-	}
-
-	/***************************************
 	 * Overridden to add the sync service endpoints to the REST server object
 	 * space.
 	 *
