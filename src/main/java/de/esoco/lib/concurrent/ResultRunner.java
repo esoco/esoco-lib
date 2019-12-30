@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.concurrent;
 
-import de.esoco.lib.expression.function.ThrowingSupplier;
+import de.esoco.lib.expression.ThrowingSupplier;
 
 import java.util.function.Supplier;
 

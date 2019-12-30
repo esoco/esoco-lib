@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2019 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -152,14 +152,16 @@ public class EndpointTest
 			CommunicationMethod<String, String> fBody =
 				httpGet().then(find(HTML_BODY_PATTERN));
 
-			assertTrue(Pattern.matches(HTML_BODY_PATTERN,
-									   fBody.getFrom(rConnection,
-													 HTML_GET_URL)));
+			assertTrue(
+				Pattern.matches(
+					HTML_BODY_PATTERN,
+					fBody.getFrom(rConnection, HTML_GET_URL)));
 
 			assertEquals(Boolean.FALSE, rConnection.get(MetaTypes.CLOSED));
-			assertTrue(Pattern.matches(HTML_BODY_PATTERN,
-									   fBody.getFrom(rConnection,
-													 HTML_GET_URL)));
+			assertTrue(
+				Pattern.matches(
+					HTML_BODY_PATTERN,
+					fBody.getFrom(rConnection, HTML_GET_URL)));
 		}
 
 		assertEquals(Boolean.TRUE, rAssertConnection.get(MetaTypes.CLOSED));
@@ -195,9 +197,10 @@ public class EndpointTest
 		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
 
 		EndpointFunction<String, String> fPostParam =
-			httpPost("post.php",
-					 NetUtil.encodeUrlParameter("test_param", "test_value"))
-			.from(aEndpoint);
+			httpPost(
+				"post.php",
+				NetUtil.encodeUrlParameter("test_param", "test_value")).from(
+				aEndpoint);
 
 		System.out.printf("POST: %s\n", fPostParam.send());
 //		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fPostParam.result()));
@@ -215,14 +218,18 @@ public class EndpointTest
 		BinaryPredicate<Reader, String> pFindLength =
 			find("Content-Length: ", Short.MAX_VALUE, false);
 
-		Function<Reader, String> fReadLength = readUntil("\r\n", 1000, false);
+		Function<Reader, String> fReadLength =
+			r -> readUntil("\r\n", 1000, false).apply(r, null);
 
 		Function<Reader, Integer> fReadContentLength =
-			doIfElse(pFindLength, fReadLength, value("-1")).then(parseInteger());
+			doIfElse(pFindLength, fReadLength, value("-1")).then(
+				parseInteger());
 
 		EndpointFunction<String, String> fGetBody =
 			textRequest(HTTP_GET_INDEX, fReadContentLength).from(aEndpoint)
-														   .then(find(HTML_BODY_PATTERN));
+														   .then(
+											   				find(
+											   					HTML_BODY_PATTERN));
 
 		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.receive()));
 		assertTrue(fGetBody.get(Endpoint.ENDPOINT_CONNECTION).hasFlag(CLOSED));

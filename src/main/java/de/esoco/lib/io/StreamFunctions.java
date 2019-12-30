@@ -16,12 +16,10 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.io;
 
-import de.esoco.lib.expression.BinaryFunction;
 import de.esoco.lib.expression.BinaryPredicate;
-import de.esoco.lib.expression.Function;
 import de.esoco.lib.expression.FunctionException;
-import de.esoco.lib.expression.function.ThrowingBinaryFunction;
-import de.esoco.lib.expression.function.ThrowingFunction;
+import de.esoco.lib.expression.ThrowingBinaryFunction;
+import de.esoco.lib.expression.ThrowingFunction;
 import de.esoco.lib.expression.monad.Option;
 import de.esoco.lib.expression.predicate.ThrowingBinaryPredicate;
 
@@ -29,6 +27,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+
+import java.util.function.BiFunction;
 
 
 /********************************************************************
@@ -110,7 +110,7 @@ public class StreamFunctions
 	 *
 	 * @return A new function instance
 	 */
-	public static Function<InputStream, byte[]> readAll(
+	public static java.util.function.Function<InputStream, byte[]> readAll(
 		int nBufferSize,
 		int nMaxLength)
 	{
@@ -130,7 +130,7 @@ public class StreamFunctions
 	 *
 	 * @return A new binary function instance
 	 */
-	public static BinaryFunction<Reader, String, String> readUntil(
+	public static BiFunction<Reader, String, String> readUntil(
 		final String  sDefaultToken,
 		final int	  nMax,
 		final boolean bIgnoreCase)
