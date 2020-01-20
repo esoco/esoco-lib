@@ -19,6 +19,10 @@ jobs:
       with:
         repository: esoco/esoco-monads
         path: esoco-monads
+    - uses: actions/checkout@v2
+      with:
+        repository: esoco/objectrelations
+        path: objectrelations
     - name: Set up JDK 1.8
       uses: actions/setup-java@v1
       with:
