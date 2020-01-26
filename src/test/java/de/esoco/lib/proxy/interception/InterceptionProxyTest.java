@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2020 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,24 +68,26 @@ public class InterceptionProxyTest extends TestCase
 
 		ip.setDefaultInterception(InterceptionProxy.FORWARD);
 
-		ip.addAdvice(new InterceptionAdvice()
+		ip.addAdvice(
+			new InterceptionAdvice()
 			{
 				@Override
 				public void before(Object   rInvoked,
 								   Method   rMethod,
-								   Object[] rArgs) throws Throwable
+								   Object[] rArgs) throws Exception
 				{
 					nBeforeCount++;
 				}
 			});
 
-		ip.addAdvice(new InterceptionAdvice()
+		ip.addAdvice(
+			new InterceptionAdvice()
 			{
 				@Override
 				public void afterReturn(Object   rReturn,
 										Object   rInvoked,
 										Method   rMethod,
-										Object[] rArgs) throws Throwable
+										Object[] rArgs) throws Exception
 				{
 					nReturnCount++;
 				}
@@ -94,17 +96,18 @@ public class InterceptionProxyTest extends TestCase
 				public void afterThrow(Throwable rThrown,
 									   Object    rInvoked,
 									   Method    rMethod,
-									   Object[]  rArgs) throws Throwable
+									   Object[]  rArgs) throws Exception
 				{
 					nThrowCount++;
 				}
 			});
 
-		ip.addAdvice(new InterceptionAdvice()
+		ip.addAdvice(
+			new InterceptionAdvice()
 			{
 				@Override
 				public void after(Object rProxy, Method rMethod, Object[] rArgs)
-					throws Throwable
+					throws Exception
 				{
 					nLogCount++;
 				}
@@ -146,8 +149,9 @@ public class InterceptionProxyTest extends TestCase
 	{
 		// DirectRelationInterface extends RelationEnabled
 		InterceptionProxy<RelationInterface> ip =
-			new InterceptionProxy<RelationInterface>(RelationInterface.class,
-													 true);
+			new InterceptionProxy<RelationInterface>(
+				RelationInterface.class,
+				true);
 
 		Object    aTarget = new TestClass();
 		Relatable ti	  = ip.newProxyInstance(aTarget);
@@ -159,8 +163,9 @@ public class InterceptionProxyTest extends TestCase
 		assertEquals(3, ti.get(TEST_STRINGS).size());
 
 		// try again without relation support enabled
-		ip = new InterceptionProxy<RelationInterface>(RelationInterface.class,
-													  false);
+		ip = new InterceptionProxy<RelationInterface>(
+				RelationInterface.class,
+				false);
 		ti = ip.newProxyInstance(aTarget);
 
 		try

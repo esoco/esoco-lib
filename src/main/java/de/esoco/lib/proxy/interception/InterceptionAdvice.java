@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2020 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,21 +104,22 @@ public abstract class InterceptionAdvice implements Cloneable
 	 *
 	 * @return The result of the interception invocation
 	 *
-	 * @throws Throwable Any kind of exception may be thrown
+	 * @throws Exception Any kind of exception may be thrown
 	 */
 	public Object invoke(Interception rInterception,
 						 Object		  rProxy,
 						 Method		  rMethod,
 						 Object		  rTarget,
-						 Object[]	  rArgs) throws Throwable
+						 Object[]	  rArgs) throws Exception
 	{
 		if (rNextAdvice != null)
 		{
-			return rNextAdvice.advise(rInterception,
-									  rProxy,
-									  rMethod,
-									  rTarget,
-									  rArgs);
+			return rNextAdvice.advise(
+				rInterception,
+				rProxy,
+				rMethod,
+				rTarget,
+				rArgs);
 		}
 		else
 		{
@@ -145,13 +146,13 @@ public abstract class InterceptionAdvice implements Cloneable
 	 *
 	 * @return The result of the interception invocation
 	 *
-	 * @throws Throwable Any kind of exception may be thrown
+	 * @throws Exception Any kind of exception may be thrown
 	 */
 	protected Object advise(Interception rInterception,
 							Object		 rProxy,
 							Method		 rMethod,
 							Object		 rTarget,
-							Object[]	 rArgs) throws Throwable
+							Object[]	 rArgs) throws Exception
 	{
 		Object rResult;
 
@@ -183,10 +184,10 @@ public abstract class InterceptionAdvice implements Cloneable
 	 * @param  rMethod  The invoked method
 	 * @param  rArgs    The method arguments
 	 *
-	 * @throws Throwable Any kind of exception may be thrown
+	 * @throws Exception Any kind of exception may be thrown
 	 */
 	protected void after(Object rInvoked, Method rMethod, Object[] rArgs)
-		throws Throwable
+		throws Exception
 	{
 	}
 
@@ -201,12 +202,12 @@ public abstract class InterceptionAdvice implements Cloneable
 	 * @param  rMethod  The original method that has been invoked
 	 * @param  rArgs    The original method arguments
 	 *
-	 * @throws Throwable Any kind of exception may be thrown
+	 * @throws Exception Any kind of exception may be thrown
 	 */
 	protected void afterReturn(Object   rReturn,
 							   Object   rInvoked,
 							   Method   rMethod,
-							   Object[] rArgs) throws Throwable
+							   Object[] rArgs) throws Exception
 	{
 		after(rInvoked, rMethod, rArgs);
 	}
@@ -221,12 +222,12 @@ public abstract class InterceptionAdvice implements Cloneable
 	 * @param  rMethod  The original method that has been invoked
 	 * @param  rArgs    The original method arguments
 	 *
-	 * @throws Throwable Any kind of exception may be thrown
+	 * @throws Exception Any kind of exception may be thrown
 	 */
 	protected void afterThrow(Throwable rThrown,
 							  Object    rInvoked,
 							  Method    rMethod,
-							  Object[]  rArgs) throws Throwable
+							  Object[]  rArgs) throws Exception
 	{
 		after(rInvoked, rMethod, rArgs);
 	}
@@ -239,10 +240,10 @@ public abstract class InterceptionAdvice implements Cloneable
 	 * @param  rMethod The original method that has been invoked
 	 * @param  rArgs   The original method arguments
 	 *
-	 * @throws Throwable Any kind of exception may be thrown
+	 * @throws Exception Any kind of exception may be thrown
 	 */
 	protected void before(Object rTarget, Method rMethod, Object[] rArgs)
-		throws Throwable
+		throws Exception
 	{
 	}
 

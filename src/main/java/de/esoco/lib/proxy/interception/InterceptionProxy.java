@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2020 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class InterceptionProxy<T> extends RelatedObject
 			public Object invoke(Object   rProxy,
 								 Method   rOriginalMethod,
 								 Object   rTarget,
-								 Object[] rArgs) throws Throwable
+								 Object[] rArgs) throws Exception
 			{
 				return null;
 			}
@@ -124,8 +124,9 @@ public class InterceptionProxy<T> extends RelatedObject
 		}
 		else
 		{
-			throw new IllegalArgumentException("Not an interception proxy: " +
-											   rProxyInstance);
+			throw new IllegalArgumentException(
+				"Not an interception proxy: " +
+				rProxyInstance);
 		}
 	}
 
@@ -216,9 +217,10 @@ public class InterceptionProxy<T> extends RelatedObject
 	@SuppressWarnings("unchecked")
 	public T newProxyInstance(Object rTarget)
 	{
-		return (T) Proxy.newProxyInstance(rProxyInterfaces[0].getClassLoader(),
-										  rProxyInterfaces,
-										  new InterceptionHandler(rTarget));
+		return (T) Proxy.newProxyInstance(
+			rProxyInterfaces[0].getClassLoader(),
+			rProxyInterfaces,
+			new InterceptionHandler(rTarget));
 	}
 
 	/***************************************
@@ -326,8 +328,9 @@ public class InterceptionProxy<T> extends RelatedObject
 
 		if (rInterception == null)
 		{
-			throw new IllegalArgumentException("No interception for method " +
-											   rMethod.getName());
+			throw new IllegalArgumentException(
+				"No interception for method " +
+				rMethod.getName());
 		}
 
 		return rInterception;
@@ -384,11 +387,12 @@ public class InterceptionProxy<T> extends RelatedObject
 
 			if (rInterceptionAdvice != null)
 			{
-				return rInterceptionAdvice.advise(rInterception,
-												  rProxy,
-												  rMethod,
-												  rTarget,
-												  rArgs);
+				return rInterceptionAdvice.advise(
+					rInterception,
+					rProxy,
+					rMethod,
+					rTarget,
+					rArgs);
 			}
 			else
 			{

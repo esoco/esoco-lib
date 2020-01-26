@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2018 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2020 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -163,7 +163,7 @@ public abstract class MethodInterception implements Interception
 	public Object invoke(Object   rProxy,
 						 Method   rOriginalMethod,
 						 Object   rTarget,
-						 Object[] rArgs) throws Throwable
+						 Object[] rArgs) throws Exception
 	{
 		Method   rMethod  = aMethodMap.get(rOriginalMethod);
 		Object[] rExtArgs;
@@ -211,8 +211,9 @@ public abstract class MethodInterception implements Interception
 
 		if (rTargetMethod == null)
 		{
-			throw new IllegalArgumentException("Missing target method: " +
-											   rMethod);
+			throw new IllegalArgumentException(
+				"Missing target method: " +
+				rMethod);
 		}
 
 		aMethodMap.put(rMethod, rTargetMethod);
@@ -305,13 +306,12 @@ public abstract class MethodInterception implements Interception
 	 */
 	protected Method mapMethod(Method rMethod)
 	{
-		Class<?>[] rExtArgTypes  = convertArgTypes(rMethod);
-		Method     rTargetMethod =
-			ReflectUtil.findPublicMethod(getClass(),
-										 rMethod.getName(),
-										 rExtArgTypes);
+		Class<?>[] rExtArgTypes = convertArgTypes(rMethod);
 
-		return rTargetMethod;
+		return ReflectUtil.findPublicMethod(
+			getClass(),
+			rMethod.getName(),
+			rExtArgTypes);
 	}
 
 	/***************************************

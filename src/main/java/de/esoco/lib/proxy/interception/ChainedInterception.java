@@ -1,6 +1,6 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // This file is a part of the 'esoco-lib' project.
-// Copyright 2015 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
+// Copyright 2020 Elmar Sonnenschein, esoco GmbH, Flensburg, Germany
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,8 @@ public abstract class ChainedInterception implements Interception
 	{
 		if (rNextInterception == null)
 		{
-			throw new IllegalArgumentException("Interception argument must not be null");
+			throw new IllegalArgumentException(
+				"Interception argument must not be null");
 		}
 
 		rNext = rNextInterception;
@@ -79,7 +80,7 @@ public abstract class ChainedInterception implements Interception
 	public final Object invoke(Object   rProxy,
 							   Method   rOriginalMethod,
 							   Object   rTarget,
-							   Object[] rArgs) throws Throwable
+							   Object[] rArgs) throws Exception
 	{
 		return invokeChain(null, rProxy, rOriginalMethod, rTarget, rArgs);
 	}
@@ -99,7 +100,7 @@ public abstract class ChainedInterception implements Interception
 					   Object		rProxy,
 					   Method		rOriginalMethod,
 					   Object		rTarget,
-					   Object[]		rArgs) throws Throwable
+					   Object[]		rArgs) throws Exception
 	{
 		Object result = null;
 
@@ -114,11 +115,12 @@ public abstract class ChainedInterception implements Interception
 			// invoked from interception proxy, therefore continue down the
 			//chain
 			result =
-				((ChainedInterception) rNext).invokeChain(rInterception,
-														  rProxy,
-														  rOriginalMethod,
-														  rTarget,
-														  rArgs);
+				((ChainedInterception) rNext).invokeChain(
+					rInterception,
+					rProxy,
+					rOriginalMethod,
+					rTarget,
+					rArgs);
 		}
 		else
 		{
