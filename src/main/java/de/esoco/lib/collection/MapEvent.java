@@ -20,8 +20,7 @@ import de.esoco.lib.event.ElementEvent;
 
 import java.util.Map;
 
-
-/********************************************************************
+/**
  * An element event subclass that contains informations related to map
  * modifications. The element value of a map event always describes the map key
  * that is affected by the event while the update value contains the map value
@@ -29,11 +28,9 @@ import java.util.Map;
  *
  * @author eso
  */
-public class MapEvent<K, V> extends ElementEvent<Map<K, V>, K, V>
-{
-	//~ Constructors -----------------------------------------------------------
+public class MapEvent<K, V> extends ElementEvent<Map<K, V>, K, V> {
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rType        The event type
@@ -41,11 +38,8 @@ public class MapEvent<K, V> extends ElementEvent<Map<K, V>, K, V>
 	 * @param rElement     The map key affected by this event
 	 * @param rUpdateValue The new value in case of update events
 	 */
-	public MapEvent(EventType rType,
-					Map<K, V> rSource,
-					K		  rElement,
-					V		  rUpdateValue)
-	{
+	public MapEvent(EventType rType, Map<K, V> rSource, K rElement,
+		V rUpdateValue) {
 		super(rType, rSource, rElement, rUpdateValue);
 	}
 }

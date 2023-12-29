@@ -18,12 +18,10 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.BinaryFunction;
 import de.esoco.lib.expression.Function;
-
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
 
-
-/********************************************************************
+/**
  * A function that applies a {@link CommunicationMethod} to an endpoint and
  * automatically performs the resource handling upon evaluation (i.e. closing
  * the endpoint {@link Connection}).
@@ -31,90 +29,75 @@ import org.obrel.core.RelatedObject;
  * @author eso
  */
 public class EndpointFunction<I, O> extends RelatedObject
-	implements BinaryFunction<I, Relatable, O>
-{
-	//~ Instance fields --------------------------------------------------------
+	implements BinaryFunction<I, Relatable, O> {
 
-	private final Endpoint				    rEndpoint;
+	private final Endpoint rEndpoint;
+
 	private final CommunicationMethod<I, O> fMethod;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rEndpoint The endpoint to invoke the method on
 	 * @param fMethod   The communication method to invoke
 	 */
-	public EndpointFunction(
-		Endpoint				  rEndpoint,
-		CommunicationMethod<I, O> fMethod)
-	{
+	public EndpointFunction(Endpoint rEndpoint,
+		CommunicationMethod<I, O> fMethod) {
 		this.rEndpoint = rEndpoint;
-		this.fMethod   = fMethod;
+		this.fMethod = fMethod;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public O evaluate(I rInput, Relatable rParams)
-	{
-		try (Connection rConnection = rEndpoint.connect(rParams))
-		{
+	public O evaluate(I rInput, Relatable rParams) {
+		try (Connection rConnection = rEndpoint.connect(rParams)) {
 			set(Endpoint.ENDPOINT_CONNECTION, rConnection);
 
 			return fMethod.evaluate(rInput, rConnection);
 		}
 	}
 
-	/***************************************
+	/**
 	 * A semantic variant of {@link #evaluate(Object)} to request from the
 	 * endpoint data with the default input of the invoked method.
 	 *
 	 * @return The function result for the default method input
 	 */
-	public O receive()
-	{
+	public O receive() {
 		return evaluate(null);
 	}
 
-	/***************************************
+	/**
 	 * A semantic variant of {@link #evaluate(Object)} to send data to the
 	 * endpoint with the default input of the invoked method.
 	 *
 	 * @return The function result for the default method input
 	 */
-	public O send()
-	{
+	public O send() {
 		return evaluate(null);
 	}
 
-	/***************************************
+	/**
 	 * A semantic variant of {@link #evaluate(Object)} to send data to the
 	 * endpoint.
 	 *
-	 * @param  rInput The input of the endpoint request
-	 *
+	 * @param rInput The input of the endpoint request
 	 * @return The result of the endpoint request
 	 */
-	public O send(I rInput)
-	{
+	public O send(I rInput) {
 		return evaluate(rInput);
 	}
 
-	/***************************************
+	/**
 	 * Overridden to create a new endpoint chain.
 	 *
 	 * @see Function#then(Function)
 	 */
 	@Override
-	public <T> EndpointFunction<I, T> then(Function<? super O, T> fOther)
-	{
-		return new EndpointFunction<>(
-			rEndpoint,
+	public <T> EndpointFunction<I, T> then(Function<? super O, T> fOther) {
+		return new EndpointFunction<>(rEndpoint,
 			new CommunicationChain<>(fMethod, fOther));
 	}
 }

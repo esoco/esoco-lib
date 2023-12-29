@@ -18,38 +18,35 @@ package de.esoco.lib.security;
 
 import org.obrel.core.Relatable;
 
-
-/********************************************************************
+/**
  * Definition of services that perform user authentication based on data in a
  * relatable object.
  *
  * @author eso
  */
-public interface AuthenticationService
-{
-	//~ Methods ----------------------------------------------------------------
+public interface AuthenticationService {
 
-	/***************************************
+	/**
 	 * Authenticates an entity based on the data in the relatable argument. The
 	 * relations of the authentication data object must contain the parameters
 	 * necessary to perform the authentication. What exactly these parameters
 	 * are depends on the service implementation. For the most basic type of a
 	 * password authentication the argument should contain of the relations
-	 * {@link SecurityRelationTypes#LOGIN_NAME} and {@link
-	 * SecurityRelationTypes#PASSWORD}. Alternatively the types {@link
-	 * SecurityRelationTypes#CREDENTIAL} or {@link
-	 * SecurityRelationTypes#BINARY_CREDENTIAL} may be used (either with or
-	 * without a login name).
+	 * {@link SecurityRelationTypes#LOGIN_NAME} and
+	 * {@link SecurityRelationTypes#PASSWORD}. Alternatively the types
+	 * {@link SecurityRelationTypes#CREDENTIAL} or
+	 * {@link SecurityRelationTypes#BINARY_CREDENTIAL} may be used (either with
+	 * or without a login name).
 	 *
 	 * <p>Implementations may also choose to use different data for the
 	 * authentication in which case the required parameters must be documented
 	 * for the callers. They can also use the relatable argument to return
-	 * addition information if they need to, e.g. a session ID or authentication
+	 * addition information if they need to, e.g. a session ID or
+	 * authentication
 	 * token.</p>
 	 *
-	 * @param  rAuthData The relatable object containing the authentication data
-	 *
+	 * @param rAuthData The relatable object containing the authentication data
 	 * @return TRUE if the authentication was successful, FALSE if not
 	 */
-	public boolean authenticate(Relatable rAuthData);
+	boolean authenticate(Relatable rAuthData);
 }

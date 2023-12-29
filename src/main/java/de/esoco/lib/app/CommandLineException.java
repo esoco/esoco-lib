@@ -16,91 +16,71 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
-/********************************************************************
- * An exception that indicates an invalid command line option in a {@link
- * CommandLine}. Invalid options are either missing completely or have an
+/**
+ * An exception that indicates an invalid command line option in a
+ * {@link CommandLine}. Invalid options are either missing completely or have an
  * illegal option value. This is a runtime exception because it may occur
  * anytime during command line processing.
  *
  * @author eso
  */
-public class CommandLineException extends RuntimeException
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class CommandLineException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Instance fields --------------------------------------------------------
-
 	private final String sInvalidOption;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance for a certain invalid command line option. If the
-	 * error message contains a %s placeholder it will be replaced with the name
+	 * error message contains a %s placeholder it will be replaced with the
+	 * name
 	 * of the invalid option
 	 *
 	 * @param sMessage       The error message
 	 * @param sInvalidOption The name of the invalid command line option
 	 */
-	public CommandLineException(String sMessage, String sInvalidOption)
-	{
+	public CommandLineException(String sMessage, String sInvalidOption) {
 		super(createErrorMessage(sMessage, sInvalidOption));
 
 		this.sInvalidOption = sInvalidOption;
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance for a certain invalid command line option. If the
-	 * error message contains a %s placeholder it will be replaced with the name
+	 * error message contains a %s placeholder it will be replaced with the
+	 * name
 	 * of the invalid option
 	 *
 	 * @param sMessage       The error message
 	 * @param sInvalidOption The name of the invalid command line option
 	 * @param eCause         The causing exception
 	 */
-	public CommandLineException(String    sMessage,
-								String    sInvalidOption,
-								Throwable eCause)
-	{
+	public CommandLineException(String sMessage, String sInvalidOption,
+		Throwable eCause) {
 		super(createErrorMessage(sMessage, sInvalidOption), eCause);
 
 		this.sInvalidOption = sInvalidOption;
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates the error message for the superclass by formatting it with the
 	 * invalid option name if necessary.
-	 *
-	 * @param  sMessage
-	 * @param  sInvalidOption
-	 *
-	 * @return
 	 */
-	private static String createErrorMessage(
-		String sMessage,
-		String sInvalidOption)
-	{
-		if (sMessage.contains("%s"))
-		{
+	private static String createErrorMessage(String sMessage,
+		String sInvalidOption) {
+		if (sMessage.contains("%s")) {
 			sMessage = String.format(sMessage, sInvalidOption);
 		}
 
 		return sMessage;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the invalid command line option that this instance refers to.
 	 *
 	 * @return The invalid command line option
 	 */
-	public final String getInvalidOption()
-	{
+	public final String getInvalidOption() {
 		return sInvalidOption;
 	}
 }

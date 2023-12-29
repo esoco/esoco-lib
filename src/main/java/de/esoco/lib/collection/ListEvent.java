@@ -18,48 +18,36 @@ package de.esoco.lib.collection;
 
 import java.util.List;
 
-
-/********************************************************************
+/**
  * A collection event subclass that provides access to the index of the list
  * position that is affected by the index.
  *
  * @author eso
  */
-public class ListEvent<E> extends CollectionEvent<E, List<E>>
-{
-	//~ Instance fields --------------------------------------------------------
+public class ListEvent<E> extends CollectionEvent<E, List<E>> {
 
 	private final int nIndex;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @see CollectionEvent#CollectionEvent(de.esoco.lib.event.ElementEvent.EventType,
-	 *      java.util.Collection, Object, Object)
+	 * java.util.Collection, Object, Object)
 	 */
-	public ListEvent(EventType rType,
-					 List<E>   rSource,
-					 E		   rElement,
-					 E		   rUpdateValue,
-					 int	   nIndex)
-	{
+	public ListEvent(EventType rType, List<E> rSource, E rElement,
+		E rUpdateValue, int nIndex) {
 		super(rType, rSource, rElement, rUpdateValue);
 		this.nIndex = nIndex;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the index of the list position that will be affected by this
 	 * event. An index value of -1 means that the last element in the list is
 	 * affected (typically used if an element is added to the end of a list).
 	 *
 	 * @return The index of the affected list position
 	 */
-	public final int getIndex()
-	{
+	public final int getIndex() {
 		return nIndex;
 	}
 }

@@ -16,41 +16,34 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * A runtime exception that will be thrown if a transaction that is managed by
  * the {@link TransactionManager} fails.
  *
  * @author eso
  */
-public class TransactionException extends RuntimeException
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class TransactionException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * @see Exception#Exception(String)
 	 */
-	public TransactionException(String sMessage)
-	{
+	public TransactionException(String sMessage) {
 		super(sMessage);
 	}
 
-	/***************************************
+	/**
 	 * @see Exception#Exception(Throwable)
 	 */
-	public TransactionException(Throwable eCause)
-	{
+	public TransactionException(Throwable eCause) {
 		super(eCause);
 	}
 
-	/***************************************
+	/**
 	 * @see Exception#Exception(Throwable)
 	 */
-	public TransactionException(String sMessage, Throwable eCause)
-	{
+	public TransactionException(String sMessage, Throwable eCause) {
 		super(sMessage, eCause);
 	}
 }

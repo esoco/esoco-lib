@@ -16,65 +16,56 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-
-/********************************************************************
+/**
  * Test of the {@link CommandLine} class.
  *
  * @author eso
  */
-public class CommandLineTest
-{
-	//~ Methods ----------------------------------------------------------------
+public class CommandLineTest {
 
-	/***************************************
+	/**
 	 * Test CommandLine(String[])
 	 */
 	@Test
-	public void testCommandLine()
-	{
-		String[]    args =
-			new String[]
-			{
-				"-a", "-b", "-t1=123", "-t2='ok ok'", "-t3", "'a value'"
-			};
-		CommandLine cl   = new CommandLine(args);
+	public void testCommandLine() {
+		String[] args =
+			new String[] { "-a", "-b", "-t1=123", "-t2='ok ok'", "-t3",
+				"'a value'" };
+		CommandLine cl = new CommandLine(args);
 
 		assertTrue(cl.hasOption("a"));
 		assertTrue(cl.hasOption("b"));
 		assertFalse(cl.hasOption("c"));
 		assertEquals(Boolean.TRUE, cl.getOption("a"));
-		assertEquals(Integer.valueOf(123), cl.getOption("t1"));
+		assertEquals(123, cl.getOption("t1"));
 		assertEquals("ok ok", cl.getOption("t2"));
 		assertEquals("a value", cl.getOption("t3"));
 	}
 
-	/***************************************
+	/**
 	 * Test assignment only CommandLine(String[], String...)
 	 */
 	@Test
-	public void testRequireOption()
-	{
-		String[]    args = new String[] { "-val=test" };
-		CommandLine cl   = new CommandLine(args);
+	public void testRequireOption() {
+		String[] args = new String[] { "-val=test" };
+		CommandLine cl = new CommandLine(args);
 
 		assertEquals("test", cl.getOption("val"));
 
-		try
-		{
+		try {
 			args = new String[] {};
-			cl   = new CommandLine(args);
+			cl = new CommandLine(args);
 
 			cl.requireOption("val");
-			assertTrue("Mandatory option value missing", false);
-		}
-		catch (CommandLineException e)
-		{
+			fail("Mandatory option value missing");
+		} catch (CommandLineException e) {
 			// expected
 		}
 	}

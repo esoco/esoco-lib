@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.reflect;
 
-/********************************************************************
+/**
  * MethodDispatcher subclass that can be created and invoked with predefined
  * arguments. That makes it easier to use MethodDispatcher instances in
  * environments where it is not possible to provide the arguments to the method
@@ -25,15 +25,11 @@ package de.esoco.lib.reflect;
  *
  * @author eso
  */
-public class MethodArgDispatcher<T> extends MethodDispatcher<T>
-{
-	//~ Instance fields --------------------------------------------------------
+public class MethodArgDispatcher<T> extends MethodDispatcher<T> {
 
 	private final Object[] rArguments;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new method dispatcher for a method with predefined parameters.
 	 * The target object must contain a method with parameters of exactly the
 	 * type of the elements in the given arguments array, else an
@@ -43,24 +39,21 @@ public class MethodArgDispatcher<T> extends MethodDispatcher<T>
 	 * @param sMethod The name of the method to invoke
 	 * @param rArgs   The arguments to be used on invocation
 	 */
-	public MethodArgDispatcher(Object rTarget, String sMethod, Object... rArgs)
-	{
+	public MethodArgDispatcher(Object rTarget, String sMethod,
+		Object... rArgs) {
 		super(rTarget, sMethod, ReflectUtil.getArgumentTypes(rArgs));
 
 		rArguments = rArgs;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Overridden empty dispatch() method that invokes the underlying method
 	 * with the arguments that have been set through the constructor.
 	 *
 	 * @return The value returned by the invoked method (NULL for void methods)
 	 */
 	@Override
-	public T dispatch()
-	{
+	public T dispatch() {
 		return dispatch(rArguments);
 	}
 }

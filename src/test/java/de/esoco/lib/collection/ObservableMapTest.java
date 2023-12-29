@@ -18,6 +18,8 @@ package de.esoco.lib.collection;
 
 import de.esoco.lib.event.ElementEvent.EventType;
 import de.esoco.lib.event.EventHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,48 +27,42 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
-/********************************************************************
+/**
  * Test of observable collection functionality.
  *
  * @author eso
  */
-public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
-{
-	//~ Instance fields --------------------------------------------------------
+public class ObservableMapTest
+	implements EventHandler<MapEvent<String, String>> {
+
+	EventType rExpectedEventType;
+
+	String sTestKey;
+
+	String sTestValue;
 
 	private ObservableMap<String, String> aObservableMap;
-	EventType							  rExpectedEventType;
-	String								  sTestKey;
-	String								  sTestValue;
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Handles collection events.
 	 *
 	 * @param rEvent The event
 	 */
 	@Override
-	public void handleEvent(MapEvent<String, String> rEvent)
-	{
+	public void handleEvent(MapEvent<String, String> rEvent) {
 		EventType rType = rEvent.getType();
 
 		assertEquals(rExpectedEventType, rType);
 
-		switch (rEvent.getType())
-		{
+		switch (rEvent.getType()) {
 			case ADD:
 			case REMOVE:
 			case REMOVE_ALL:
 			case UPDATE:
-				sTestKey   = rEvent.getElement();
+				sTestKey = rEvent.getElement();
 				sTestValue = rEvent.getUpdateValue();
 
 				break;
@@ -76,26 +72,23 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		}
 	}
 
-	/***************************************
+	/**
 	 * Test setup.
 	 */
 	@Before
-	public void setup()
-	{
+	public void setup() {
 		// use a linked map to make entry order predictable
-		aObservableMap =
-			new ObservableMap<String, String>(new LinkedHashMap<String,
-																String>());
+		aObservableMap = new ObservableMap<String, String>(
+			new LinkedHashMap<String, String>());
 
 		aObservableMap.addListener(this);
 	}
 
-	/***************************************
+	/**
 	 * Tests clearing the map.
 	 */
 	@Test
-	public void testClear()
-	{
+	public void testClear() {
 		initMap(EventType.REMOVE_ALL);
 
 		aObservableMap.clear();
@@ -103,12 +96,11 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		assertTrue(aObservableMap.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Tests removing through an entry iterator.
 	 */
 	@Test
-	public void testEntryIteratorRemove()
-	{
+	public void testEntryIteratorRemove() {
 		initMap(EventType.REMOVE);
 
 		Iterator<Entry<String, String>> rIterator =
@@ -116,8 +108,7 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 
 		int i = 1;
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			rIterator.next();
 			rIterator.remove();
 			assertTestValues("K" + i, "V" + i);
@@ -125,12 +116,11 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		}
 	}
 
-	/***************************************
+	/**
 	 * Tests removing through an entry iterator.
 	 */
 	@Test
-	public void testEntryUpdate()
-	{
+	public void testEntryUpdate() {
 		initMap(EventType.UPDATE);
 
 		Iterator<Entry<String, String>> rIterator =
@@ -138,28 +128,25 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 
 		int i = 1;
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			rIterator.next().setValue("U" + i);
 			assertTestValues("K" + i, "U" + i);
 			i++;
 		}
 	}
 
-	/***************************************
+	/**
 	 * Tests removing through a key iterator.
 	 */
 	@Test
-	public void testKeyIteratorRemove()
-	{
+	public void testKeyIteratorRemove() {
 		initMap(EventType.REMOVE);
 
 		Iterator<String> rIterator = aObservableMap.keySet().iterator();
 
 		int i = 1;
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			rIterator.next();
 			rIterator.remove();
 			assertTestValues("K" + i, "V" + i);
@@ -167,12 +154,11 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		}
 	}
 
-	/***************************************
+	/**
 	 * Tests adding elements with put.
 	 */
 	@Test
-	public void testPut()
-	{
+	public void testPut() {
 		initMap(EventType.ADD);
 
 		Map<String, String> aPutMap = new HashMap<String, String>();
@@ -184,12 +170,11 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		assertTestValues("K5", "V5");
 	}
 
-	/***************************************
+	/**
 	 * Tests removing elements.
 	 */
 	@Test
-	public void testRemove()
-	{
+	public void testRemove() {
 		initMap(EventType.REMOVE);
 
 		aObservableMap.remove("K1");
@@ -202,12 +187,11 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		assertTrue(aObservableMap.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Tests updating elements.
 	 */
 	@Test
-	public void testUpdate()
-	{
+	public void testUpdate() {
 		initMap(EventType.UPDATE);
 
 		aObservableMap.put("K1", "V1A");
@@ -218,20 +202,18 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		assertTestValues("K3", "V3A");
 	}
 
-	/***************************************
+	/**
 	 * Tests removing through a value iterator.
 	 */
 	@Test
-	public void testValueIteratorRemove()
-	{
+	public void testValueIteratorRemove() {
 		initMap(EventType.REMOVE);
 
 		Iterator<String> rIterator = aObservableMap.values().iterator();
 
 		int i = 1;
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			rIterator.next();
 			rIterator.remove();
 			assertTestValues("K" + i, "V" + i);
@@ -239,25 +221,23 @@ public class ObservableMapTest implements EventHandler<MapEvent<String, String>>
 		}
 	}
 
-	/***************************************
+	/**
 	 * Asserts the equality of the test values with the arguments.
 	 *
 	 * @param sKey   The expected test key
 	 * @param sValue The expected test value
 	 */
-	void assertTestValues(String sKey, String sValue)
-	{
+	void assertTestValues(String sKey, String sValue) {
 		assertEquals(sKey, sTestKey);
 		assertEquals(sValue, sTestValue);
 	}
 
-	/***************************************
+	/**
 	 * Initializes the test map.
 	 *
 	 * @param rEventType The expected event type for subsequent changes
 	 */
-	void initMap(EventType rEventType)
-	{
+	void initMap(EventType rEventType) {
 		assertTrue(aObservableMap.isEmpty());
 
 		rExpectedEventType = EventType.ADD;

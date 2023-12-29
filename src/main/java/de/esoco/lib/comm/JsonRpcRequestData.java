@@ -18,46 +18,35 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.json.JsonObject;
 
-
-/********************************************************************
+/**
  * A JSON object that initializes and contains the data of a JSON RPC request.
  *
  * @author eso
  */
-public class JsonRpcRequestData extends JsonObject
-{
-	//~ Constructors -----------------------------------------------------------
+public class JsonRpcRequestData extends JsonObject {
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rId     The ID of the request (a string or an integer number)
 	 * @param sMethod The RPC method to call
 	 */
-	public JsonRpcRequestData(Object rId, String sMethod)
-	{
+	public JsonRpcRequestData(Object rId, String sMethod) {
 		set("jsonrpc", "2.0");
 		set("id", rId);
 		set("method", sMethod);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Adds or removes parameters to this request.
 	 *
-	 * @param  rParams The parameters to add or NULL to remove all parameters
-	 *
+	 * @param rParams The parameters to add or NULL to remove all parameters
 	 * @return This instance for fluent invocation
 	 */
-	public JsonRpcRequestData withParams(Object rParams)
-	{
-		if (rParams != null)
-		{
+	public JsonRpcRequestData withParams(Object rParams) {
+		if (rParams != null) {
 			set("params", rParams);
-		}
-		else
-		{
+		} else {
 			remove("params");
 		}
 

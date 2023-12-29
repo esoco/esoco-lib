@@ -20,8 +20,7 @@ import de.esoco.lib.expression.ThrowingSupplier;
 
 import java.util.function.Supplier;
 
-
-/********************************************************************
+/**
  * Runnable implementation that allows to access the result of the runnable
  * execution after the run() method has terminated. Subclasses must provide an
  * instance of the {@link ThrowingSupplier} interface that will create the
@@ -39,56 +38,49 @@ import java.util.function.Supplier;
  * method. It is the responsibility of the application to not access the
  * result() method before the {@link #run()} method has finished. Else most
  * probably unpredictable results will occur. To check if the {@link #run()}
- * method has run completely this class provides the method {@link
- * #isFinished()}.</p>
+ * method has run completely this class provides the method
+ * {@link #isFinished()}.</p>
  */
-public class ResultRunner<T> implements Runnable
-{
-	//~ Instance fields --------------------------------------------------------
+public class ResultRunner<T> implements Runnable {
 
-	private ThrowingSupplier<T> fCreateResult;
+	private final ThrowingSupplier<T> fCreateResult;
 
-	private T		  rResult    = null;
+	private T rResult = null;
+
 	private Throwable rException = null;
-	private boolean   bFinished  = false;
 
-	//~ Constructors -----------------------------------------------------------
+	private boolean bFinished = false;
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rCreateResult The function that generates the result
 	 */
-	public ResultRunner(ThrowingSupplier<T> rCreateResult)
-	{
+	public ResultRunner(ThrowingSupplier<T> rCreateResult) {
 		fCreateResult = rCreateResult;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns any exception thrown by the supplying function. Will be NULL if
 	 * the method terminated regularly.
 	 *
 	 * @return An exception thrown by execute() or NULL for none
 	 */
-	public final Throwable getException()
-	{
+	public final Throwable getException() {
 		return rException;
 	}
 
-	/***************************************
+	/**
 	 * Allows to check if the execution has finished. When this method returns
 	 * TRUE it is safe to query the {@link #result()} method.
 	 *
 	 * @return TRUE if the execution has finished
 	 */
-	public synchronized boolean isFinished()
-	{
+	public synchronized boolean isFinished() {
 		return bFinished;
 	}
 
-	/***************************************
+	/**
 	 * Allows to query the result of the execution of this instance. If the
 	 * supplying function returned a value the same value will be returned by
 	 * this method. If it threw an exception this method will throw a
@@ -98,25 +90,20 @@ public class ResultRunner<T> implements Runnable
 	 *
 	 * <p>This method does not perform any thread synchronization. The result
 	 * will only be valid after the {@link #run()} method has been executed
-	 * completely. It is the application's responsibility to check this by means
+	 * completely. It is the application's responsibility to check this by
+	 * means
 	 * of the method {@link #isFinished()} if necessary.</p>
 	 *
 	 * @return The result returned by the execute() method (may be NULL)
-	 *
 	 * @throws RuntimeException If the execute() method threw an exception,
 	 *                          which is set as the cause of the runtime
 	 *                          exception
 	 */
-	public final T result()
-	{
-		if (rException != null)
-		{
-			if (rException instanceof RuntimeException)
-			{
+	public final T result() {
+		if (rException != null) {
+			if (rException instanceof RuntimeException) {
 				throw (RuntimeException) rException;
-			}
-			else
-			{
+			} else {
 				throw new RuntimeException(rException);
 			}
 		}
@@ -124,32 +111,25 @@ public class ResultRunner<T> implements Runnable
 		return rResult;
 	}
 
-	/***************************************
+	/**
 	 * Invokes the supplying function and captures the result or any exceptions
 	 * that may occur.
 	 */
 	@Override
-	public final void run()
-	{
-		try
-		{
+	public final void run() {
+		try {
 			rResult = fCreateResult.tryGet();
-		}
-		catch (Throwable t)
-		{
+		} catch (Throwable t) {
 			rException = t;
-		}
-		finally
-		{
+		} finally {
 			finish();
 		}
 	}
 
-	/***************************************
+	/**
 	 * Internal method to set the finished state of this instance to true.
 	 */
-	private final synchronized void finish()
-	{
+	private final synchronized void finish() {
 		bFinished = true;
 	}
 }

@@ -18,49 +18,49 @@ package de.esoco.lib.io;
 
 import java.io.IOException;
 
-
-/********************************************************************
+/**
  * An IO exception that is thrown if a stream has reached a limit.
  *
  * @author eso
  */
-public class StreamLimitException extends IOException
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class StreamLimitException extends IOException {
+	
+	-------------------------------------------
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Instance fields --------------------------------------------------------
+	
+	
 
 	private final boolean bOnInput;
 
-	//~ Constructors -----------------------------------------------------------
+	
+	
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param sMessage An error message
 	 * @param bOnInput TRUE if the limit was reached on an input stream, FALSE
 	 *                 for an output stream
 	 */
-	public StreamLimitException(String sMessage, boolean bOnInput)
-	{
+	public StreamLimitException(String sMessage, boolean bOnInput) {
 		super(sMessage);
 
 		this.bOnInput = bOnInput;
 	}
 
-	//~ Methods ----------------------------------------------------------------
+	
+	
 
-	/***************************************
+	/**
 	 * Checks whether the limit was reached on an input stream or on an output
 	 * stream.
 	 *
 	 * @return TRUE if the limit was reached on an input stream, FALSE for an
-	 *         output stream
+	 * output stream
 	 */
-	public final boolean onInput()
-	{
+	public final boolean onInput() {
 		return bOnInput;
 	}
 }

@@ -16,69 +16,55 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.net;
 
-import java.io.Serializable;
-
-import java.util.regex.Pattern;
-
 import org.obrel.core.RelatedObject;
 
+import java.io.Serializable;
+import java.util.regex.Pattern;
 
-/********************************************************************
+/**
  * Immutable datatype class for network adapter MAC addresses. A MAC address
  * consists of 6 bytes that identify a network adapter.
  *
  * @author eso
  */
-public class MACAddress extends RelatedObject implements Serializable
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class MACAddress extends RelatedObject implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	// allowed MAC string patterns: xx-xx-xx-xx-xx-xx or xx:xx:xx:xx:xx:xx
-	private static Pattern aMACPattern =
-		Pattern.compile("(\\p{XDigit}{2}[:-]){5}" +
-						"\\p{XDigit}{2}");
-
-	//~ Instance fields --------------------------------------------------------
+	private static final Pattern aMACPattern =
+		Pattern.compile("(\\p{XDigit}{2}[:-]){5}" + "\\p{XDigit}{2}");
 
 	private byte[] aBytes;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance from a string representation of the MAC address.
 	 *
-	 * @param  sMAC A string containing the MAC address
-	 *
+	 * @param sMAC A string containing the MAC address
 	 * @throws IllegalArgumentException If the format of the argument string is
 	 *                                  invalid
 	 */
-	public MACAddress(String sMAC)
-	{
+	public MACAddress(String sMAC) {
 		aBytes = parseBytes(sMAC);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance from a byte array. The array must contain exactly
 	 * 6 bytes in transmission order.
 	 *
-	 * @param  rBytes An array containing the 6 bytes of the MAC address
-	 *
+	 * @param rBytes An array containing the 6 bytes of the MAC address
 	 * @throws IllegalArgumentException If the argument array is NULL or does
 	 *                                  not contain exactly 6 bytes
 	 */
-	public MACAddress(byte[] rBytes)
-	{
-		if (rBytes == null || rBytes.length != 6)
-		{
+	public MACAddress(byte[] rBytes) {
+		if (rBytes == null || rBytes.length != 6) {
 			aBytes = new byte[6];
 		}
 
 		System.arraycopy(rBytes, 0, aBytes, 0, aBytes.length);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance from 6 byte values in transmission order.
 	 *
 	 * @param b1 Byte 1
@@ -88,8 +74,7 @@ public class MACAddress extends RelatedObject implements Serializable
 	 * @param b5 Byte 5
 	 * @param b6 Byte 6
 	 */
-	public MACAddress(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6)
-	{
+	public MACAddress(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6) {
 		aBytes = new byte[6];
 
 		aBytes[0] = b1;
@@ -100,50 +85,43 @@ public class MACAddress extends RelatedObject implements Serializable
 		aBytes[5] = b6;
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Parses the bytes of a MAC address string and returns a new array
 	 * containing the bytes in transmission order.
 	 *
-	 * @param  sMAC The MAC address string to parse
-	 *
+	 * @param sMAC The MAC address string to parse
 	 * @return A new array containing the MAC address bytes
-	 *
-	 * @throws IllegalArgumentException If the argument string is NULL or has an
+	 * @throws IllegalArgumentException If the argument string is NULL or
+	 * has an
 	 *                                  invalid format
 	 */
-	public static byte[] parseBytes(String sMAC) throws IllegalArgumentException
-	{
-		if (sMAC == null || !aMACPattern.matcher(sMAC).matches())
-		{
+	public static byte[] parseBytes(String sMAC)
+		throws IllegalArgumentException {
+		if (sMAC == null || !aMACPattern.matcher(sMAC).matches()) {
 			throw new IllegalArgumentException("Invalid MAC string: " + sMAC);
 		}
 
 		String[] aByteTokens = sMAC.split("[:-]");
-		byte[]   aBytes		 = new byte[6];
+		byte[] aBytes = new byte[6];
 
 		// should be covered by the pattern, but to be sure...
 		assert aByteTokens.length == 6;
 
-		for (int i = 0; i < 6; i++)
-		{
+		for (int i = 0; i < 6; i++) {
 			aBytes[i] = (byte) Integer.parseInt(aByteTokens[i], 16);
 		}
 
 		return aBytes;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
-	 * Returns the bytes of this MAC address in a new byte array in transmission
+	/**
+	 * Returns the bytes of this MAC address in a new byte array in
+	 * transmission
 	 * order.
 	 *
 	 * @return A new array containing the bytes of the MAC address
 	 */
-	public byte[] getBytes()
-	{
+	public byte[] getBytes() {
 		byte[] aResult = new byte[aBytes.length];
 
 		System.arraycopy(aBytes, 0, aResult, 0, aBytes.length);

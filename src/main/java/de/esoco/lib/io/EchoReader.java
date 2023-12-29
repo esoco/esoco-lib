@@ -21,62 +21,51 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 
-
-/********************************************************************
+/**
  * A {@link Reader} that echos all characters that are read from a wrapped
  * reader to a {@link Writer}.
  *
  * @author eso
  */
-public class EchoReader extends FilterReader
-{
-	//~ Instance fields --------------------------------------------------------
+public class EchoReader extends FilterReader {
 
 	private final Writer rEchoWriter;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedReader The wrapped reader
 	 * @param rEchoWriter    The writer to echo the input to
 	 */
-	public EchoReader(Reader rWrappedReader, Writer rEchoWriter)
-	{
+	public EchoReader(Reader rWrappedReader, Writer rEchoWriter) {
 		super(rWrappedReader);
 
 		this.rEchoWriter = rEchoWriter;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read() throws IOException
-	{
+	public int read() throws IOException {
 		int nChar = super.read();
 
-		if (nChar >= 0)
-		{
+		if (nChar >= 0) {
 			rEchoWriter.write(nChar);
 		}
 
 		return nChar;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(char[] rBuffer, int nOffset, int nLength) throws IOException
-	{
+	public int read(char[] rBuffer, int nOffset, int nLength)
+		throws IOException {
 		int nRead = super.read(rBuffer, nOffset, nLength);
 
-		if (nRead >= 0)
-		{
+		if (nRead >= 0) {
 			rEchoWriter.write(rBuffer, nOffset, nRead);
 		}
 

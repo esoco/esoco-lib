@@ -19,8 +19,7 @@ package de.esoco.lib.reflect;
 import de.esoco.lib.event.Event;
 import de.esoco.lib.event.EventHandler;
 
-
-/********************************************************************
+/**
  * An event handler implementation that invokes a method on a target object to
  * handle an event. Even non-public methods can be used, the implementation will
  * try to invoke setAccessible() on them. In environments where that is not
@@ -31,11 +30,9 @@ import de.esoco.lib.event.EventHandler;
  * @author eso
  */
 public class EventMethod<E extends Event<?>> extends MethodDispatcher<Object>
-	implements EventHandler<E>
-{
-	//~ Constructors -----------------------------------------------------------
+	implements EventHandler<E> {
 
-	/***************************************
+	/**
 	 * Creates a new event method object that will invoke a certain method on
 	 * the target object in case of an event. It will first look for a method
 	 * with the given name and a parameter with a type of the EWT EWTEvent
@@ -48,33 +45,28 @@ public class EventMethod<E extends Event<?>> extends MethodDispatcher<Object>
 	 * found it will look for a method with no parameters. If such also doesn't
 	 * exist an IllegalArgumentException will be thrown.</p>
 	 *
-	 * <p>The given method may be non-public. It will then be tried to set it as
-	 * accessible for this purpose. In environments where that is not possible
-	 * an exception will be thrown. Therefore applications that are built for
-	 * environments that have limited accessibility (like applets) should only
-	 * use public methods as event listeners.</p>
+	 * <p>The given method may be non-public. It will then be tried to set it
+	 * as accessible for this purpose. In environments where that is not
+	 * possible an exception will be thrown. Therefore applications that are
+	 * built for environments that have limited accessibility (like applets)
+	 * should only use public methods as event listeners.</p>
 	 *
-	 * @param  rTarget     The target on which the method shall be invoked
-	 * @param  sMethod     The name of the method to invoke
-	 * @param  rEventClass The class of the event to dispatch
-	 *
+	 * @param rTarget     The target on which the method shall be invoked
+	 * @param sMethod     The name of the method to invoke
+	 * @param rEventClass The class of the event to dispatch
 	 * @throws IllegalArgumentException If no matching method could be found
 	 */
-	public EventMethod(Object rTarget, String sMethod, Class<E> rEventClass)
-	{
+	public EventMethod(Object rTarget, String sMethod, Class<E> rEventClass) {
 		super(rTarget, sMethod, true, rEventClass);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Dispatches the event to the actual listener method.
 	 *
 	 * @param rEvent The event to dispatch
 	 */
 	@Override
-	public final void handleEvent(E rEvent)
-	{
+	public final void handleEvent(E rEvent) {
 		dispatch(rEvent);
 	}
 }

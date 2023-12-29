@@ -18,8 +18,7 @@ package de.esoco.lib.logging;
 
 import de.esoco.lib.expression.function.TokenStringFormat;
 
-
-/********************************************************************
+/**
  * Special token string transformation that transforms log records into strings.
  * It defines several additional tokens that refer to the fields of the
  * transformed log record. All tokens support the formatting options of the base
@@ -47,16 +46,15 @@ import de.esoco.lib.expression.function.TokenStringFormat;
  *
  * @author eso
  */
-public class LogRecordFormat extends TokenStringFormat<LogRecord>
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class LogRecordFormat extends TokenStringFormat<LogRecord> {
 
-	/** A token string macro for the source location of a log record */
+	/**
+	 * A token string macro for the source location of a log record
+	 */
 	public static final String SOURCE_LOCATION =
 		"{package}.{class}.{method}({file}:{line})";
 
-	static
-	{
+	static {
 		PropertyToken aToken;
 
 		aToken = new PropertyToken("getLevel");
@@ -80,20 +78,17 @@ public class LogRecordFormat extends TokenStringFormat<LogRecord>
 		registerToken("file", new PropertyToken("getSourceFileName"));
 		registerToken("line", new PropertyToken("getLineNumber"));
 		registerToken("stack",
-					  new PropertyToken("getLogStackTrace", "F\t| %s\n"));
+			new PropertyToken("getLogStackTrace", "F\t| %s\n"));
 		registerToken("stacktop",
-					  new PropertyToken("getLogStackTrace", "3F\t| %s\n"));
+			new PropertyToken("getLogStackTrace", "3F\t| %s\n"));
 	}
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance for a certain log format string.
 	 *
 	 * @param sLogFormat The log format pattern
 	 */
-	public LogRecordFormat(String sLogFormat)
-	{
+	public LogRecordFormat(String sLogFormat) {
 		super(sLogFormat);
 	}
 }

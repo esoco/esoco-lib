@@ -16,19 +16,17 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.property;
 
-/********************************************************************
+/**
  * Writable integer value attribute.
  *
  * @author eso
  */
-public interface IntAttribute extends IntValue
-{
-	//~ Methods ----------------------------------------------------------------
+public interface IntAttribute extends IntValue {
 
-	/***************************************
+	/**
 	 * Sets the integer value.
 	 *
 	 * @param nValue The new integer value
 	 */
-	public void setValue(int nValue);
+	void setValue(int nValue);
 }

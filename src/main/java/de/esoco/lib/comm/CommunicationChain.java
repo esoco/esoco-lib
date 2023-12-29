@@ -18,70 +18,59 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.expression.Function;
 
-
-/********************************************************************
+/**
  * Binary function that chains a communication method with another function and
  * still can be used as a communication method so that it can be invoked with a
  * connection as the second evaluation argument.
  *
  * @author eso
  */
-public class CommunicationChain<I, V, O> extends CommunicationMethod<I, O>
-{
-	//~ Instance fields --------------------------------------------------------
+public class CommunicationChain<I, V, O> extends CommunicationMethod<I, O> {
 
 	private final CommunicationMethod<I, V> fMethod;
-	private final Function<? super V, O>    fValue;
 
-	//~ Constructors -----------------------------------------------------------
+	private final Function<? super V, O> fValue;
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param fMethod The communication method to evaluate
 	 * @param fValue  The function to evaluate the communication result with
 	 */
-	CommunicationChain(
-		CommunicationMethod<I, V> fMethod,
-		Function<? super V, O>    fValue)
-	{
+	CommunicationChain(CommunicationMethod<I, V> fMethod,
+		Function<? super V, O> fValue) {
 		super(fValue.getToken() + "(" + fMethod.getToken() + ")", null);
 
 		this.fMethod = fMethod;
-		this.fValue  = fValue;
+		this.fValue = fValue;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public O doOn(Connection rConnection, I rInput)
-	{
-		V rValue  = fMethod.evaluate(rInput, rConnection);
+	public O doOn(Connection rConnection, I rInput) {
+		V rValue = fMethod.evaluate(rInput, rConnection);
 		O rResult = fValue.evaluate(rValue);
 
 		return rResult;
 	}
 
-	/***************************************
+	/**
 	 * Returns the communication method of this instance.
 	 *
 	 * @return The communication method
 	 */
-	public final CommunicationMethod<I, V> getCommunicationMethod()
-	{
+	public final CommunicationMethod<I, V> getCommunicationMethod() {
 		return fMethod;
 	}
 
-	/***************************************
+	/**
 	 * Returns the value function of this instance.
 	 *
 	 * @return The value function
 	 */
-	public final Function<? super V, O> getValueFunction()
-	{
+	public final Function<? super V, O> getValueFunction() {
 		return fValue;
 	}
 }

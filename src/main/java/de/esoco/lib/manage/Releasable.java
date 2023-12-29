@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * Interface for manageable elements that can be released. An example are
  * objects that are retrieved from a cache and can be put back into the cache by
  * releasing them. How a releasable object is acquired depends on the
@@ -28,12 +28,10 @@ package de.esoco.lib.manage;
  *
  * @author eso
  */
-public interface Releasable
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Releasable {
 
-	/***************************************
+	/**
 	 * Releases this objects.
 	 */
-	public void release();
+	void release();
 }

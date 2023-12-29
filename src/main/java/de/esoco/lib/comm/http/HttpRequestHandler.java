@@ -25,23 +25,20 @@ import de.esoco.lib.datatype.Pair;
 import de.esoco.lib.io.EchoInputStream;
 import de.esoco.lib.logging.Log;
 import de.esoco.lib.security.AuthenticationService;
+import org.obrel.core.Relatable;
+import org.obrel.core.RelatedObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
-
 import java.nio.charset.StandardCharsets;
-
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.obrel.core.Relatable;
-import org.obrel.core.RelatedObject;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_MAX_HEADER_LINE_SIZE;
 import static de.esoco.lib.comm.CommunicationRelationTypes.HTTP_RESPONSE_HEADERS;
@@ -50,20 +47,17 @@ import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_METHOD;
 import static de.esoco.lib.security.SecurityRelationTypes.AUTHENTICATION_SERVICE;
 import static de.esoco.lib.security.SecurityRelationTypes.LOGIN_NAME;
 import static de.esoco.lib.security.SecurityRelationTypes.PASSWORD;
-
 import static org.obrel.type.StandardTypes.EXCEPTION;
 import static org.obrel.type.StandardTypes.IP_ADDRESS;
 import static org.obrel.type.StandardTypes.NAME;
 
-
-/********************************************************************
+/**
  * A {@link Server} request handler implementation for HTTP requests.
  *
  * @author eso
  */
-public class HttpRequestHandler extends RelatedObject implements RequestHandler
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class HttpRequestHandler extends RelatedObject
+	implements RequestHandler {
 
 	private static final Set<String> SUPPORTED_AUTH_METHODS =
 		CollectionUtil.setOf("Basic", "BCrypt");
@@ -71,28 +65,23 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	private static final ThreadLocal<HttpRequest> aThreadLocalRequest =
 		new ThreadLocal<>();
 
-	//~ Instance fields --------------------------------------------------------
+	private final Relatable rContext;
 
-	private Relatable				 rContext;
 	private HttpRequestMethodHandler rRequestMethodHandler = null;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance with a certain request method handler.
 	 *
 	 * @param rContext The context for this request handler
 	 * @param rHandler The handler for the HTTP request methods
 	 */
-	public HttpRequestHandler(
-		Relatable				 rContext,
-		HttpRequestMethodHandler rHandler)
-	{
-		this.rContext		  = rContext;
+	public HttpRequestHandler(Relatable rContext,
+		HttpRequestMethodHandler rHandler) {
+		this.rContext = rContext;
 		rRequestMethodHandler = rHandler;
 	}
 
-	/***************************************
+	/**
 	 * Subclass constructor. If the subclass implements the HTTP request method
 	 * handler interface {@link HttpRequestHandler} it will be set as the
 	 * request method handler directly. Otherwise the handler must be set with
@@ -101,66 +90,54 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 	 *
 	 * @param rContext The context of this request handler
 	 */
-	protected HttpRequestHandler(Relatable rContext)
-	{
+	protected HttpRequestHandler(Relatable rContext) {
 		this.rContext = rContext;
 
-		if (this instanceof HttpRequestMethodHandler)
-		{
+		if (this instanceof HttpRequestMethodHandler) {
 			rRequestMethodHandler = (HttpRequestMethodHandler) this;
 		}
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the active HTTP request for the current thread.
 	 *
 	 * @return The current thread's HTTP request or NULL if no request is
-	 *         handled by the thread
+	 * handled by the thread
 	 */
-	public static final HttpRequest getThreadLocalRequest()
-	{
+	public static final HttpRequest getThreadLocalRequest() {
 		return aThreadLocalRequest.get();
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the context of this handler. The context is a {@link Relatable}
 	 * object that provides access to relations containing configuration data.
 	 * It may be readonly and should therefore not be modified by the receiver.
 	 *
 	 * @return The request handler context
 	 */
-	public final Relatable getContext()
-	{
+	public final Relatable getContext() {
 		return rContext;
 	}
 
-	/***************************************
+	/**
 	 * Returns the handler for the HTTP request methods.
 	 *
 	 * @return The request method handler
 	 */
-	public final HttpRequestMethodHandler getRequestMethodHandler()
-	{
+	public final HttpRequestMethodHandler getRequestMethodHandler() {
 		return rRequestMethodHandler;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public String handleRequest(
-		InputStream  rRequestStream,
-		OutputStream rResponseStream) throws IOException
-	{
+	public String handleRequest(InputStream rRequestStream,
+		OutputStream rResponseStream) throws IOException {
 		ByteArrayOutputStream aRequestCopy = new ByteArrayOutputStream(2048);
-		String				  sRequest     = null;
+		String sRequest = null;
 
-		try
-		{
+		try {
 			rRequestStream = new EchoInputStream(rRequestStream, aRequestCopy);
 
 			HttpRequest rRequest = readRequest(rRequestStream);
@@ -171,67 +148,50 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			checkAuthentication(rRequest);
 
 			sendResponse(createResponse(rRequest), rResponseStream);
-		}
-		catch (Exception e)
-		{
-			HttpStatusCode eStatus		 = HttpStatusCode.INTERNAL_SERVER_ERROR;
-			boolean		   bEmptyRequest = (e instanceof EmptyRequestException);
-			String		   sMessage		 = "";
+		} catch (Exception e) {
+			HttpStatusCode eStatus = HttpStatusCode.INTERNAL_SERVER_ERROR;
+			boolean bEmptyRequest = (e instanceof EmptyRequestException);
+			String sMessage = "";
 
 			Map<HttpHeaderField, String> rResponseHeaders = null;
 
 			set(EXCEPTION, e);
 
-			if (e instanceof HttpStatusException)
-			{
+			if (e instanceof HttpStatusException) {
 				HttpStatusException eStatusException = (HttpStatusException) e;
 
-				sMessage		 = eStatusException.getMessage();
-				eStatus			 = eStatusException.getStatusCode();
+				sMessage = eStatusException.getMessage();
+				eStatus = eStatusException.getStatusCode();
 				rResponseHeaders = eStatusException.getResponseHeaders();
 
-				if (!bEmptyRequest)
-				{
-					Log.infof(
-						"HTTP status exception (%s): %s",
-						eStatus,
+				if (!bEmptyRequest) {
+					Log.infof("HTTP status exception (%s): %s", eStatus,
 						sMessage);
 				}
-			}
-			else
-			{
+			} else {
 				Log.error("HTTP Request failed", e);
 			}
 
 			// ignore empty requests; some browsers open connections in advance
-			if (!bEmptyRequest)
-			{
+			if (!bEmptyRequest) {
 				HttpResponse aErrorResponse =
 					new HttpResponse(eStatus, sMessage);
 
-				if (rResponseHeaders != null)
-				{
+				if (rResponseHeaders != null) {
 					for (Entry<HttpHeaderField, String> rHeader :
-						 rResponseHeaders.entrySet())
-					{
-						aErrorResponse.setHeader(
-							rHeader.getKey(),
+						rResponseHeaders.entrySet()) {
+						aErrorResponse.setHeader(rHeader.getKey(),
 							rHeader.getValue());
 					}
 				}
 
-				try
-				{
+				try {
 					aErrorResponse.write(rResponseStream);
-				}
-				catch (Exception eResponse)
-				{
+				} catch (Exception eResponse) {
 					Log.info("Response output failed", eResponse);
 				}
 			}
-		}
-		finally
-		{
+		} finally {
 			sRequest = aRequestCopy.toString(StandardCharsets.UTF_8.name());
 		}
 
@@ -240,50 +200,40 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		return sRequest;
 	}
 
-	/***************************************
+	/**
 	 * Checks if authentication is needed and if so, whether the request
 	 * contains the necessary authentication information.
 	 *
-	 * @param  rRequest The request to check for authentication if necessary
-	 *
+	 * @param rRequest The request to check for authentication if necessary
 	 * @throws HttpStatusException If authentication is required but not
 	 *                             provided
 	 */
 	protected void checkAuthentication(HttpRequest rRequest)
-		throws HttpStatusException
-	{
+		throws HttpStatusException {
 		AuthenticationService rAuthService =
 			rContext.get(AUTHENTICATION_SERVICE);
 
-		if (rAuthService != null)
-		{
+		if (rAuthService != null) {
 			boolean bAuthenticated = false;
 
 			String sAuth = rRequest.get(HttpHeaderTypes.AUTHORIZATION);
 
-			if (sAuth == null)
-			{
-				throw new HttpStatusException(
-					HttpStatusCode.UNAUTHORIZED,
-					"Authentication required",
-					getAuthErrorHeader());
+			if (sAuth == null) {
+				throw new HttpStatusException(HttpStatusCode.UNAUTHORIZED,
+					"Authentication required", getAuthErrorHeader());
 			}
 
 			String[] aAuthHeader = sAuth.trim().split(" ");
 
-			if (aAuthHeader.length == 2)
-			{
+			if (aAuthHeader.length == 2) {
 				String sMethod = aAuthHeader[0];
 
-				if (SUPPORTED_AUTH_METHODS.contains(sMethod))
-				{
+				if (SUPPORTED_AUTH_METHODS.contains(sMethod)) {
 					String[] aCredential =
-						new String(
-							Base64.getDecoder().decode(aAuthHeader[1]),
+						new String(Base64.getDecoder().decode(aAuthHeader[1]),
 							StandardCharsets.UTF_8).split(":");
 
-					if (aCredential.length == 2)
-					{
+					if (aCredential.length == 2) {
 						Relatable aAuthData = new RelatedObject();
 
 						aAuthData.set(AUTHENTICATION_METHOD, sMethod);
@@ -294,79 +244,68 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 				}
 			}
 
-			if (!bAuthenticated)
-			{
-				throw new HttpStatusException(
-					HttpStatusCode.UNAUTHORIZED,
-					"Authentication invalid",
-					getAuthErrorHeader());
+			if (!bAuthenticated) {
+				throw new HttpStatusException(HttpStatusCode.UNAUTHORIZED,
+					"Authentication invalid", getAuthErrorHeader());
 			}
 		}
 	}
 
-	/***************************************
+	/**
 	 * Creates the HTTP response for a certain HTTP request. The default
-	 * implementation invokes the method {@link
-	 * HttpRequestMethodHandler#handleMethod(HttpRequest)} of the request method
-	 * handler.
+	 * implementation invokes the method
+	 * {@link HttpRequestMethodHandler#handleMethod(HttpRequest)} of the
+	 * request
+	 * method handler.
 	 *
-	 * @param  rRequest The request to create the response for
-	 *
+	 * @param rRequest The request to create the response for
 	 * @return The response
-	 *
 	 * @throws IOException If handling the request method fails
 	 */
 	protected HttpResponse createResponse(HttpRequest rRequest)
-		throws IOException
-	{
+		throws IOException {
 		return rRequestMethodHandler.handleMethod(rRequest);
 	}
 
-	/***************************************
+	/**
 	 * Returns a pair of header field name and value for an authentication
 	 * error.
 	 *
 	 * @return The authentication error header
 	 */
-	protected Pair<HttpHeaderField, String> getAuthErrorHeader()
-	{
-		return new Pair<>(
-			HttpHeaderField.WWW_AUTHENTICATE,
+	protected Pair<HttpHeaderField, String> getAuthErrorHeader() {
+		return new Pair<>(HttpHeaderField.WWW_AUTHENTICATE,
 			String.format("Basic realm=\"%s\"", getContext().get(NAME)));
 	}
 
-	/***************************************
+	/**
 	 * Reads the HTTP request from the given input stream. The default
 	 * implementation just returns a new instance of {@link HttpRequest}
 	 * containing the data from the stream.
 	 *
-	 * @param  rInput The input stream to read the request from
-	 *
+	 * @param rInput The input stream to read the request from
 	 * @return A new HTTP request
-	 *
 	 * @throws IOException         If reading from the input fails
 	 * @throws HttpStatusException The corresponding HTTP status if the request
 	 *                             violates requirements
 	 */
 	@SuppressWarnings("boxing")
 	protected HttpRequest readRequest(InputStream rInput)
-		throws IOException, HttpStatusException
-	{
-		return new HttpRequest(rInput, rContext.get(HTTP_MAX_HEADER_LINE_SIZE));
+		throws IOException, HttpStatusException {
+		return new HttpRequest(rInput,
+			rContext.get(HTTP_MAX_HEADER_LINE_SIZE));
 	}
 
-	/***************************************
+	/**
 	 * Sends the HTTP response for an HTTP request through the given output
 	 * stream.
 	 *
-	 * @param  rResponse The HTTP response to send
-	 * @param  rOutput   The output stream to write the response to
-	 *
+	 * @param rResponse The HTTP response to send
+	 * @param rOutput   The output stream to write the response to
 	 * @throws IOException If writing the output fails
 	 */
 	protected void sendResponse(HttpResponse rResponse, OutputStream rOutput)
-		throws IOException
-	{
+		throws IOException {
 		Map<String, List<String>> rDefaultResponseHeaders =
 			rContext.get(HTTP_RESPONSE_HEADERS);
 
@@ -374,12 +313,10 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 			rResponse.get(HTTP_RESPONSE_HEADERS);
 
 		for (Entry<String, List<String>> rDefaultHeader :
-			 rDefaultResponseHeaders.entrySet())
-		{
+			rDefaultResponseHeaders.entrySet()) {
 			String sHeaderName = rDefaultHeader.getKey();
 
-			if (!rResponseHeaders.containsKey(sHeaderName))
-			{
+			if (!rResponseHeaders.containsKey(sHeaderName)) {
 				rResponseHeaders.put(sHeaderName, rDefaultHeader.getValue());
 			}
 		}
@@ -387,135 +324,115 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 		rResponse.write(rOutput);
 	}
 
-	/***************************************
+	/**
 	 * Sets the handler for the HTTP request methods.
 	 *
 	 * @param rHandler The new request method handler
 	 */
 	protected final void setRequestMethodHandler(
-		HttpRequestMethodHandler rHandler)
-	{
+		HttpRequestMethodHandler rHandler) {
 		rRequestMethodHandler = rHandler;
 	}
 
-	//~ Inner Interfaces -------------------------------------------------------
-
-	/********************************************************************
-	 * An interface for the handling of the distinct HTTP request methods. It is
+	/**
+	 * An interface for the handling of the distinct HTTP request methods.
+	 * It is
 	 * a functional interface so only the method {@link #doGet(HttpRequest)}
 	 * needs to be implemented for basic GET request functionality. But
 	 * implementors can also implement support for other requests methods like
 	 * POST, PUT, and DELETE if necessary. The default implementations for this
 	 * methods always throw an {@link UnsupportedOperationException}. If other
-	 * request methods need to be supported the implementation may also override
+	 * request methods need to be supported the implementation may also
+	 * override
 	 * the method {@link #handleMethod(HttpRequest)} which switches over the
 	 * {@link HttpRequestMethod} and throws a HTTP status code exception on
 	 * unsupported request methods.
 	 *
 	 * <p>The handling of request methods is intended to be stateless so that a
 	 * single instance should be able to handle multiple requests. The state
-	 * that is associated with the handling of a particular request is stored in
+	 * that is associated with the handling of a particular request is
+	 * stored in
 	 * the associated {@link RequestHandler} instance and will be handed to the
-	 * request method handler in the {@link HttpRequest} argument of the methods
+	 * request method handler in the {@link HttpRequest} argument of the
+	 * methods
 	 * below.</p>
 	 *
 	 * @author eso
 	 */
 	@FunctionalInterface
-	public static interface HttpRequestMethodHandler
-	{
-		//~ Methods ------------------------------------------------------------
+	public interface HttpRequestMethodHandler {
 
-		/***************************************
-		 * This method must be always be implemented to provide the basic
-		 * functionality in the form of GET requests.
-		 *
-		 * @param  rRequest The request to execute
-		 *
-		 * @return A {@link HttpResponse} object containing relations with the
-		 *         response data
-		 *
-		 * @throws HttpStatusException If executing the request fails
-		 */
-		public HttpResponse doGet(HttpRequest rRequest)
-			throws HttpStatusException;
-
-		/***************************************
+		/**
 		 * Must be overridden to support the DELETE request method. The default
 		 * implementation just throws an {@link HttpStatusException}.
 		 *
-		 * @param  rRequest The request to execute
-		 *
+		 * @param rRequest The request to execute
 		 * @return A {@link HttpResponse} object containing relations with the
-		 *         response data
-		 *
+		 * response data
 		 * @throws HttpStatusException If executing the request fails
 		 */
 		default HttpResponse doDelete(HttpRequest rRequest)
-			throws HttpStatusException
-		{
-			throw new HttpStatusException(
-				HttpStatusCode.NOT_IMPLEMENTED,
+			throws HttpStatusException {
+			throw new HttpStatusException(HttpStatusCode.NOT_IMPLEMENTED,
 				"DELETE not supported");
 		}
 
-		/***************************************
+		/**
+		 * This method must be always be implemented to provide the basic
+		 * functionality in the form of GET requests.
+		 *
+		 * @param rRequest The request to execute
+		 * @return A {@link HttpResponse} object containing relations with the
+		 * response data
+		 * @throws HttpStatusException If executing the request fails
+		 */
+		HttpResponse doGet(HttpRequest rRequest) throws HttpStatusException;
+
+		/**
 		 * Must be overridden to support the POST request method. The default
 		 * implementation just throws an {@link HttpStatusException}.
 		 *
-		 * @param  rRequest The request to execute
-		 *
+		 * @param rRequest The request to execute
 		 * @return A {@link HttpResponse} object containing relations with the
-		 *         response data
-		 *
+		 * response data
 		 * @throws HttpStatusException If executing the request fails
 		 */
 		default HttpResponse doPost(HttpRequest rRequest)
-			throws HttpStatusException
-		{
-			throw new HttpStatusException(
-				HttpStatusCode.NOT_IMPLEMENTED,
+			throws HttpStatusException {
+			throw new HttpStatusException(HttpStatusCode.NOT_IMPLEMENTED,
 				"POST not supported");
 		}
 
-		/***************************************
+		/**
 		 * Must be overridden to support the PUT request method. The default
 		 * implementation just throws an {@link HttpStatusException}.
 		 *
-		 * @param  rRequest The request to execute
-		 *
+		 * @param rRequest The request to execute
 		 * @return A {@link HttpResponse} object containing relations with the
-		 *         response data
-		 *
+		 * response data
 		 * @throws HttpStatusException If executing the request fails
 		 */
 		default HttpResponse doPut(HttpRequest rRequest)
-			throws HttpStatusException
-		{
-			throw new HttpStatusException(
-				HttpStatusCode.NOT_IMPLEMENTED,
+			throws HttpStatusException {
+			throw new HttpStatusException(HttpStatusCode.NOT_IMPLEMENTED,
 				"PUT not supported");
 		}
 
-		/***************************************
-		 * Creates the response for the current request and returns a {@link
-		 * Reader} that provides the data of the response body.
+		/**
+		 * Creates the response for the current request and returns a
+		 * {@link Reader} that provides the data of the response body.
 		 *
-		 * @param  rRequest rRequest eRequestMethod The request method to create
-		 *                  the response for
-		 *
+		 * @param rRequest rRequest eRequestMethod The request method to create
+		 *                 the response for
 		 * @return A {@link HttpResponse} object containing relations with the
-		 *         response data
-		 *
+		 * response data
 		 * @throws IOException If reading or writing data fails
 		 */
 		default HttpResponse handleMethod(HttpRequest rRequest)
-			throws IOException
-		{
+			throws IOException {
 			HttpResponse rResponse = null;
 
-			switch (rRequest.getMethod())
-			{
+			switch (rRequest.getMethod()) {
 				case GET:
 					rResponse = doGet(rRequest);
 					break;
@@ -534,8 +451,7 @@ public class HttpRequestHandler extends RelatedObject implements RequestHandler
 
 				default:
 					badRequest(
-						"Unsupported request method: " +
-						rRequest.getMethod());
+						"Unsupported request method: " + rRequest.getMethod());
 			}
 
 			return rResponse;

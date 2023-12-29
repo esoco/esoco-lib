@@ -23,28 +23,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-
-/********************************************************************
+/**
  * Test of {@link CacheMap}.
  *
  * @author eso
  */
-public class CacheMapTest
-{
-	//~ Instance fields --------------------------------------------------------
+public class CacheMapTest {
 
-	private CacheMap<Integer, String> aTestMap =
+	private final CacheMap<Integer, String> aTestMap =
 		new CacheMap<Integer, String>(5);
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Test setup.
 	 */
 	@Before
 	@SuppressWarnings("boxing")
-	public void setUp()
-	{
+	public void setUp() {
 		aTestMap.put(1, "Test1");
 		aTestMap.put(2, "Test2");
 		aTestMap.put(3, "Test3");
@@ -52,34 +46,31 @@ public class CacheMapTest
 		aTestMap.put(5, "Test5");
 	}
 
-	/***************************************
+	/**
 	 * Test of {@link CacheMap#get(Object)}.
 	 */
 	@SuppressWarnings("boxing")
 	@Test
-	public void testAutoRemove()
-	{
+	public void testAutoRemove() {
 		aTestMap.put(6, "Test6");
 		assertFalse(aTestMap.containsKey(1));
 		assertOrder(2, 3, 4, 5, 6);
 	}
 
-	/***************************************
+	/**
 	 * Test of {@link CacheMap#getCapacity()}.
 	 */
 	@Test
-	public void testGetCapacity()
-	{
+	public void testGetCapacity() {
 		assertEquals(5, aTestMap.getCapacity());
 	}
 
-	/***************************************
+	/**
 	 * Test correct ordering of map contents.
 	 */
 	@SuppressWarnings("boxing")
 	@Test
-	public void testOrder()
-	{
+	public void testOrder() {
 		assertOrder(1, 2, 3, 4, 5);
 		aTestMap.get(1);
 		assertOrder(2, 3, 4, 5, 1);
@@ -87,23 +78,21 @@ public class CacheMapTest
 		assertOrder(2, 4, 5, 1, 3);
 	}
 
-	/***************************************
+	/**
 	 * Test of {@link CacheMap#put(Object, Object)}.
 	 */
 	@SuppressWarnings("boxing")
 	@Test
-	public void testPut()
-	{
+	public void testPut() {
 		aTestMap.put(6, "Test6");
 		assertFalse(aTestMap.containsKey(1));
 	}
 
-	/***************************************
+	/**
 	 * Test of {@link CacheMap#removeEldest()}.
 	 */
 	@Test
-	public void testRemoveEldest()
-	{
+	public void testRemoveEldest() {
 		assertEquals("Test1", aTestMap.removeEldest().getValue());
 		assertEquals("Test2", aTestMap.removeEldest().getValue());
 		assertEquals("Test3", aTestMap.removeEldest().getValue());
@@ -112,17 +101,15 @@ public class CacheMapTest
 		assertTrue(aTestMap.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Assert a certain order of the map entries.
 	 *
 	 * @param rOrder The keys for the cache order, from oldest to newest
 	 */
-	private void assertOrder(int... rOrder)
-	{
+	private void assertOrder(int... rOrder) {
 		int i = 0;
 
-		for (Integer nKey : aTestMap.keySet())
-		{
+		for (Integer nKey : aTestMap.keySet()) {
 			assertEquals(Integer.valueOf(rOrder[i++]), nKey);
 		}
 	}

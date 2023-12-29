@@ -21,106 +21,87 @@ import de.esoco.lib.text.TextUtil;
 
 import java.io.File;
 import java.io.FilenameFilter;
-
 import java.util.regex.Pattern;
 
-
-/********************************************************************
+/**
  * Contains factory methods for I/O-related functions.
  */
 
-public class IOFunctions
-{
-	//~ Constructors -----------------------------------------------------------
+public class IOFunctions {
 
-	/***************************************
+	/**
 	 * Private, only static use.
 	 */
-	private IOFunctions()
-	{
+	private IOFunctions() {
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Returns an implementation of {@link Predicate} and {@link FilenameFilter}
+	/**
+	 * Returns an implementation of {@link Predicate} and
+	 * {@link FilenameFilter}
 	 * that matches filenames against a simple filename pattern. The simple
 	 * pattern can contain the standard wildcard characters '*' and '?'. '*'
 	 * matches arbitrary character sequences, '?' matches a single character.
 	 * The pattern will be converted into a regular expression by means of the
 	 * method {@link TextUtil#simplePatternToRegEx(String)}.
 	 *
-	 * @param  sPattern The simple filename pattern
-	 *
+	 * @param sPattern The simple filename pattern
 	 * @return The filename filter predicate
 	 */
-	public static PatternFilenameFilter ifFilenameLike(String sPattern)
-	{
+	public static PatternFilenameFilter ifFilenameLike(String sPattern) {
 		Pattern aPattern =
 			Pattern.compile(TextUtil.simplePatternToRegEx(sPattern));
 
 		return new PatternFilenameFilter(aPattern);
 	}
 
-	/***************************************
-	 * Returns an implementation of {@link Predicate} and {@link FilenameFilter}
+	/**
+	 * Returns an implementation of {@link Predicate} and
+	 * {@link FilenameFilter}
 	 * that matches filenames against a regular expression.
 	 *
-	 * @param  sRegex The regular expression
-	 *
+	 * @param sRegex The regular expression
 	 * @return The filename filter predicate
 	 */
-	public static PatternFilenameFilter ifFilenameMatches(String sRegex)
-	{
+	public static PatternFilenameFilter ifFilenameMatches(String sRegex) {
 		return new PatternFilenameFilter(Pattern.compile(sRegex));
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * Implementation of {@link FilenameFilter} that uses a regular expression
-	 * pattern for the filename selection. Also implements the {@link Predicate}
+	 * pattern for the filename selection. Also implements the
+	 * {@link Predicate}
 	 * interface for {@link File} input values.
 	 *
 	 * @author eso
 	 */
-	public static class PatternFilenameFilter implements Predicate<File>,
-														 FilenameFilter
-	{
-		//~ Instance fields ----------------------------------------------------
+	public static class PatternFilenameFilter
+		implements Predicate<File>, FilenameFilter {
 
-		private Pattern rPattern;
+		private final Pattern rPattern;
 
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Creates a new FileFilter object.
 		 *
 		 * @param rPattern The file pattern
 		 */
-		private PatternFilenameFilter(Pattern rPattern)
-		{
+		private PatternFilenameFilter(Pattern rPattern) {
 			this.rPattern = rPattern;
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public boolean accept(File rPath, String sName)
-		{
+		public boolean accept(File rPath, String sName) {
 			return rPattern.matcher(sName).matches();
 		}
 
-		/***************************************
+		/**
 		 * {@inheritDoc}
 		 */
 		@Override
 		@SuppressWarnings("boxing")
-		public Boolean evaluate(File rFile)
-		{
+		public Boolean evaluate(File rFile) {
 			return accept(rFile.getParentFile(), rFile.getName());
 		}
 	}

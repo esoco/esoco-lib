@@ -20,67 +20,55 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-
-/********************************************************************
+/**
  * A subclass of linked hash map that implements a cache of a fixed size. It
  * uses the constructor {@link LinkedHashMap#LinkedHashMap(int, float, boolean)}
  * to create an access-ordered map. The maximum capacity of the cache is
- * enforced by overriding the method {@link
- * LinkedHashMap#removeEldestEntry(java.util.Map.Entry)}. If the capacity is
- * exceeded while adding a new entry the eldest (i.e. least recently accessed)
- * entry will be removed from the cache.
+ * enforced by overriding the method
+ * {@link LinkedHashMap#removeEldestEntry(java.util.Map.Entry)}. If the capacity
+ * is exceeded while adding a new entry the eldest (i.e. least recently
+ * accessed) entry will be removed from the cache.
  *
  * @author eso
  */
-public class CacheMap<K, V> extends LinkedHashMap<K, V>
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class CacheMap<K, V> extends LinkedHashMap<K, V> {
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Instance fields --------------------------------------------------------
-
 	private int nCapacity;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
-	 * Creates a new instance with a certain capacity that will not be exceeded.
+	/**
+	 * Creates a new instance with a certain capacity that will not be
+	 * exceeded.
 	 *
 	 * @param nCapacity The capacity of this cache map
 	 */
-	public CacheMap(int nCapacity)
-	{
+	public CacheMap(int nCapacity) {
 		super(nCapacity, 0.75f, true);
 		this.nCapacity = nCapacity;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the capacity of this cache map. If a new entry is added to the
 	 * cache and the capacity is exceeded the oldest entry will be removed from
 	 * the cache.
 	 *
 	 * @return The capacity
 	 */
-	public int getCapacity()
-	{
+	public int getCapacity() {
 		return nCapacity;
 	}
 
-	/***************************************
+	/**
 	 * Removes the eldest entry from this cache map and returns it.
 	 *
 	 * @return The removed entry or NULL if this map is empty
 	 */
-	public Entry<K, V> removeEldest()
-	{
+	public Entry<K, V> removeEldest() {
 		Iterator<Entry<K, V>> aIterator = entrySet().iterator();
-		Entry<K, V>			  rEldest   = null;
+		Entry<K, V> rEldest = null;
 
-		if (aIterator.hasNext())
-		{
+		if (aIterator.hasNext()) {
 			rEldest = aIterator.next();
 			aIterator.remove();
 		}
@@ -88,30 +76,27 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V>
 		return rEldest;
 	}
 
-	/***************************************
+	/**
 	 * Sets the capacity of this instance. If the capacity is decreased below
 	 * the current size of this instance the oldest entries will be removed.
 	 *
 	 * @param nNewCapacity The new capacity
 	 */
-	public void setCapacity(int nNewCapacity)
-	{
-		while (size() > nNewCapacity)
-		{
+	public void setCapacity(int nNewCapacity) {
+		while (size() > nNewCapacity) {
 			removeEldest();
 		}
 
 		nCapacity = nNewCapacity;
 	}
 
-	/***************************************
+	/**
 	 * Ensures that the cache does not exceeds it's capacity.
 	 *
 	 * @see LinkedHashMap#removeEldestEntry(java.util.Map.Entry)
 	 */
 	@Override
-	protected boolean removeEldestEntry(Entry<K, V> rEldest)
-	{
+	protected boolean removeEldestEntry(Entry<K, V> rEldest) {
 		return size() > nCapacity;
 	}
 }

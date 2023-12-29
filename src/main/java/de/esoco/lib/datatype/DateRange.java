@@ -20,23 +20,20 @@ import de.esoco.lib.datatype.Period.Unit;
 import de.esoco.lib.expression.function.CalendarFunctions;
 
 import java.io.Serializable;
-
 import java.time.Instant;
-
 import java.util.Calendar;
 import java.util.Date;
 
-
-/********************************************************************
+/**
  * Immutable datatype that describes date ranges. It is encoded with two dates
  * that contain the start and end of the date range. The end date will be
  * exclusive, i.e. it will be 1 millisecond AFTER the end of the date range and
  * on the first millisecond of the adjacent range.
  *
- * <p>Date ranges are comparable based on their position in time (not their size
- * in milliseconds). A range is considered to be "larger" if it's end date is
- * after that of another range and "smaller" if the end date is before that of
- * the other range. If the end dates are equal the start dates are consider
+ * <p>Date ranges are comparable based on their position in time (not their
+ * size in milliseconds). A range is considered to be "larger" if it's end date
+ * is after that of another range and "smaller" if the end date is before that
+ * of the other range. If the end dates are equal the start dates are consider
  * accordingly. That also means that a range that is fully contained in another
  * is always considered smaller. Comparing may not be sufficient for all cases
  * so application code should also use the methods {@link #contains(DateRange)}
@@ -44,19 +41,16 @@ import java.util.Date;
  *
  * @author eso
  */
-public class DateRange implements Comparable<DateRange>, Serializable
-{
-	//~ Enums ------------------------------------------------------------------
+public class DateRange implements Comparable<DateRange>, Serializable {
 
-	/********************************************************************
+	/**
 	 * An enumeration of typical date range types for date calculations and
 	 * display in user interfaces. The value {@link #NONE} has only a
 	 * declarative purpose (e.g. for UI selection) and must not be used as an
-	 * argument to methods like {@link
-	 * DateRange#calculateFor(StandardDateRange)}.
+	 * argument to methods like
+	 * {@link DateRange#calculateFor(StandardDateRange)}.
 	 */
-	public enum StandardDateRange
-	{
+	public enum StandardDateRange {
 		NONE(Period.NONE, 0), LAST_HOUR(Period.HOURLY, -1),
 		CURRENT_HOUR(Period.HOURLY, 0), BEFORE_YESTERDAY(Period.DAYLY, -2),
 		YESTERDAY(Period.DAYLY, -1), TODAY(Period.DAYLY, 0),
@@ -70,84 +64,73 @@ public class DateRange implements Comparable<DateRange>, Serializable
 		CURRENT_HALF_YEAR(Period.HALF_YEARLY, 0), LAST_YEAR(Period.YEARLY, -1),
 		CURRENT_YEAR(Period.YEARLY, 0);
 
-		//~ Instance fields ----------------------------------------------------
-
 		private final Period rPeriod;
-		private final int    nFieldAddition;
 
-		//~ Constructors -------------------------------------------------------
+		private final int nFieldAddition;
 
-		/***************************************
+		/**
 		 * Creates a new instance.
 		 *
 		 * @param rPeriod        The period of this standard date range
 		 * @param nFieldAddition The value to add to the calendar field
 		 */
-		StandardDateRange(Period rPeriod, int nFieldAddition)
-		{
-			this.rPeriod	    = rPeriod;
+		StandardDateRange(Period rPeriod, int nFieldAddition) {
+			this.rPeriod = rPeriod;
 			this.nFieldAddition = nFieldAddition;
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Returns the value that will be added to the corresponding calendar
 		 * field for this standard range.
 		 *
 		 * @return The calendar field addition
 		 */
-		public final int getFieldAddition()
-		{
+		public final int getFieldAddition() {
 			return nFieldAddition;
 		}
 
-		/***************************************
+		/**
 		 * Returns the period of this standard range.
 		 *
 		 * @return The period
 		 */
-		public final Period getPeriod()
-		{
+		public final Period getPeriod() {
 			return rPeriod;
 		}
 	}
 
-	//~ Static fields/initializers ---------------------------------------------
-
 	static final long serialVersionUID = 3730180974383009738L;
 
-	//~ Instance fields --------------------------------------------------------
-
 	private final long nStart;
+
 	private final long nEnd;
 
 	// Lazily initialized variable; volatile to ensure thread safety
 	private volatile int nHashCode = 0;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new DateRange object that is valid from a certain start date
-	 * until a certain end date. If the end date is NULL the range will be open,
+	 * until a certain end date. If the end date is NULL the range will be
+	 * open,
 	 * i.e. the method isValid() will not check against an end date.
 	 *
 	 * <p>This constructor makes defensive copies of the mutable Date arguments
-	 * so that later changes to these objects won't affect the internal state of
+	 * so that later changes to these objects won't affect the internal
+	 * state of
 	 * this instance.</p>
 	 *
 	 * @param rStart The start date of the range (inclusive)
 	 * @param rEnd   The end date of the range (inclusive) or NULL for no end
 	 */
-	public DateRange(Date rStart, Date rEnd)
-	{
+	public DateRange(Date rStart, Date rEnd) {
 		this(rStart.getTime(),
-			 (rEnd != null) ? rEnd.getTime() : Long.MAX_VALUE);
+			(rEnd != null) ? rEnd.getTime() : Long.MAX_VALUE);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new DateRange object that is valid from a certain start date
-	 * until a certain end date, defined as java.util.Calendar instances. If the
+	 * until a certain end date, defined as java.util.Calendar instances. If
+	 * the
 	 * end date is NULL the range will be open, i.e. the method isValid() will
 	 * not check against an end date.
 	 *
@@ -155,136 +138,115 @@ public class DateRange implements Comparable<DateRange>, Serializable
 	 *               (inclusive)
 	 * @param rEnd   A Calendar instance containing the end date of the range
 	 *               (inclusive) or NULL for no end
-	 *
-	 * @see   #DateRange(Date, Date)
+	 * @see #DateRange(Date, Date)
 	 */
-	public DateRange(Calendar rStart, Calendar rEnd)
-	{
+	public DateRange(Calendar rStart, Calendar rEnd) {
 		this(rStart.getTimeInMillis(),
-			 (rEnd != null) ? rEnd.getTimeInMillis() : Long.MAX_VALUE);
+			(rEnd != null) ? rEnd.getTimeInMillis() : Long.MAX_VALUE);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance from {@link Instant Instants}.
 	 *
 	 * @param rStart The start instant
 	 * @param rEnd   The end instant (exclusive)
 	 */
-	public DateRange(Instant rStart, Instant rEnd)
-	{
+	public DateRange(Instant rStart, Instant rEnd) {
 		this(rStart.toEpochMilli(),
-			 (rEnd != null) ? rEnd.toEpochMilli() : Long.MAX_VALUE);
+			(rEnd != null) ? rEnd.toEpochMilli() : Long.MAX_VALUE);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new DateRange object from the milliseconds of it's start and
 	 * end dates. The milliseconds are counted from the start date January 1,
 	 * 1970, 00:00:00 GMT.
 	 *
-	 * @param  nStartMillis The milliseconds of the start time
-	 * @param  nEndMillis   The milliseconds of the end time
-	 *
+	 * @param nStartMillis The milliseconds of the start time
+	 * @param nEndMillis   The milliseconds of the end time
 	 * @throws IllegalArgumentException If start &gt; end
 	 */
-	public DateRange(long nStartMillis, long nEndMillis)
-	{
-		if (nStartMillis > nEndMillis)
-		{
-			throw new IllegalArgumentException(String.format("Start > End: %s > %s",
-															 new Date(nStartMillis),
-															 new Date(nEndMillis)));
+	public DateRange(long nStartMillis, long nEndMillis) {
+		if (nStartMillis > nEndMillis) {
+			throw new IllegalArgumentException(
+				String.format("Start > End: %s > %s", new Date(nStartMillis),
+					new Date(nEndMillis)));
 		}
 
 		nStart = nStartMillis;
-		nEnd   = nEndMillis;
+		nEnd = nEndMillis;
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Calculates a date range for a standard date range relative to the current
+	/**
+	 * Calculates a date range for a standard date range relative to the
+	 * current
 	 * date.
 	 *
-	 * @param  eStandardRange The standard date range definition
-	 *
+	 * @param eStandardRange The standard date range definition
 	 * @return The resulting date range
 	 */
-	public static DateRange calculateFor(StandardDateRange eStandardRange)
-	{
+	public static DateRange calculateFor(StandardDateRange eStandardRange) {
 		return calculateFor(new Date(), eStandardRange);
 	}
 
-	/***************************************
+	/**
 	 * Calculates a date range for a standard date range relative to a given
 	 * date.
 	 *
-	 * @param  rDate          The date to calculate the standard date range for
-	 * @param  eStandardRange The standard date range definition
-	 *
+	 * @param rDate          The date to calculate the standard date range for
+	 * @param eStandardRange The standard date range definition
 	 * @return The resulting date range
 	 */
-	public static DateRange calculateFor(
-		Date			  rDate,
-		StandardDateRange eStandardRange)
-	{
-		if (eStandardRange.nFieldAddition != 0)
-		{
+	public static DateRange calculateFor(Date rDate,
+		StandardDateRange eStandardRange) {
+		if (eStandardRange.nFieldAddition != 0) {
 			Calendar aRangeDate = Calendar.getInstance();
 
 			aRangeDate.setTime(rDate);
 			aRangeDate.add(eStandardRange.rPeriod.getUnit().getCalendarField(),
-						   eStandardRange.nFieldAddition);
+				eStandardRange.nFieldAddition);
 			rDate = aRangeDate.getTime();
 		}
 
 		return calculateFor(rDate, eStandardRange.rPeriod);
 	}
 
-	/***************************************
+	/**
 	 * Calculates a date range for a certain period relative to a given date.
 	 *
-	 * @param  rDate   The date to place the date range around
-	 * @param  rPeriod The period to calculate
-	 *
+	 * @param rDate   The date to place the date range around
+	 * @param rPeriod The period to calculate
 	 * @return The resulting date range
 	 */
-	public static DateRange calculateFor(Date rDate, Period rPeriod)
-	{
-		Calendar aStart     = Calendar.getInstance();
-		Calendar aEnd	    = Calendar.getInstance();
-		int		 nField     = rPeriod.getUnit().getCalendarField();
-		int		 nRangeSize = rPeriod.getCount();
+	public static DateRange calculateFor(Date rDate, Period rPeriod) {
+		Calendar aStart = Calendar.getInstance();
+		Calendar aEnd = Calendar.getInstance();
+		int nField = rPeriod.getUnit().getCalendarField();
+		int nRangeSize = rPeriod.getCount();
 
 		aStart.setTime(rDate);
 
 		int nRangeStart = aStart.get(nField);
 
-		if (nRangeSize > 1)
-		{
+		if (nRangeSize > 1) {
 			boolean bZeroBased = CalendarFunctions.isZeroBased(nField);
 
-			if (!bZeroBased)
-			{
+			if (!bZeroBased) {
 				nRangeStart -= 1;
 			}
 
 			nRangeStart = nRangeStart / nRangeSize * nRangeSize;
 
-			if (!bZeroBased)
-			{
+			if (!bZeroBased) {
 				nRangeStart += 1;
 			}
 		}
 
 		aStart.set(nField, nRangeStart);
 
-		if (nField == Calendar.WEEK_OF_YEAR)
-		{
+		if (nField == Calendar.WEEK_OF_YEAR) {
 			CalendarFunctions.resetBelow(Calendar.DAY_OF_MONTH, aStart, false);
 			aStart.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-		}
-		else
-		{
+		} else {
 			CalendarFunctions.resetBelow(nField, aStart, false);
 		}
 
@@ -294,11 +256,11 @@ public class DateRange implements Comparable<DateRange>, Serializable
 		return new DateRange(aStart, aEnd);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
-	 * Compares this date ranges with another. The comparison is relative to the
-	 * position in time, not to the "size" of the date range. The algorithm used
+	/**
+	 * Compares this date ranges with another. The comparison is relative to
+	 * the
+	 * position in time, not to the "size" of the date range. The algorithm
+	 * used
 	 * is:
 	 *
 	 * <ol>
@@ -308,142 +270,124 @@ public class DateRange implements Comparable<DateRange>, Serializable
 	 * </ol>
 	 *
 	 * @param rOther The other DateRange object to compare with
-	 *
-	 * @see   Comparable#compareTo(Object)
+	 * @see Comparable#compareTo(Object)
 	 */
 	@Override
-	public int compareTo(DateRange rOther)
-	{
-		if (nEnd != rOther.nEnd)
-		{
+	public int compareTo(DateRange rOther) {
+		if (nEnd != rOther.nEnd) {
 			return (nEnd < rOther.nEnd) ? -1 : 1;
 		}
 
-		if (nStart != rOther.nStart)
-		{
+		if (nStart != rOther.nStart) {
 			return (nStart < rOther.nStart) ? -1 : 1;
 		}
 
 		return 0;
 	}
 
-	/***************************************
+	/**
 	 * To check if this date range contains a certain date. Returns TRUE if the
 	 * argument lies between this range's start and end dates. The end date is
-	 * exclusive, i.e. it will be 1 millisecond AFTER the actual end of the date
+	 * exclusive, i.e. it will be 1 millisecond AFTER the actual end of the
+	 * date
 	 * range and on the first millisecond of the adjacent range.
 	 *
-	 * @param  rDate The date to test against this range
-	 *
+	 * @param rDate The date to test against this range
 	 * @return TRUE, if start &lt;= rDate &lt;= end
 	 */
-	public boolean contains(Date rDate)
-	{
+	public boolean contains(Date rDate) {
 		long t = rDate.getTime();
 
 		return nStart <= t && t < nEnd;
 	}
 
-	/***************************************
+	/**
 	 * To check if this date range completely contains another range. Returns
 	 * TRUE if the arguments start and end dates lie between this range's start
 	 * and end dates. The end date is exclusive, i.e. it will be 1 millisecond
 	 * AFTER the end of the date range and on the first millisecond of the
 	 * adjacent range.
 	 *
-	 * @param  rRange The range to test against this range
-	 *
+	 * @param rRange The range to test against this range
 	 * @return TRUE, if start &lt;= rRange.start and end &gt;= rRange.end
 	 */
-	public boolean contains(DateRange rRange)
-	{
+	public boolean contains(DateRange rRange) {
 		return rRange.nStart >= nStart && rRange.nEnd <= nEnd;
 	}
 
-	/***************************************
+	/**
 	 * Test for equality with another object. Returns true if the argument is
 	 * also a DateRange object and compareTo(rObj) returns 0.
 	 *
-	 * @param  rObj The object to compare with for equality
-	 *
+	 * @param rObj The object to compare with for equality
 	 * @return TRUE if the objects are equal
 	 */
 	@Override
-	public boolean equals(Object rObj)
-	{
-		if (rObj == this)
-		{
+	public boolean equals(Object rObj) {
+		if (rObj == this) {
 			return true;
 		}
 
-		if (rObj instanceof DateRange)
-		{
+		if (rObj instanceof DateRange) {
 			return compareTo((DateRange) rObj) == 0;
 		}
 
 		return false;
 	}
 
-	/***************************************
+	/**
 	 * Returns the end date of the date range.
 	 *
 	 * @return A new instance of java.util.Date containing the end date
 	 */
-	public Date getEnd()
-	{
+	public Date getEnd() {
 		return new Date(nEnd);
 	}
 
-	/***************************************
+	/**
 	 * Returns the start date of the date range.
 	 *
 	 * @return A new instance of java.util.Date containing the start date
 	 */
-	public Date getStart()
-	{
+	public Date getStart() {
 		return new Date(nStart);
 	}
 
-	/***************************************
+	/**
 	 * Calculates and returns the hash code for this range.
 	 *
 	 * @return A hash code based on the internal start and end date values
 	 */
 	@Override
-	public int hashCode()
-	{
-		if (nHashCode == 0)
-		{
+	public int hashCode() {
+		if (nHashCode == 0) {
 			nHashCode = (int) (((37L + nStart) * 37L) + nEnd);
 		}
 
 		return nHashCode;
 	}
 
-	/***************************************
+	/**
 	 * To check if this date range overlaps with another range. Returns TRUE if
-	 * at least either the arguments start or end date lies between this range's
+	 * at least either the arguments start or end date lies between this
+	 * range's
 	 * start and end dates. The end date is exclusive, i.e. it will be 1
 	 * millisecond AFTER the end of the date range and on the first millisecond
 	 * of the adjacent range.
 	 *
-	 * @param  rOther The range to test against this range
-	 *
+	 * @param rOther The range to test against this range
 	 * @return TRUE, if NOT (rRange.end &lt; start OR rRange.start &gt; end)
-	 *
-	 * @see    #contains(DateRange)
+	 * @see #contains(DateRange)
 	 */
-	public boolean overlaps(DateRange rOther)
-	{
+	public boolean overlaps(DateRange rOther) {
 		return rOther.nEnd > nStart && rOther.nStart < nEnd;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return String.format("DateRange[%s - %s]", getStart(), getEnd());
 	}
 }

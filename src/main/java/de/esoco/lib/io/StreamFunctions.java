@@ -27,135 +27,100 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
-
 import java.util.function.BiFunction;
 
-
-/********************************************************************
+/**
  * Provides access to stream and I/O related function implementations. All
  * functions map occurring IO exceptions to a {@link FunctionException} runtime
  * exception.
  *
  * @author eso
  */
-public class StreamFunctions
-{
-	//~ Constructors -----------------------------------------------------------
+public class StreamFunctions {
 
-	/***************************************
+	/**
 	 * Private, only static use.
 	 */
-	private StreamFunctions()
-	{
+	private StreamFunctions() {
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Returns a new binary predicate that invokes {@link
-	 * StreamUtil#find(Reader, String, int, boolean,
+	/**
+	 * Returns a new binary predicate that invokes
+	 * {@link StreamUtil#find(Reader, String, int, boolean,
 	 * de.esoco.lib.io.StreamUtil.ReadHandler)}.
 	 *
-	 * @param  rDefaultToken The token to search
-	 * @param  nMax          The maximum number of characters to read
-	 *
+	 * @param rDefaultToken The token to search
+	 * @param nMax          The maximum number of characters to read
 	 * @return A new binary predicate instance
 	 */
 	public static BinaryPredicate<InputStream, byte[]> find(
-		final byte[] rDefaultToken,
-		final int    nMax)
-	{
+		final byte[] rDefaultToken, final int nMax) {
 		return ThrowingBinaryPredicate.of(
-			(stream, token) ->
-				StreamUtil.find(
-					stream,
-					Option.of(token).orUse(rDefaultToken),
-					nMax,
-					null));
+			(stream, token) -> StreamUtil.find(stream,
+				Option.of(token).orUse(rDefaultToken), nMax, null));
 	}
 
-	/***************************************
-	 * Returns a new binary predicate that invokes {@link
-	 * StreamUtil#find(Reader, String, int, boolean,
+	/**
+	 * Returns a new binary predicate that invokes
+	 * {@link StreamUtil#find(Reader, String, int, boolean,
 	 * de.esoco.lib.io.StreamUtil.ReadHandler)}.
 	 *
-	 * @param  sDefaultToken The token to search
-	 * @param  nMax          The maximum number of characters to read
-	 * @param  bIgnoreCase   TRUE if the case of the token should be ignored
-	 *
+	 * @param sDefaultToken The token to search
+	 * @param nMax          The maximum number of characters to read
+	 * @param bIgnoreCase   TRUE if the case of the token should be ignored
 	 * @return A new binary predicate instance
 	 */
 	public static BinaryPredicate<Reader, String> find(
-		final String  sDefaultToken,
-		final int	  nMax,
-		final boolean bIgnoreCase)
-	{
+		final String sDefaultToken, final int nMax,
+		final boolean bIgnoreCase) {
 		return ThrowingBinaryPredicate.of(
-			(stream, token) ->
-				StreamUtil.find(
-					stream,
-					Option.of(token).orUse(sDefaultToken),
-					nMax,
-					bIgnoreCase,
-					null));
+			(stream, token) -> StreamUtil.find(stream,
+				Option.of(token).orUse(sDefaultToken), nMax, bIgnoreCase,
+				null));
 	}
 
-	/***************************************
+	/**
 	 * Returns a new function that invokes reads all available data from an
-	 * input stream by invoking {@link StreamUtil#readAll(InputStream, int,
-	 * int)}.
+	 * input stream by invoking
+	 * {@link StreamUtil#readAll(InputStream, int, int)}.
 	 *
-	 * @param  nBufferSize The buffer size to use
-	 * @param  nMaxLength  The maximum length to read
-	 *
+	 * @param nBufferSize The buffer size to use
+	 * @param nMaxLength  The maximum length to read
 	 * @return A new function instance
 	 */
 	public static java.util.function.Function<InputStream, byte[]> readAll(
-		int nBufferSize,
-		int nMaxLength)
-	{
+		int nBufferSize, int nMaxLength) {
 		return ThrowingFunction.of(
 			rInput -> StreamUtil.readAll(rInput, nBufferSize, nMaxLength));
 	}
 
-	/***************************************
-	 * Returns a new binary function that invokes the method {@link
-	 * StreamUtil#readUntil(Reader, Writer, String, int, boolean)} and returns
-	 * either the string found or NULL if the given token didn't occur in the
-	 * data that has been read up to the maximum..
+	/**
+	 * Returns a new binary function that invokes the method
+	 * {@link StreamUtil#readUntil(Reader, Writer, String, int, boolean)} and
+	 * returns either the string found or NULL if the given token didn't occur
+	 * in the data that has been read up to the maximum..
 	 *
-	 * @param  sDefaultToken sToken The token to search
-	 * @param  nMax          The maximum number of characters to read
-	 * @param  bIgnoreCase   TRUE if the case of the token should be ignored
-	 *
+	 * @param sDefaultToken sToken The token to search
+	 * @param nMax          The maximum number of characters to read
+	 * @param bIgnoreCase   TRUE if the case of the token should be ignored
 	 * @return A new binary function instance
 	 */
 	public static BiFunction<Reader, String, String> readUntil(
-		final String  sDefaultToken,
-		final int	  nMax,
-		final boolean bIgnoreCase)
-	{
-		return ThrowingBinaryFunction.of(
-			(reader, token) ->
-			{
-				Writer aOutput = new StringWriter();
-				String sToken  = Option.of(token).orUse(sDefaultToken);
-				String sResult = null;
+		final String sDefaultToken, final int nMax,
+		final boolean bIgnoreCase) {
+		return ThrowingBinaryFunction.of((reader, token) -> {
+			Writer aOutput = new StringWriter();
+			String sToken = Option.of(token).orUse(sDefaultToken);
+			String sResult = null;
 
-				if (StreamUtil.readUntil(
-						reader,
-						aOutput,
-						sToken,
-						nMax,
-						bIgnoreCase))
-				{
-					sResult = aOutput.toString();
-					sResult =
-						sResult.substring(0, sResult.length() -
-							sToken.length());
-				}
+			if (StreamUtil.readUntil(reader, aOutput, sToken, nMax,
+				bIgnoreCase)) {
+				sResult = aOutput.toString();
+				sResult =
+					sResult.substring(0, sResult.length() - sToken.length());
+			}
 
-				return sResult;
-			});
+			return sResult;
+		});
 	}
 }

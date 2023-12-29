@@ -18,31 +18,24 @@ package de.esoco.lib.proxy.interception;
 
 import java.lang.reflect.Method;
 
-
-/********************************************************************
+/**
  * Defines a method Interception for the interception proxy. Contains a single
  * method invoke() that must be overridden by implementations to provide the
  * interception functionality.
  */
-public interface Interception
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Interception {
 
-	/***************************************
+	/**
 	 * This method must be implemented to provide the actual method
 	 * interception.
 	 *
-	 * @param  rProxy          The proxy on which the method has been invoked
-	 * @param  rOriginalMethod The original method that has been invoked
-	 * @param  rTarget         The object on which the method shall be invoked
-	 * @param  rArgs           The original method arguments
-	 *
+	 * @param rProxy          The proxy on which the method has been invoked
+	 * @param rOriginalMethod The original method that has been invoked
+	 * @param rTarget         The object on which the method shall be invoked
+	 * @param rArgs           The original method arguments
 	 * @return The result of the method call or of the interception
-	 *
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	public Object invoke(Object   rProxy,
-						 Method   rOriginalMethod,
-						 Object   rTarget,
-						 Object[] rArgs) throws Exception;
+	Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
+		Object[] rArgs) throws Exception;
 }

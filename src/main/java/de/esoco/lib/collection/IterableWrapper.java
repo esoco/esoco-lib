@@ -18,43 +18,34 @@ package de.esoco.lib.collection;
 
 import java.util.Iterator;
 
-
-/********************************************************************
+/**
  * A simple wrapper around an Iterable instance. It provides a way to use an
  * iterable in places where the underlying collection shall not be exposed.
  *
  * @author eso
  */
-public class IterableWrapper<T> implements Iterable<T>
-{
-	//~ Instance fields --------------------------------------------------------
+public class IterableWrapper<T> implements Iterable<T> {
 
 	private final Iterable<T> rIterable;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Wraps a certain iterable instance. This allows to return an Iterable
 	 * instance for an arbitrary collection without returning the collection
 	 * itself. The original iterable object cannot be accessed externally.
 	 *
 	 * @param rIterable The iterable instance to wrap
 	 */
-	public IterableWrapper(Iterable<T> rIterable)
-	{
+	public IterableWrapper(Iterable<T> rIterable) {
 		this.rIterable = rIterable;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the iterator of the wrapped iterable.
 	 *
 	 * @return The iterator
 	 */
 	@Override
-	public Iterator<T> iterator()
-	{
+	public Iterator<T> iterator() {
 		return rIterable.iterator();
 	}
 }

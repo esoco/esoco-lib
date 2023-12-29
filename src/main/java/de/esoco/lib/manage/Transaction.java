@@ -23,16 +23,16 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
 
-
-/********************************************************************
+/**
  * A transaction class. Transaction instances are typically managed on a
  * per-thread basis by the {@link TransactionManager} class unless they are
  * created through {@link TransactionManager#beginUnmanagedTransaction()}.
  *
- * <p>A transaction basically is a queue of {@link Transactional} elements which
- * can be committed or rolled back together with the methods in this class. The
- * queue structure means that the elements that have been added first will also
- * be processed first when the transaction is finished (the FIFO principle).</p>
+ * <p>A transaction basically is a queue of {@link Transactional} elements
+ * which can be committed or rolled back together with the methods in this
+ * class. The queue structure means that the elements that have been added first
+ * will also be processed first when the transaction is finished (the FIFO
+ * principle).</p>
  *
  * <p>If a transaction element implements the {@link Releasable} interface it
  * will be automatically released when a transaction is finished in either way.
@@ -44,63 +44,52 @@ import java.util.Queue;
  *
  * @author eso
  */
-public class Transaction implements Transactional
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class Transaction implements Transactional {
 
 	private static int nNextTransactionId = 1;
 
-	//~ Instance fields --------------------------------------------------------
+	private final int nId = nNextTransactionId++;
 
 	private Queue<Transactional> aTransactionElements =
 		new LinkedList<Transactional>();
-	private Queue<Releasable>    aReleasableElements  =
+
+	private Queue<Releasable> aReleasableElements =
 		new LinkedList<Releasable>();
 
-	private final int nId		  = nNextTransactionId++;
-	private int		  nLevel	  = 1;
-	private boolean   bCommitting = false;
+	private int nLevel = 1;
 
-	//~ Constructors -----------------------------------------------------------
+	private boolean bCommitting = false;
 
-	/***************************************
+	/**
 	 * Package-internal constructor.
 	 */
-	Transaction()
-	{
+	Transaction() {
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Adds a certain transactional element to this transaction. If the element
 	 * is already part of this transaction it will be ignored.
 	 *
-	 * @param  rElement The element to add
-	 *
+	 * @param rElement The element to add
 	 * @throws IllegalStateException If this transaction is no longer active
 	 */
-	public final void addElement(Transactional rElement)
-	{
+	public final void addElement(Transactional rElement) {
 		checkActive();
 
-		if (rElement == null)
-		{
+		if (rElement == null) {
 			throw new IllegalArgumentException("Element must not be NULL");
 		}
 
-		if (!aTransactionElements.contains(rElement))
-		{
+		if (!aTransactionElements.contains(rElement)) {
 			aTransactionElements.add(rElement);
 		}
 
-		if (rElement instanceof Releasable)
-		{
+		if (rElement instanceof Releasable) {
 			aReleasableElements.add((Releasable) rElement);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Performs a commit by invoking {@link Transactional#commit()} on all
 	 * elements of this transaction if the topmost transaction level has been
 	 * reached.
@@ -110,21 +99,19 @@ public class Transaction implements Transactional
 	 *                               element fails
 	 */
 	@Override
-	public final void commit() throws TransactionException
-	{
+	public final void commit() throws TransactionException {
 		assert nLevel >= 0 : "Invalid transaction level: " + nLevel;
 
 		// bCommitting will safeguard against re-commits caused by transactions
 		// that are started from transaction elements that are currently
 		// committed by the method endTransaction()
-		if (--nLevel == 0 && !bCommitting)
-		{
+		if (--nLevel == 0 && !bCommitting) {
 			bCommitting = true;
 			endTransaction(true);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns a readonly collection of the transactional elements in this
 	 * transaction. The returned collection will contain all transaction
 	 * elements that have been added to this transaction so far. If this
@@ -133,65 +120,58 @@ public class Transaction implements Transactional
 	 *
 	 * @return The list of transaction elements
 	 */
-	public final Collection<Transactional> getElements()
-	{
-		if (aTransactionElements != null)
-		{
+	public final Collection<Transactional> getElements() {
+		if (aTransactionElements != null) {
 			return Collections.unmodifiableCollection(aTransactionElements);
-		}
-		else
-		{
+		} else {
 			return Collections.emptyList();
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns the current transaction level. The starting level of a
 	 * transaction is 1. A level of zero means that the transaction has been
 	 * committed or rolled back.
 	 *
 	 * @return The current transaction level
 	 */
-	public final int getLevel()
-	{
+	public final int getLevel() {
 		return nLevel;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this transaction has been finished completely.
 	 *
 	 * @return TRUE if this transaction has been finished
 	 */
-	public final boolean isFinished()
-	{
+	public final boolean isFinished() {
 		return nLevel == 0 && !hasActiveElements();
 	}
 
-	/***************************************
-	 * Removes a certain element from the this transaction. If the element isn't
-	 * currently part of this transaction the method call won't have any effect.
+	/**
+	 * Removes a certain element from the this transaction. If the element
+	 * isn't
+	 * currently part of this transaction the method call won't have any
+	 * effect.
 	 * The given element will neither be committed nor rolled back by this
 	 * method. It is the responsibility of the calling context to handle the
 	 * removed element as necessary.
 	 *
-	 * @param  rElement The element to remove from the thread's current
-	 *                  transaction
-	 *
+	 * @param rElement The element to remove from the thread's current
+	 *                 transaction
 	 * @throws IllegalStateException If this transaction is no longer active
 	 */
-	public final void removeElement(Transactional rElement)
-	{
+	public final void removeElement(Transactional rElement) {
 		checkActive();
 
-		if (rElement == null)
-		{
+		if (rElement == null) {
 			throw new IllegalArgumentException("Element must not be NULL");
 		}
 
 		aTransactionElements.remove(rElement);
 	}
 
-	/***************************************
+	/**
 	 * Performs a rollback by invoking {@link Transactional#rollback()} on all
 	 * elements of this transaction.
 	 *
@@ -200,112 +180,92 @@ public class Transaction implements Transactional
 	 *                               element fails
 	 */
 	@Override
-	public final void rollback() throws TransactionException
-	{
+	public final void rollback() throws TransactionException {
 		assert nLevel >= 0 : "Invalid transaction level: " + nLevel;
 
-		if (nLevel == 0)
-		{
-			throw new IllegalStateException("Transaction already rolled back completely");
+		if (nLevel == 0) {
+			throw new IllegalStateException(
+				"Transaction already rolled back completely");
 		}
 
 		nLevel -= 1;
 
-		if (hasActiveElements())
-		{
+		if (hasActiveElements()) {
 			endTransaction(false);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns a string representation of this transaction.
 	 *
 	 * @return A string describing this transaction
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	public String toString()
-	{
-		return String.format("Transaction-%d[%d, %s]",
-							 nId,
-							 nLevel,
-							 aTransactionElements);
+	public String toString() {
+		return String.format("Transaction-%d[%d, %s]", nId, nLevel,
+			aTransactionElements);
 	}
 
-	/***************************************
-	 * Checks whether this transaction is still active. Returns FALSE after this
+	/**
+	 * Checks whether this transaction is still active. Returns FALSE after
+	 * this
 	 * transaction has been committed or rolled back completely.
 	 *
 	 * @return The active state of this transaction
 	 */
-	final boolean hasActiveElements()
-	{
+	final boolean hasActiveElements() {
 		return aTransactionElements != null;
 	}
 
-	/***************************************
+	/**
 	 * Package-internal method to increment the transaction level.
 	 */
-	final void incrementLevel()
-	{
+	final void incrementLevel() {
 		checkActive();
 		nLevel += 1;
 	}
 
-	/***************************************
+	/**
 	 * Internal method to check the active state of this transaction and to
 	 * throw an exception if it is no longer active.
 	 *
 	 * @throws IllegalStateException If this transaction is no longer active
 	 */
-	private void checkActive()
-	{
-		if (!hasActiveElements())
-		{
+	private void checkActive() {
+		if (!hasActiveElements()) {
 			throw new IllegalStateException("Transaction not active");
 		}
 	}
 
-	/***************************************
+	/**
 	 * Internal method to finish the current thread's transaction either by
 	 * committing or by performing a rollback for all transaction elements.
 	 *
-	 * @param  bCommit TRUE to commit, FALSE to rollback
-	 *
+	 * @param bCommit TRUE to commit, FALSE to rollback
 	 * @throws IllegalStateException If this transaction is no longer active
 	 * @throws TransactionException  If finishing a certain transaction element
 	 *                               fails
 	 */
-	private void endTransaction(boolean bCommit) throws TransactionException
-	{
+	private void endTransaction(boolean bCommit) throws TransactionException {
 		checkActive();
 
-		try
-		{
-			while (!aTransactionElements.isEmpty())
-			{
+		try {
+			while (!aTransactionElements.isEmpty()) {
 				Transactional rElement = aTransactionElements.poll();
 
-				if (bCommit)
-				{
+				if (bCommit) {
 					rElement.commit();
-				}
-				else
-				{
+				} else {
 					rElement.rollback();
 				}
 			}
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			rollbackRemainingElements();
 
-			throw new TransactionException((bCommit ? "Commit" : "Rollback") +
-										   " failed",
-										   e);
-		}
-		finally
-		{
+			throw new TransactionException(
+				(bCommit ? "Commit" : "Rollback") + " failed", e);
+		} finally {
 			releaseElements();
 
 			// mark this transaction as inactive
@@ -313,22 +273,17 @@ public class Transaction implements Transactional
 		}
 	}
 
-	/***************************************
+	/**
 	 * Releases all transaction elements that implement the {@link Releasable}
 	 * interface.
 	 */
-	private void releaseElements()
-	{
-		while (!aReleasableElements.isEmpty())
-		{
+	private void releaseElements() {
+		while (!aReleasableElements.isEmpty()) {
 			Releasable rElement = aReleasableElements.poll();
 
-			try
-			{
+			try {
 				rElement.release();
-			}
-			catch (Exception e)
-			{
+			} catch (Exception e) {
 				Log.warn("Error on release of " + rElement, e);
 			}
 		}
@@ -336,25 +291,19 @@ public class Transaction implements Transactional
 		aReleasableElements = null;
 	}
 
-	/***************************************
+	/**
 	 * This method performs a rollback of all remaining transaction elements.
 	 * Any exceptions will be logged as an error but otherwise they will be
 	 * ignored. Releasable elements will be released.
 	 */
-	private void rollbackRemainingElements()
-	{
-		if (aTransactionElements != null)
-		{
-			while (!aTransactionElements.isEmpty())
-			{
+	private void rollbackRemainingElements() {
+		if (aTransactionElements != null) {
+			while (!aTransactionElements.isEmpty()) {
 				Transactional rElement = aTransactionElements.poll();
 
-				try
-				{
+				try {
 					rElement.rollback();
-				}
-				catch (Exception e)
-				{
+				} catch (Exception e) {
 					Log.error("Error on cleanup rollback of " + rElement, e);
 				}
 			}

@@ -18,29 +18,24 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.comm.smtp.Email;
 import de.esoco.lib.comm.smtp.SmtpProtocolHandler;
+import org.obrel.core.RelationType;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import java.net.Socket;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.obrel.core.RelationType;
-
 import static de.esoco.lib.comm.CommunicationRelationTypes.PASSWORD;
 import static de.esoco.lib.comm.CommunicationRelationTypes.USER_NAME;
-
 import static org.obrel.core.RelationTypeModifier.PRIVATE;
 import static org.obrel.core.RelationTypes.newType;
 
-
-/********************************************************************
+/**
  * A socket-based {@link Endpoint} that allows to send email to an SMTP server.
  * The endpoint supports encrypted connections (SMTPS) and PLAIN authentication.
  * It does not support STARTTLS so the connection needs to be encrypted from the
@@ -63,9 +58,7 @@ import static org.obrel.core.RelationTypes.newType;
  *
  * @author eso
  */
-public class SmtpEndpoint extends SocketEndpoint
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class SmtpEndpoint extends SocketEndpoint {
 
 	/**
 	 * An internal relation type to the data input stream for the socket input
@@ -75,115 +68,95 @@ public class SmtpEndpoint extends SocketEndpoint
 		newType(PRIVATE);
 
 	/**
-	 * An internal relation type to the data output stream for the socket output
+	 * An internal relation type to the data output stream for the socket
+	 * output
 	 * stream of an EPP endpoint.
 	 */
 	private static final RelationType<DataOutputStream> SMTP_OUTPUT_STREAM =
 		newType(PRIVATE);
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Factory method to create an instance of {@link SmtpRequest} without a
 	 * default email message.
 	 *
 	 * @return The new request instance
 	 */
-	public static SmtpRequest sendMail()
-	{
+	public static SmtpRequest sendMail() {
 		return new SmtpRequest(null);
 	}
 
-	/***************************************
+	/**
 	 * Factory method to create an instance of {@link SmtpRequest}.
 	 *
-	 * @param  rDefaultEmail The default email to send
-	 *
+	 * @param rDefaultEmail The default email to send
 	 * @return The new request instance
 	 */
-	public static SmtpRequest sendMail(Email rDefaultEmail)
-	{
+	public static SmtpRequest sendMail(Email rDefaultEmail) {
 		return new SmtpRequest(rDefaultEmail);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void initConnection(Connection rConnection) throws IOException
-	{
+	protected void initConnection(Connection rConnection) throws IOException {
 		super.initConnection(rConnection);
 
 		Socket rSocket = getSocket(rConnection);
 
 		DataOutputStream aDataOut =
 			new DataOutputStream(rSocket.getOutputStream());
-		DataInputStream  aDataIn  =
+		DataInputStream aDataIn =
 			new DataInputStream(rSocket.getInputStream());
 
 		rConnection.set(SMTP_OUTPUT_STREAM, aDataOut);
 		rConnection.set(SMTP_INPUT_STREAM, aDataIn);
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * A SMTP request that sends email from instance of {@link Email}.
 	 *
 	 * @author eso
 	 */
-	public static class SmtpRequest extends SocketRequest<Email, Void>
-	{
-		//~ Constructors -------------------------------------------------------
+	public static class SmtpRequest extends SocketRequest<Email, Void> {
 
-		/***************************************
+		/**
 		 * Creates a new instance.
 		 *
 		 * @param rDefaultEmail The default email to send
 		 */
-		protected SmtpRequest(Email rDefaultEmail)
-		{
+		protected SmtpRequest(Email rDefaultEmail) {
 			super(SmtpRequest.class.getSimpleName(), rDefaultEmail);
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected Void sendRequest(Connection   rConnection,
-								   OutputStream rOutput,
-								   InputStream  rInput,
-								   Email		rEmail) throws Exception
-		{
+		protected Void sendRequest(Connection rConnection,
+			OutputStream rOutput,
+			InputStream rInput, Email rEmail) throws Exception {
 			SmtpProtocolHandler aSmtpHandler =
 				new SmtpProtocolHandler("localhost", rOutput, rInput);
 
 			String sFrom = rEmail.get(Email.SENDER_ADDRESS);
-			String sTo   = rEmail.get(Email.RECIPIENT_ADDRESS);
+			String sTo = rEmail.get(Email.RECIPIENT_ADDRESS);
 
-			if (sFrom == null || sTo == null)
-			{
-				String			    sQuery		   =
-					rConnection.getUri().getQuery();
-				String[]		    aQueryElements = sQuery.split("&");
-				Map<String, String> aParams		   = new HashMap<>();
+			if (sFrom == null || sTo == null) {
+				String sQuery = rConnection.getUri().getQuery();
+				String[] aQueryElements = sQuery.split("&");
+				Map<String, String> aParams = new HashMap<>();
 
-				for (String sElement : aQueryElements)
-				{
+				for (String sElement : aQueryElements) {
 					String[] aParam = sElement.split("=");
 
-					if (aParam.length == 2)
-					{
+					if (aParam.length == 2) {
 						aParams.put(aParam[0].toLowerCase(), aParam[1]);
 					}
 				}
 
 				sFrom = sFrom == null ? aParams.get("from") : sFrom;
-				sTo   = sTo == null ? aParams.get("to") : sTo;
+				sTo = sTo == null ? aParams.get("to") : sTo;
 
 				Objects.requireNonNull(sFrom, "Missing sender address");
 				Objects.requireNonNull(sTo, "Missing recipient address");
@@ -193,7 +166,7 @@ public class SmtpEndpoint extends SocketEndpoint
 			}
 
 			aSmtpHandler.connect(rConnection.get(USER_NAME),
-								 rConnection.get(PASSWORD));
+				rConnection.get(PASSWORD));
 			aSmtpHandler.send(rEmail);
 			aSmtpHandler.disconnect();
 

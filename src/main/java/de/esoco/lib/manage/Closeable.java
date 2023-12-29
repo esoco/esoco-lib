@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * A management interface for objects that can free allocated resources when
  * being closed. Whether an object can be reused after is has been closed
  * depends on the implementation and should be documented accordingly. A
@@ -26,17 +26,16 @@ package de.esoco.lib.manage;
  *
  * @author eso
  */
-public interface Closeable extends AutoCloseable
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Closeable extends AutoCloseable {
 
-	/***************************************
-	 * Closes the object. It is recommended that implementations handle multiple
+	/**
+	 * Closes the object. It is recommended that implementations handle
+	 * multiple
 	 * invocations and problems that occur while closing gracefully. In cases
 	 * where a problem is caused by inconsistencies in the runtime environment
 	 * or similar issues (or will cause them) a documented RuntimeException
 	 * should be thrown.
 	 */
 	@Override
-	public void close();
+	void close();
 }

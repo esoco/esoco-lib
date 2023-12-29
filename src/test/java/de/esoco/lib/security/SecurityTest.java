@@ -20,34 +20,28 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-
-/********************************************************************
+/**
  * Test of {@link Security} methods.
  *
  * @author eso
  */
-public class SecurityTest
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class SecurityTest {
 
 	private static final String ENCRYPTION_TEST_PASSPHRASE = "EncryptionTest";
 
 	private static final String ENCRYPTION_TEST_TEXT =
 		"Lorem ipsum dolor sit amet, consectetuer adipiscing elit";
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
-	 * Test of {@link Security#encrypt(String, String)} and {@link
-	 * Security#decrypt(byte[], String)}.
+	/**
+	 * Test of {@link Security#encrypt(String, String)} and
+	 * {@link Security#decrypt(byte[], String)}.
 	 */
 	@Test
-	public void testEncrypt()
-	{
+	public void testEncrypt() {
 		byte[] encrypted =
 			Security.encrypt(ENCRYPTION_TEST_TEXT, ENCRYPTION_TEST_PASSPHRASE);
 
 		assertEquals(ENCRYPTION_TEST_TEXT,
-					 Security.decrypt(encrypted, ENCRYPTION_TEST_PASSPHRASE));
+			Security.decrypt(encrypted, ENCRYPTION_TEST_PASSPHRASE));
 	}
 }

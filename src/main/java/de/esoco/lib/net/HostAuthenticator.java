@@ -18,76 +18,62 @@ package de.esoco.lib.net;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-
 import java.util.HashMap;
 import java.util.Map;
 
-
-/********************************************************************
+/**
  * Host-based Authenticator implementation that returns passwords based on the
  * address of the requesting host.
  *
  * @author eso
  */
-public class HostAuthenticator extends Authenticator
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class HostAuthenticator extends Authenticator {
 
-	private static Map<String, PasswordAuthentication> aAuthentications =
+	private static final Map<String, PasswordAuthentication> aAuthentications =
 		new HashMap<String, PasswordAuthentication>();
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Adds a password authentication for a certain host.
 	 *
 	 * @param sHost The host to set the authentication for
 	 * @param rAuth The password authentication object
 	 */
-	public static void addAuthentication(
-		String				   sHost,
-		PasswordAuthentication rAuth)
-	{
+	public static void addAuthentication(String sHost,
+		PasswordAuthentication rAuth) {
 		aAuthentications.put(sHost, rAuth);
 	}
 
-	/***************************************
-	 * Adds an authentication for a certain host. For higher security please use
+	/**
+	 * Adds an authentication for a certain host. For higher security please
+	 * use
 	 * the {@link #addAuthentication(String, PasswordAuthentication)} method.
 	 *
 	 * @param sHost     The host to set the authentication for
 	 * @param sUser     The user name
 	 * @param sPassword The password
 	 */
-	public static void addAuthentication(String sHost,
-										 String sUser,
-										 String sPassword)
-	{
+	public static void addAuthentication(String sHost, String sUser,
+		String sPassword) {
 		addAuthentication(sHost,
-						  new PasswordAuthentication(sUser,
-													 sPassword.toCharArray()));
+			new PasswordAuthentication(sUser, sPassword.toCharArray()));
 	}
 
-	/***************************************
+	/**
 	 * Enables host-based authentication by registering an instance of this
 	 * class by means of the {@link Authenticator#setDefault(Authenticator)}
 	 * method.
 	 */
-	public static void enable()
-	{
+	public static void enable() {
 		Authenticator.setDefault(new HostAuthenticator());
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the password authentication for the current requesting host.
 	 *
 	 * @return The password authentication
 	 */
 	@Override
-	protected PasswordAuthentication getPasswordAuthentication()
-	{
+	protected PasswordAuthentication getPasswordAuthentication() {
 		return aAuthentications.get(getRequestingHost());
 	}
 }

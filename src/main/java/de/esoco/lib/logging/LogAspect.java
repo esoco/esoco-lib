@@ -17,6 +17,9 @@
 package de.esoco.lib.logging;
 
 import de.esoco.lib.expression.Action;
+import org.obrel.core.RelatedObject;
+import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypes;
 
 import java.util.Collection;
 import java.util.Queue;
@@ -24,15 +27,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.obrel.core.RelatedObject;
-import org.obrel.core.RelationType;
-import org.obrel.core.RelationTypes;
-
 import static org.obrel.core.RelationTypes.newDefaultValueType;
 import static org.obrel.core.RelationTypes.newIntType;
 
-
-/********************************************************************
+/**
  * This is a base class for the implementation of specific aspects of logging,
  * like logging to a database or external systems. The common property of
  * aspects implemented with this class is that they need to synchronize access
@@ -60,9 +58,7 @@ import static org.obrel.core.RelationTypes.newIntType;
  *
  * @author eso
  */
-public abstract class LogAspect<T> extends RelatedObject
-{
-	//~ Static fields/initializers ---------------------------------------------
+public abstract class LogAspect<T> extends RelatedObject {
 
 	/**
 	 * The minimum log level to be logged by this aspect. Will be initialized
@@ -84,44 +80,39 @@ public abstract class LogAspect<T> extends RelatedObject
 	 * logging framework. Default value is 0 (zero), i.e. logging will be
 	 * shutdown on the first error.
 	 */
-	public static final RelationType<Integer> MAX_LOGGING_ERRORS = newIntType();
+	public static final RelationType<Integer> MAX_LOGGING_ERRORS =
+		newIntType();
 
-	static
-	{
+	static {
 		RelationTypes.init(LogAspect.class);
 	}
 
-	//~ Instance fields --------------------------------------------------------
-
 	private boolean bLoggingInitialized = false;
-	private int     nErrorCount;
 
-	private Lock     aQueueAccessLock;
+	private int nErrorCount;
+
+	private Lock aQueueAccessLock;
+
 	private Queue<T> aLogQueue;
 
 	private Action<LogRecord> fLogFunction;
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Initializes the logging of this aspect. Multiple invocations of this
 	 * method will be ignored.
 	 */
-	public final synchronized void initLogging()
-	{
-		if (!bLoggingInitialized)
-		{
-			nErrorCount		 = 0;
+	public final synchronized void initLogging() {
+		if (!bLoggingInitialized) {
+			nErrorCount = 0;
 			aQueueAccessLock = new ReentrantLock();
-			aLogQueue		 = new ConcurrentLinkedQueue<T>();
-			fLogFunction     = this::processLogRecord;
+			aLogQueue = new ConcurrentLinkedQueue<T>();
+			fLogFunction = this::processLogRecord;
 
 			init();
 
 			String sInitMessage = getLogInitMessage();
 
-			if (sInitMessage == null)
-			{
+			if (sInitMessage == null) {
 				Log.info(sInitMessage);
 			}
 
@@ -130,14 +121,12 @@ public abstract class LogAspect<T> extends RelatedObject
 		}
 	}
 
-	/***************************************
+	/**
 	 * Stops the logging of this aspect. Multiple invocations of this method
 	 * will be ignored.
 	 */
-	public final synchronized void shutdownLogging()
-	{
-		if (bLoggingInitialized)
-		{
+	public final synchronized void shutdownLogging() {
+		if (bLoggingInitialized) {
 			Log.removeDefaultLogHandler(fLogFunction);
 			shutdown();
 			Log.infof("Log aspect %s has been shut down", this);
@@ -145,135 +134,117 @@ public abstract class LogAspect<T> extends RelatedObject
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns the simple name of this aspect's class.
 	 *
 	 * @return The class name
 	 */
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return getClass().getSimpleName();
 	}
 
-	/***************************************
+	/**
 	 * Must be implemented by subclasses to create an implementation-specific
 	 * log data object from a {@link LogRecord} instance.
 	 *
-	 * @param  rLogRecord The log record to convert
-	 *
+	 * @param rLogRecord The log record to convert
 	 * @return The implementation log object
 	 */
 	protected abstract T createLogObject(LogRecord rLogRecord);
 
-	/***************************************
-	 * Must be implemented by subclasses to process a collection of log data
-	 * objects in an implementation-specific way, e.g. by sending them to
-	 * another system or store them in a database. The given collection will
-	 * always contain at least one object. Multiple objects should always be
-	 * process in the iteration order of the collection and the collection must
-	 * not be modified by the implementation. The objects in the collection have
-	 * all been created by {@link #createLogObject(LogRecord)}.
-	 *
-	 * <p>Implementations may throw any kind of exception. The log aspect base
-	 * implementation will perform a generic error handling by shutting down the
-	 * aspect logging and logging a FATAL message. The implementation must still
-	 * perform any cleanup of acquired resources if necessary.</p>
-	 *
-	 * @param  rLogObjects The log objects to process
-	 *
-	 * @throws Exception If the processing fails
-	 */
-	protected abstract void processLogObjects(Collection<T> rLogObjects)
-		throws Exception;
-
-	/***************************************
+	/**
 	 * Returns a message that will be logged as info message after
 	 * initialization of this aspect.
 	 *
 	 * @return The log init message (NULL for none)
 	 */
-	protected String getLogInitMessage()
-	{
+	protected String getLogInitMessage() {
 		return String.format("Log aspect %s initialized, starting logging",
-							 this);
+			this);
 	}
 
-	/***************************************
+	/**
 	 * Will be invoked from {@link #initLogging()}. Can be implemented by
 	 * subclasses to initialize the internal state that is needed for the
 	 * operation of this aspect. The default implementation does nothing.
 	 */
-	protected void init()
-	{
+	protected void init() {
 	}
 
-	/***************************************
+	/**
+	 * Must be implemented by subclasses to process a collection of log data
+	 * objects in an implementation-specific way, e.g. by sending them to
+	 * another system or store them in a database. The given collection will
+	 * always contain at least one object. Multiple objects should always be
+	 * process in the iteration order of the collection and the collection must
+	 * not be modified by the implementation. The objects in the collection
+	 * have
+	 * all been created by {@link #createLogObject(LogRecord)}.
+	 *
+	 * <p>Implementations may throw any kind of exception. The log aspect base
+	 * implementation will perform a generic error handling by shutting down
+	 * the
+	 * aspect logging and logging a FATAL message. The implementation must
+	 * still
+	 * perform any cleanup of acquired resources if necessary.</p>
+	 *
+	 * @param rLogObjects The log objects to process
+	 * @throws Exception If the processing fails
+	 */
+	protected abstract void processLogObjects(Collection<T> rLogObjects)
+		throws Exception;
+
+	/**
 	 * Will be invoked from {@link #shutdownLogging()}. Can be implemented by
 	 * subclasses to perform a cleanup of resources that had been acquired in
 	 * {@link #init()} or during logging. The default implementation does
 	 * nothing.
 	 */
-	protected void shutdown()
-	{
+	protected void shutdown() {
 	}
 
-	/***************************************
+	/**
 	 * Processes and empties the log object queue.
 	 */
 	@SuppressWarnings("boxing")
-	private void processLogQueue()
-	{
-		try
-		{
-			if (!aLogQueue.isEmpty())
-			{
+	private void processLogQueue() {
+		try {
+			if (!aLogQueue.isEmpty()) {
 				processLogObjects(aLogQueue);
 			}
 
 			aLogQueue.clear();
-		}
-		catch (Exception e)
-		{
-			if (++nErrorCount >= get(MAX_LOGGING_ERRORS))
-			{
+		} catch (Exception e) {
+			if (++nErrorCount >= get(MAX_LOGGING_ERRORS)) {
 				shutdownLogging();
-				Log.fatalf(e,
-						   "Log aspect %s failed, stopped after %d errors",
-						   this.getClass().getSimpleName(),
-						   nErrorCount);
+				Log.fatalf(e, "Log aspect %s failed, stopped after %d errors",
+					this.getClass().getSimpleName(), nErrorCount);
 			}
 		}
 	}
 
-	/***************************************
+	/**
 	 * Stores a new log entry based on a log record.
 	 *
-	 * @param  rLogRecord The log record
-	 *
+	 * @param rLogRecord The log record
 	 * @return Always NULL, return value exists only to comply with function
-	 *         signature
+	 * signature
 	 */
-	private Object processLogRecord(LogRecord rLogRecord)
-	{
-		if (rLogRecord.getLevel().compareTo(get(MIN_LOG_LEVEL)) >= 0)
-		{
+	private Object processLogRecord(LogRecord rLogRecord) {
+		if (rLogRecord.getLevel().compareTo(get(MIN_LOG_LEVEL)) >= 0) {
 			T aLogObject = createLogObject(rLogRecord);
 
-			if (aLogObject != null)
-			{
+			if (aLogObject != null) {
 				aLogQueue.add(aLogObject);
 
-				// only send queue if processing is not currently in progress to
+				// only send queue if processing is not currently in
+				// progress to
 				// prevent opening multiple target connections
-				if (aQueueAccessLock.tryLock())
-				{
-					try
-					{
+				if (aQueueAccessLock.tryLock()) {
+					try {
 						processLogQueue();
-					}
-					finally
-					{
+					} finally {
 						aQueueAccessLock.unlock();
 					}
 				}

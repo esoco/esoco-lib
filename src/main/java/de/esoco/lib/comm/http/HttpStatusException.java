@@ -23,41 +23,33 @@ import de.esoco.lib.datatype.Pair;
 import java.util.Collections;
 import java.util.Map;
 
-
-/********************************************************************
+/**
  * An unchecked exception to report exceptional HTTP responses.
  *
  * @author eso
  */
-public class HttpStatusException extends RuntimeException
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class HttpStatusException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
-
-	//~ Instance fields --------------------------------------------------------
 
 	private final HttpStatusCode eStatusCode;
 
 	private Map<HttpHeaderField, String> rResponseHeaders =
 		Collections.emptyMap();
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance with a status code and causing exception.
 	 *
 	 * @param eStatusCode The status code
 	 * @param eCause      The causing exception
 	 */
-	public HttpStatusException(HttpStatusCode eStatusCode, Exception eCause)
-	{
+	public HttpStatusException(HttpStatusCode eStatusCode, Exception eCause) {
 		super(eCause);
 
 		this.eStatusCode = eStatusCode;
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance with a status code and message.
 	 *
 	 * @param eStatusCode      The status code
@@ -66,19 +58,16 @@ public class HttpStatusException extends RuntimeException
 	 *                         response
 	 */
 	@SafeVarargs
-	public HttpStatusException(
-		HttpStatusCode					 eStatusCode,
-		String							 sMessage,
-		Pair<HttpHeaderField, String>... rResponseHeaders)
-	{
+	public HttpStatusException(HttpStatusCode eStatusCode, String sMessage,
+		Pair<HttpHeaderField, String>... rResponseHeaders) {
 		super(sMessage);
 
-		this.eStatusCode	  = eStatusCode;
+		this.eStatusCode = eStatusCode;
 		this.rResponseHeaders =
 			CollectionUtil.fixedOrderedMapOf(rResponseHeaders);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance with a status code, message, and causing
 	 * exception.
 	 *
@@ -86,58 +75,45 @@ public class HttpStatusException extends RuntimeException
 	 * @param sMessage    The error message
 	 * @param eCause      The causing exception
 	 */
-	public HttpStatusException(HttpStatusCode eStatusCode,
-							   String		  sMessage,
-							   Exception	  eCause)
-	{
+	public HttpStatusException(HttpStatusCode eStatusCode, String sMessage,
+		Exception eCause) {
 		super(sMessage, eCause);
 
 		this.eStatusCode = eStatusCode;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns a map of the optional response headers for this status code
 	 * exception.
 	 *
 	 * @return The response headers map (may be empty but will never be NULL)
 	 */
-	public final Map<HttpHeaderField, String> getResponseHeaders()
-	{
+	public final Map<HttpHeaderField, String> getResponseHeaders() {
 		return rResponseHeaders;
 	}
 
-	/***************************************
+	/**
 	 * Returns the HTTP status code.
 	 *
 	 * @return The status code
 	 */
-	public final HttpStatusCode getStatusCode()
-	{
+	public final HttpStatusCode getStatusCode() {
 		return eStatusCode;
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * A subclass that indicates a bad request that has no content.
 	 *
 	 * @author eso
 	 */
-	public static class EmptyRequestException extends HttpStatusException
-	{
-		//~ Static fields/initializers -----------------------------------------
+	public static class EmptyRequestException extends HttpStatusException {
 
 		private static final long serialVersionUID = 1L;
 
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Creates a new instance.
 		 */
-		public EmptyRequestException()
-		{
+		public EmptyRequestException() {
 			super(HttpStatusCode.BAD_REQUEST, "Request empty");
 		}
 	}

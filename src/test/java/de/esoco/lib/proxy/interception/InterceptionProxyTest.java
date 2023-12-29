@@ -17,50 +17,41 @@
 package de.esoco.lib.proxy.interception;
 
 import junit.framework.TestCase;
-
-import java.lang.reflect.Method;
-
-import java.util.List;
-
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 
+import java.lang.reflect.Method;
+import java.util.List;
+
 import static org.obrel.core.RelationTypes.newListType;
 
-
-/********************************************************************
+/**
  * Test of interception proxies.
  *
  * @author eso
  */
-public class InterceptionProxyTest extends TestCase
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class InterceptionProxyTest extends TestCase {
 
 	private static final RelationType<List<String>> TEST_STRINGS =
 		newListType();
 
-	//~ Instance fields --------------------------------------------------------
+	int nLogCount = 0;
 
-	int nLogCount    = 0;
 	int nBeforeCount = 0;
-	int nReturnCount = 0;
-	int nThrowCount  = 0;
 
-	//~ Instance initializers --------------------------------------------------
+	int nReturnCount = 0;
+
+	int nThrowCount = 0;
 
 	{
 		RelationTypes.init(InterceptionProxyTest.class);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Method testNewProxyInstance.
 	 */
-	public final void testNewProxyInstance()
-	{
+	public final void testNewProxyInstance() {
 		InterceptionProxy<TestInterface> ip =
 			new InterceptionProxy<TestInterface>(TestInterface.class);
 
@@ -68,50 +59,35 @@ public class InterceptionProxyTest extends TestCase
 
 		ip.setDefaultInterception(InterceptionProxy.FORWARD);
 
-		ip.addAdvice(
-			new InterceptionAdvice()
-			{
-				@Override
-				public void before(Object   rInvoked,
-								   Method   rMethod,
-								   Object[] rArgs) throws Exception
-				{
-					nBeforeCount++;
-				}
-			});
+		ip.addAdvice(new InterceptionAdvice() {
+			@Override
+			public void before(Object rInvoked, Method rMethod, Object[] rArgs)
+				throws Exception {
+				nBeforeCount++;
+			}
+		});
 
-		ip.addAdvice(
-			new InterceptionAdvice()
-			{
-				@Override
-				public void afterReturn(Object   rReturn,
-										Object   rInvoked,
-										Method   rMethod,
-										Object[] rArgs) throws Exception
-				{
-					nReturnCount++;
-				}
+		ip.addAdvice(new InterceptionAdvice() {
+			@Override
+			public void afterReturn(Object rReturn, Object rInvoked,
+				Method rMethod, Object[] rArgs) throws Exception {
+				nReturnCount++;
+			}
 
-				@Override
-				public void afterThrow(Throwable rThrown,
-									   Object    rInvoked,
-									   Method    rMethod,
-									   Object[]  rArgs) throws Exception
-				{
-					nThrowCount++;
-				}
-			});
+			@Override
+			public void afterThrow(Throwable rThrown, Object rInvoked,
+				Method rMethod, Object[] rArgs) throws Exception {
+				nThrowCount++;
+			}
+		});
 
-		ip.addAdvice(
-			new InterceptionAdvice()
-			{
-				@Override
-				public void after(Object rProxy, Method rMethod, Object[] rArgs)
-					throws Exception
-				{
-					nLogCount++;
-				}
-			});
+		ip.addAdvice(new InterceptionAdvice() {
+			@Override
+			public void after(Object rProxy, Method rMethod, Object[] rArgs)
+				throws Exception {
+				nLogCount++;
+			}
+		});
 
 		TestInterface ti = ip.newProxyInstance(aTarget);
 
@@ -126,13 +102,10 @@ public class InterceptionProxyTest extends TestCase
 		assertEquals(0, nThrowCount);
 		assertEquals(2, nLogCount);
 
-		try
-		{
+		try {
 			ti.close();
 			assertFalse(true);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			// expected
 		}
 
@@ -142,19 +115,17 @@ public class InterceptionProxyTest extends TestCase
 		assertEquals(3, nLogCount);
 	}
 
-	/***************************************
+	/**
 	 * Test proxies with explicit relation support.
 	 */
-	public void testRelationsExplicit()
-	{
+	public void testRelationsExplicit() {
 		// DirectRelationInterface extends RelationEnabled
 		InterceptionProxy<RelationInterface> ip =
-			new InterceptionProxy<RelationInterface>(
-				RelationInterface.class,
+			new InterceptionProxy<RelationInterface>(RelationInterface.class,
 				true);
 
-		Object    aTarget = new TestClass();
-		Relatable ti	  = ip.newProxyInstance(aTarget);
+		Object aTarget = new TestClass();
+		Relatable ti = ip.newProxyInstance(aTarget);
 
 		ti.get(TEST_STRINGS).add("TEST1");
 		ti.get(TEST_STRINGS).add("TEST2");
@@ -163,88 +134,70 @@ public class InterceptionProxyTest extends TestCase
 		assertEquals(3, ti.get(TEST_STRINGS).size());
 
 		// try again without relation support enabled
-		ip = new InterceptionProxy<RelationInterface>(
-				RelationInterface.class,
-				false);
+		ip = new InterceptionProxy<RelationInterface>(RelationInterface.class,
+			false);
 		ti = ip.newProxyInstance(aTarget);
 
-		try
-		{
+		try {
 			ti.get(TEST_STRINGS).add("TEST1");
 			assertFalse(true);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			// this is the correct execution path
 		}
 	}
 
-	//~ Inner Interfaces -------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * Test interface for object relations that directly implements
 	 * RelationEnabled.
 	 *
 	 * @author eso
 	 */
-	public static interface RelationInterface extends TestInterface, Relatable
-	{
+	public interface RelationInterface extends TestInterface, Relatable {
 	}
 
-	/********************************************************************
+	/**
 	 * Interface InterceptorIF.
 	 */
-	public static interface TestInterface
-	{
-		//~ Methods ------------------------------------------------------------
+	public interface TestInterface {
 
-		/***************************************
+		/**
 		 * Method close.
 		 */
-		public void close();
+		void close();
 
-		/***************************************
+		/**
 		 * Method open.
 		 */
-		public void open();
+		void open();
 
-		/***************************************
+		/**
 		 * Method other.
 		 */
-		public void other();
+		void other();
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * Class TestClass.
 	 */
-	public class TestClass
-	{
-		//~ Methods ------------------------------------------------------------
+	public class TestClass {
 
-		/***************************************
+		/**
 		 * Method close.
-		 *
-		 * @throws Exception
 		 */
-		public void close() throws Exception
-		{
+		public void close() throws Exception {
 			throw new Exception();
 		}
 
-		/***************************************
+		/**
 		 * Method open.
 		 */
-		public void open()
-		{
+		public void open() {
 		}
 
-		/***************************************
+		/**
 		 * Method other.
 		 */
-		public void other()
-		{
+		public void other() {
 		}
 	}
 }

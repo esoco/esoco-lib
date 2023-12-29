@@ -18,31 +18,25 @@ package de.esoco.lib.datatype.test;
 
 import de.esoco.lib.datatype.GenericEnum;
 
-
-/********************************************************************
+/**
  * Test enum subclass in another package.
  *
  * @author eso
  */
-public class OtherPackageEnum extends GenericEnum<OtherPackageEnum>
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class OtherPackageEnum extends GenericEnum<OtherPackageEnum> {
 
-	private static final long serialVersionUID = 1L;
-
-	/** Test enum instance */
+	/**
+	 * Test enum instance
+	 */
 	public static final OtherPackageEnum PACKAGE_ENUM =
 		new OtherPackageEnum("PACKAGE_ENUM");
 
-	//~ Constructors -----------------------------------------------------------
+	private static final long serialVersionUID = 1L;
 
-	/***************************************
+	/**
 	 * Constructor.
-	 *
-	 * @param rName
 	 */
-	OtherPackageEnum(String rName)
-	{
+	OtherPackageEnum(String rName) {
 		super(rName);
 	}
 }

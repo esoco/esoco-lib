@@ -20,8 +20,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-
-/********************************************************************
+/**
  * An input stream wrapper that limits the number of bytes that can be read from
  * the stream. It limits all (and only) bytes read from the stream, even if the
  * {@link #mark(int)} and {@link #reset()} methods are used. Bytes ignored by
@@ -33,62 +32,52 @@ import java.io.InputStream;
  *
  * @author eso
  */
-public class LimitedInputStream extends FilterInputStream
-{
-	//~ Instance fields --------------------------------------------------------
+public class LimitedInputStream extends FilterInputStream {
 
 	private int nRemainingLength;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedStream The stream wrapped by this instance
 	 * @param nMax           The maximum number of bytes that can be read from
 	 *                       this instance
 	 */
-	public LimitedInputStream(InputStream rWrappedStream, int nMax)
-	{
+	public LimitedInputStream(InputStream rWrappedStream, int nMax) {
 		super(rWrappedStream);
 
 		nRemainingLength = nMax;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the remaining limit that can be read.
 	 *
 	 * @return The remaining limit
 	 */
-	public int getRemainingLimit()
-	{
+	public int getRemainingLimit() {
 		return nRemainingLength;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read() throws IOException
-	{
+	public int read() throws IOException {
 		checkLimit();
 		nRemainingLength--;
 
 		return super.read();
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBuffer, int nOffset, int nLength) throws IOException
-	{
+	public int read(byte[] rBuffer, int nOffset, int nLength)
+		throws IOException {
 		checkLimit();
 
-		if (nRemainingLength < nLength)
-		{
+		if (nRemainingLength < nLength) {
 			nLength = nRemainingLength;
 		}
 
@@ -99,28 +88,23 @@ public class LimitedInputStream extends FilterInputStream
 		return nRead;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	public String toString()
-	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLength,
-							 in);
+	public String toString() {
+		return String.format("%s(%d, %s)", getClass().getSimpleName(),
+			nRemainingLength, in);
 	}
 
-	/***************************************
+	/**
 	 * Checks whether the limit has been reached.
 	 *
 	 * @throws StreamLimitException If the limit has been reached
 	 */
-	protected void checkLimit() throws StreamLimitException
-	{
-		if (nRemainingLength == 0)
-		{
+	protected void checkLimit() throws StreamLimitException {
+		if (nRemainingLength == 0) {
 			throw new StreamLimitException("Input limit reached", true);
 		}
 	}

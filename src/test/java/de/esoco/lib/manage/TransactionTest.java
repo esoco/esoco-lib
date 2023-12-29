@@ -17,7 +17,6 @@
 package de.esoco.lib.manage;
 
 import de.esoco.lib.manage.TransactionTest.TestTransactionElement.State;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,256 +25,190 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
-/********************************************************************
+/**
  * JUnit test case for the {@link TransactionManager} class.
  *
  * @author eso
  */
-public class TransactionTest
-{
-	//~ Enums ------------------------------------------------------------------
+public class TransactionTest {
 
-	/********************************************************************
+	/**
 	 * Transaction test modes
 	 */
-	enum Mode { COMMIT, ROLLBACK, MULTI_LEVEL }
+	enum Mode {COMMIT, ROLLBACK, MULTI_LEVEL}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Performs initial checks before a single test is run.
 	 */
 	@Before
-	public void before()
-	{
+	public void before() {
 		assertFalse(TransactionManager.isInTransaction());
 	}
 
-	/***************************************
+	/**
 	 * Tests committing of transactions.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testCommit() throws TransactionException
-	{
+	public void testCommit() throws TransactionException {
 		performTransaction(true, false, 0);
 	}
 
-	/***************************************
+	/**
 	 * Tests failing commit of transactions.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testFailingCommit() throws TransactionException
-	{
+	public void testFailingCommit() throws TransactionException {
 		performTransaction(true, true, 0);
 	}
 
-	/***************************************
+	/**
 	 * Tests failing rollback of transactions.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testFailingRollback() throws TransactionException
-	{
+	public void testFailingRollback() throws TransactionException {
 		performTransaction(false, true, 0);
 	}
 
-	/***************************************
+	/**
 	 * Tests a commit of a multi-level transaction.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testMultiLevelCommit() throws TransactionException
-	{
+	public void testMultiLevelCommit() throws TransactionException {
 		performTransaction(true, false, 2);
 	}
 
-	/***************************************
+	/**
 	 * Tests a commit of a multi-level transaction that fails.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testMultiLevelFailedCommit() throws TransactionException
-	{
+	public void testMultiLevelFailedCommit() throws TransactionException {
 		performTransaction(true, true, 2);
 	}
 
-	/***************************************
+	/**
 	 * Tests a rollback of a multi-level transaction that fails.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testMultiLevelFailedRollback() throws TransactionException
-	{
+	public void testMultiLevelFailedRollback() throws TransactionException {
 		performTransaction(false, true, 2);
 	}
 
-	/***************************************
+	/**
 	 * Tests a rollback of a multi-level transaction.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testMultiLevelRollback() throws TransactionException
-	{
+	public void testMultiLevelRollback() throws TransactionException {
 		performTransaction(false, false, 2);
 	}
 
-	/***************************************
+	/**
 	 * Tests committing of transactions.
-	 *
-	 * @throws InterruptedException
 	 */
 	@Test
-	public void testMultithreadCommit() throws InterruptedException
-	{
+	public void testMultithreadCommit() throws InterruptedException {
 		runThreadTest(true);
 	}
 
-	/***************************************
+	/**
 	 * Tests committing of transactions.
-	 *
-	 * @throws InterruptedException
 	 */
 	@Test
-	public void testMultithreadRollback() throws InterruptedException
-	{
+	public void testMultithreadRollback() throws InterruptedException {
 		runThreadTest(false);
 	}
 
-	/***************************************
+	/**
 	 * Tests rollback of transactions.
-	 *
-	 * @throws TransactionException
 	 */
 	@Test
-	public void testRollback() throws TransactionException
-	{
+	public void testRollback() throws TransactionException {
 		performTransaction(false, false, 0);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new thread that invokes the commit or rollback test method.
 	 *
-	 * @param  bCommit TRUE for commit, FALSE for rollback
-	 *
+	 * @param bCommit TRUE for commit, FALSE for rollback
 	 * @return A new thread
 	 */
-	private Thread createTransactionThread(final boolean bCommit)
-	{
-		return new Thread()
-		{
+	private Thread createTransactionThread(final boolean bCommit) {
+		return new Thread() {
 			@Override
-			public void run()
-			{
-				try
-				{
-					if (bCommit)
-					{
+			public void run() {
+				try {
+					if (bCommit) {
 						testCommit();
-					}
-					else
-					{
+					} else {
 						testRollback();
 					}
-				}
-				catch (TransactionException e)
-				{
+				} catch (TransactionException e) {
 					fail("Thread commit failed");
 				}
 			}
 		};
 	}
 
-	/***************************************
+	/**
 	 * Performs a transaction.
 	 *
-	 * @param  bCommit      TRUE for commit, FALSE for rollback
-	 * @param  bWithFailure TRUE to add a faulty transaction step
-	 * @param  nSubLevels   The number of additional transaction levels
-	 *
-	 * @throws TransactionException
+	 * @param bCommit      TRUE for commit, FALSE for rollback
+	 * @param bWithFailure TRUE to add a faulty transaction step
+	 * @param nSubLevels   The number of additional transaction levels
 	 */
-	private void performTransaction(boolean bCommit,
-									boolean bWithFailure,
-									int		nSubLevels)
-		throws TransactionException
-	{
-		TestTransactionElement te1  = new TestTransactionElement(false);
-		TestTransactionElement te2  = new TestTransactionElement(false);
+	private void performTransaction(boolean bCommit, boolean bWithFailure,
+		int nSubLevels) throws TransactionException {
+		TestTransactionElement te1 = new TestTransactionElement(false);
+		TestTransactionElement te2 = new TestTransactionElement(false);
 		TestTransactionElement fail = new TestTransactionElement(true);
 
-		State	    rState		 = bCommit ? State.COMMITTED : State.ROLLBACK;
+		State rState = bCommit ? State.COMMITTED : State.ROLLBACK;
 		Transaction rTransaction;
-		int		    nLevel;
+		int nLevel;
 
 		rTransaction = TransactionManager.begin();
-		nLevel		 = rTransaction.getLevel();
+		nLevel = rTransaction.getLevel();
 
 		assertTrue(TransactionManager.isInTransaction());
 
 		TransactionManager.addTransactionElement(te1);
 		rTransaction.addElement(te2);
 
-		if (bWithFailure && nLevel == 1)
-		{
+		if (bWithFailure && nLevel == 1) {
 			rTransaction.addElement(fail);
 		}
 
-		if (nSubLevels > 0)
-		{
+		if (nSubLevels > 0) {
 			performTransaction(bCommit, bWithFailure, nSubLevels - 1);
 		}
 
-		try
-		{
-			if (bCommit)
-			{
+		try {
+			if (bCommit) {
 				TransactionManager.commit();
-			}
-			else
-			{
+			} else {
 				TransactionManager.rollback();
 			}
 
-			if (bWithFailure)
-			{
-				if (bCommit && nLevel == 1 || !bCommit && nSubLevels == 0)
-				{
+			if (bWithFailure) {
+				if (bCommit && nLevel == 1 || !bCommit && nSubLevels == 0) {
 					fail("Exception expected");
 				}
 			}
-		}
-		catch (TransactionException e)
-		{
-			if (!bWithFailure)
-			{
+		} catch (TransactionException e) {
+			if (!bWithFailure) {
 				throw e;
 			}
 		}
 
-		if (bWithFailure && nLevel == 1)
-		{
+		if (bWithFailure && nLevel == 1) {
 			// check for level 1 because the first failure transaction will
 			// cause the exception
 			assertEquals(State.FAILURE, fail.aState);
 			assertTrue(fail.bReleased);
 		}
 
-		if (bCommit && nLevel > 1)
-		{
+		if (bCommit && nLevel > 1) {
 			assertTrue(rTransaction.hasActiveElements());
-		}
-		else
-		{
+		} else {
 			assertEquals(rState, te1.aState);
 			assertEquals(rState, te2.aState);
 			assertTrue(te1.bReleased);
@@ -284,22 +217,18 @@ public class TransactionTest
 			assertEquals(0, rTransaction.getElements().size());
 			assertFalse(rTransaction.hasActiveElements());
 
-			if (nLevel == 1)
-			{
+			if (nLevel == 1) {
 				assertFalse(TransactionManager.isInTransaction());
 			}
 		}
 	}
 
-	/***************************************
+	/**
 	 * Runs a multi-threaded transaction test.
 	 *
-	 * @param  bCommit TRUE for commit, FALSE for rollback
-	 *
-	 * @throws InterruptedException
+	 * @param bCommit TRUE for commit, FALSE for rollback
 	 */
-	private void runThreadTest(boolean bCommit) throws InterruptedException
-	{
+	private void runThreadTest(boolean bCommit) throws InterruptedException {
 		Thread aThread1 = createTransactionThread(bCommit);
 		Thread aThread2 = createTransactionThread(bCommit);
 
@@ -310,85 +239,66 @@ public class TransactionTest
 		aThread2.join();
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * A simple transaction implementation for test purposes.
 	 */
-	static class TestTransactionElement implements Transactional, Releasable
-	{
-		//~ Enums --------------------------------------------------------------
+	static class TestTransactionElement implements Transactional, Releasable {
 
-		/********************************************************************
+		/**
 		 * Transaction states
 		 */
-		enum State { NEW, COMMITTED, ROLLBACK, FAILURE }
+		enum State {NEW, COMMITTED, ROLLBACK, FAILURE}
 
-		//~ Instance fields ----------------------------------------------------
+		State aState = State.NEW;
 
-		State   aState    = State.NEW;
-		boolean bFail     = false;
+		boolean bFail = false;
+
 		boolean bReleased = false;
 
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Constructor.
 		 *
 		 * @param bFail TRUE to make the commit and rollback methods fail with
 		 *              an exception
 		 */
-		public TestTransactionElement(boolean bFail)
-		{
+		public TestTransactionElement(boolean bFail) {
 			this.bFail = bFail;
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * @see Transactional#commit()
 		 */
 		@Override
-		public void commit() throws Exception
-		{
-			if (bFail)
-			{
+		public void commit() throws Exception {
+			if (bFail) {
 				aState = State.FAILURE;
 				throw new Exception("TestTransaction forced failure");
-			}
-			else
-			{
+			} else {
 				aState = State.COMMITTED;
 			}
 		}
 
-		/***************************************
+		/**
 		 * @see Releasable#release()
 		 */
 		@Override
-		public void release()
-		{
-			if (bReleased)
-			{
+		public void release() {
+			if (bReleased) {
 				throw new RuntimeException("Already released");
 			}
 
 			bReleased = true;
 		}
 
-		/***************************************
+		/**
 		 * @see Transactional#rollback()
 		 */
 		@Override
-		public void rollback() throws Exception
-		{
-			if (bFail)
-			{
+		public void rollback() throws Exception {
+			if (bFail) {
 				aState = State.FAILURE;
 				throw new Exception("TestTransaction forced failure");
-			}
-			else
-			{
+			} else {
 				aState = State.ROLLBACK;
 			}
 		}

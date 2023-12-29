@@ -22,119 +22,111 @@ import org.obrel.core.RelationType;
 
 import static org.obrel.core.RelationTypes.newType;
 
-
-/********************************************************************
+/**
  * A related object that contains the values for a single email message.
  *
  * @author eso
  */
-public class Email extends RelatedObject implements FluentRelatable<Email>
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class Email extends RelatedObject implements FluentRelatable<Email> {
 
-	/** The name of the email sender (FROM). */
+	/**
+	 * The name of the email sender (FROM).
+	 */
 	public static final RelationType<String> SENDER_NAME = newType();
 
-	/** The email address of the sender (FROM). */
+	/**
+	 * The email address of the sender (FROM).
+	 */
 	public static final RelationType<String> SENDER_ADDRESS = newType();
 
-	/** The name of the email recipient (TO). */
+	/**
+	 * The name of the email recipient (TO).
+	 */
 	public static final RelationType<String> RECIPIENT_NAME = newType();
 
-	/** The email address of the recipient (TO). */
+	/**
+	 * The email address of the recipient (TO).
+	 */
 	public static final RelationType<String> RECIPIENT_ADDRESS = newType();
 
-	/** The subject line of the email. */
+	/**
+	 * The subject line of the email.
+	 */
 	public static final RelationType<String> SUBJECT = newType();
 
-	/** The message text of the email. */
+	/**
+	 * The message text of the email.
+	 */
 	public static final RelationType<String> MESSAGE = newType();
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * A factory method that creates a new instance.
 	 *
 	 * @return The new instance
 	 */
-	public static Email email()
-	{
+	public static Email email() {
 		return new Email();
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Sets the sender address and an empty sender name.
 	 *
-	 * @param  sAddress The receiver address
-	 *
+	 * @param sAddress The receiver address
 	 * @return This instance for fluent invocation
 	 */
-	public Email from(String sAddress)
-	{
+	public Email from(String sAddress) {
 		return from("", sAddress);
 	}
 
-	/***************************************
+	/**
 	 * Sets the receiver address.
 	 *
-	 * @param  sName    The receiver name
-	 * @param  sAddress The receiver address
-	 *
+	 * @param sName    The receiver name
+	 * @param sAddress The receiver address
 	 * @return This instance for fluent invocation
 	 */
-	public Email from(String sName, String sAddress)
-	{
+	public Email from(String sName, String sAddress) {
 		return with(SENDER_NAME, sName).with(SENDER_ADDRESS, sAddress);
 	}
 
-	/***************************************
+	/**
 	 * Sets the email's message text.
 	 *
-	 * @param  sMessage sSubject The message text
-	 *
+	 * @param sMessage sSubject The message text
 	 * @return This instance for fluent invocation
 	 */
-	public Email message(String sMessage)
-	{
+	public Email message(String sMessage) {
 		return with(MESSAGE, sMessage);
 	}
 
-	/***************************************
+	/**
 	 * Sets the email's subject line.
 	 *
-	 * @param  sSubject The subject line
-	 *
+	 * @param sSubject The subject line
 	 * @return This instance for fluent invocation
 	 */
-	public Email subject(String sSubject)
-	{
+	public Email subject(String sSubject) {
 		return with(SUBJECT, sSubject);
 	}
 
-	/***************************************
+	/**
 	 * Sets the recipient address and an empty recipient name.
 	 *
-	 * @param  sAddress The recipient address
-	 *
+	 * @param sAddress The recipient address
 	 * @return This instance for fluent invocation
 	 */
-	public Email to(String sAddress)
-	{
+	public Email to(String sAddress) {
 		return to("", sAddress);
 	}
 
-	/***************************************
+	/**
 	 * Sets the receiver address.
 	 *
-	 * @param  sName    The receiver name
-	 * @param  sAddress The receiver address
-	 *
+	 * @param sName    The receiver name
+	 * @param sAddress The receiver address
 	 * @return This instance for fluent invocation
 	 */
-	public Email to(String sName, String sAddress)
-	{
+	public Email to(String sName, String sAddress) {
 		return with(RECIPIENT_NAME, sName).with(RECIPIENT_ADDRESS, sAddress);
 	}
 }

@@ -18,8 +18,7 @@ package de.esoco.lib.manage;
 
 import de.esoco.lib.logging.Log;
 
-
-/********************************************************************
+/**
  * A thread-based transaction manager implementation. New transactions will be
  * associated with the current thread and all subsequent invocations of the
  * static manager methods will operate on the transaction for the current
@@ -36,13 +35,13 @@ import de.esoco.lib.logging.Log;
  * calling the method {@link #commit()} or rolled back (canceled) by using
  * {@link #rollback()}.</p>
  *
- * <p>If a call to {@link #commit()} or {@link #rollback()} fails the respective
- * method will throw a {@link TransactionException}. All transaction elements
- * after the element that caused the failure will be rolled back before the call
- * returns. All elements that had been committed before the failure will remain
- * so because currently there's no way to revert the commit. Therefore it is
- * recommended to handle modifications in different contexts in different
- * transactions to prevent inconsistencies between the context.</p>
+ * <p>If a call to {@link #commit()} or {@link #rollback()} fails the
+ * respective method will throw a {@link TransactionException}. All transaction
+ * elements after the element that caused the failure will be rolled back before
+ * the call returns. All elements that had been committed before the failure
+ * will remain so because currently there's no way to revert the commit.
+ * Therefore it is recommended to handle modifications in different contexts in
+ * different transactions to prevent inconsistencies between the context.</p>
  *
  * <p>Transactions can be nested. Any subsequent call to the {@link #begin()}
  * method will increase the transaction level by 1. The current level can be
@@ -62,81 +61,67 @@ import de.esoco.lib.logging.Log;
  * transaction:</p>
  *
  * <pre>
-   TransactionManager.begin();
-   try
-   {  // add the transaction elements
-      Transactional aElement = ...;
-      TransactionManager.addTransactionElement(aElement);
-      ...
-   }
-   catch (Exception e)
-   {  // rollback on any error, even runtime exceptions
-      TransactionManager.rollback();
-      // re-throw exceptions (wrap if necessary) to signal the rollback to the
-      // invoking code unless this is the top-level error handling code; in the
-      // latter case the commit must only be performed if no rollback occurred
-      // (e.g. by checking TransactionManager.isInTransaction()
-      throw e;
-   }
-   // commit the successfully created transaction elements
-   TransactionManager.commit();
-
+ * TransactionManager.begin();
+ * try
+ * {  // add the transaction elements
+ * Transactional aElement = ...;
+ * TransactionManager.addTransactionElement(aElement);
+ * ...
+ * }
+ * catch (Exception e)
+ * {  // rollback on any error, even runtime exceptions
+ * TransactionManager.rollback();
+ * // re-throw exceptions (wrap if necessary) to signal the rollback to the
+ * // invoking code unless this is the top-level error handling code; in the
+ * // latter case the commit must only be performed if no rollback occurred
+ * // (e.g. by checking TransactionManager.isInTransaction()
+ * throw e;
+ * }
+ * // commit the successfully created transaction elements
+ * TransactionManager.commit();
+ *
  * </pre>
  *
  * @author eso
  */
-public class TransactionManager
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class TransactionManager {
 
 	private static ThreadLocal<Transaction> aThreadTransaction;
 
-	static
-	{
+	static {
 		aThreadTransaction = new ThreadLocal<Transaction>();
 	}
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Private, only static use.
 	 */
-	private TransactionManager()
-	{
+	private TransactionManager() {
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Adds a certain transactional element to the current transaction. If the
 	 * element is already part of the transaction it will be ignored.
 	 *
-	 * @param  rElement The element to add
-	 *
+	 * @param rElement The element to add
 	 * @throws IllegalStateException If there's no active transaction for the
 	 *                               current thread
 	 */
-	public static void addTransactionElement(Transactional rElement)
-	{
+	public static void addTransactionElement(Transactional rElement) {
 		getTransaction().addElement(rElement);
 	}
 
-	/***************************************
+	/**
 	 * Begins a new transaction for the current thread.
 	 *
 	 * @return Returns the new transaction instance
 	 */
-	public static Transaction begin()
-	{
+	public static Transaction begin() {
 		Transaction aTransaction = aThreadTransaction.get();
 
-		if (aTransaction == null)
-		{
+		if (aTransaction == null) {
 			aTransaction = new Transaction();
 			aThreadTransaction.set(aTransaction);
-		}
-		else
-		{
+		} else {
 			aTransaction.incrementLevel();
 		}
 
@@ -145,23 +130,23 @@ public class TransactionManager
 		return aTransaction;
 	}
 
-	/***************************************
+	/**
 	 * Creates and returns a new transaction that is not managed by the
 	 * transaction manager and therefore isn't bound to a specific thread. This
 	 * method can be used in special cases where applications need to handle
-	 * separate transactions, e.g. to coordinate separate threads by themselves.
+	 * separate transactions, e.g. to coordinate separate threads by
+	 * themselves.
 	 * Because transactions implement the {@link Transactional} interface they
 	 * can be added to other transactions to perform the final commit or
 	 * rollback.
 	 *
 	 * @return The new unmanaged transaction instance
 	 */
-	public static Transaction beginUnmanagedTransaction()
-	{
+	public static Transaction beginUnmanagedTransaction() {
 		return new Transaction();
 	}
 
-	/***************************************
+	/**
 	 * Commits the transaction of the current thread by committing all
 	 * transaction elements in the reverse order in which they have been added.
 	 * If an element fails to commit a {@link TransactionException} will be
@@ -174,93 +159,93 @@ public class TransactionManager
 	 *                               current thread
 	 * @throws TransactionException  If committing a transaction element fails
 	 */
-	public static void commit() throws TransactionException
-	{
+	public static void commit() throws TransactionException {
 		Transaction rTransaction = getTransaction();
 
-		try
-		{
+		try {
 			Log.debugf("Commit of %s", rTransaction);
 			rTransaction.commit();
-		}
-		finally
-		{
-			if (rTransaction.isFinished())
-			{
+		} finally {
+			if (rTransaction.isFinished()) {
 				removeTransaction(rTransaction);
 			}
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns the transaction instance for the current thread. Throws an
 	 * exception if there isn't a transaction active for the invoking thread.
 	 *
 	 * @return The current thread's transaction
-	 *
 	 * @throws IllegalStateException If there is no active transaction for the
 	 *                               current thread
 	 */
-	public static Transaction getTransaction()
-	{
+	public static Transaction getTransaction() {
 		Transaction rTransaction = aThreadTransaction.get();
 
-		if (rTransaction == null)
-		{
+		if (rTransaction == null) {
 			throw new IllegalStateException("Thread not in transaction");
 		}
 
 		return rTransaction;
 	}
 
-	/***************************************
+	/**
 	 * Returns the transaction state of the current thread.
 	 *
 	 * @return TRUE if there's an active transaction for the current thread
 	 */
-	public static boolean isInTransaction()
-	{
+	public static boolean isInTransaction() {
 		return aThreadTransaction.get() != null;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether a certain transaction element is active in the current
 	 * thread's transaction. An element is active if it is part of this
 	 * transaction and is not yet committed or rolled back.
 	 *
-	 * @param  rElement The element to check
-	 *
+	 * @param rElement The element to check
 	 * @return TRUE if the given element is active in the current thread's
-	 *         transaction, FALSE if not or if there's no active transaction for
-	 *         the current thread
+	 * transaction, FALSE if not or if there's no active transaction for the
+	 * current thread
 	 */
-	public static boolean isTransactionElement(Transactional rElement)
-	{
+	public static boolean isTransactionElement(Transactional rElement) {
 		Transaction rTransaction = aThreadTransaction.get();
 
 		return rTransaction != null &&
-			   rTransaction.getElements().contains(rTransaction);
+			rTransaction.getElements().contains(rTransaction);
 	}
 
-	/***************************************
+	/**
+	 * Package-internal method to remove a certain transaction. Will be invoked
+	 * by a transaction after it has finished completely.
+	 *
+	 * @param rTransaction The transaction to remove
+	 */
+	static void removeTransaction(Transaction rTransaction) {
+		assert getTransaction() == rTransaction :
+			"Not current thread's transaction: " + rTransaction;
+
+		aThreadTransaction.remove();
+	}
+
+	/**
 	 * Removes a certain element from the current thread's transaction. If the
 	 * element isn't currently part of the transaction the method call won't
 	 * have any effect. The given element will neither be committed nor rolled
 	 * back by this method. It is the responsibility of the calling context to
 	 * handle the removed element as necessary.
 	 *
-	 * @param  rElement The element to remove from the thread's current
-	 *                  transaction
-	 *
+	 * @param rElement The element to remove from the thread's current
+	 *                 transaction
 	 * @throws IllegalStateException If there's no active transaction for the
 	 *                               current thread
 	 */
-	public static void removeTransactionElement(Transactional rElement)
-	{
+	public static void removeTransactionElement(Transactional rElement) {
 		getTransaction().removeElement(rElement);
 	}
 
-	/***************************************
+	/**
 	 * Performs a rollback of the transaction that is active for the current
 	 * thread.
 	 *
@@ -269,49 +254,28 @@ public class TransactionManager
 	 * @throws TransactionException  If the rollback of a transaction element
 	 *                               fails
 	 */
-	public static void rollback() throws TransactionException
-	{
+	public static void rollback() throws TransactionException {
 		Transaction rTransaction = getTransaction();
 
-		try
-		{
+		try {
 			Log.debugf("Rollback of %s", rTransaction);
 			rTransaction.rollback();
-		}
-		finally
-		{
-			if (rTransaction.isFinished())
-			{
+		} finally {
+			if (rTransaction.isFinished()) {
 				removeTransaction(rTransaction);
 			}
 		}
 	}
 
-	/***************************************
+	/**
 	 * Performs a shutdown of the transaction manager and frees all allocated
 	 * resources.
 	 */
-	public static void shutdown()
-	{
-		if (aThreadTransaction.get() != null)
-		{
+	public static void shutdown() {
+		if (aThreadTransaction.get() != null) {
 			aThreadTransaction.get().rollback();
 		}
 
 		aThreadTransaction = null;
-	}
-
-	/***************************************
-	 * Package-internal method to remove a certain transaction. Will be invoked
-	 * by a transaction after it has finished completely.
-	 *
-	 * @param rTransaction The transaction to remove
-	 */
-	static void removeTransaction(Transaction rTransaction)
-	{
-		assert getTransaction() == rTransaction : "Not current thread's transaction: " +
-			   rTransaction;
-
-		aThreadTransaction.remove();
 	}
 }

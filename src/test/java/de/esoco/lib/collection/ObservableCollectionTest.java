@@ -18,51 +18,45 @@ package de.esoco.lib.collection;
 
 import de.esoco.lib.event.ElementEvent.EventType;
 import de.esoco.lib.event.EventHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
-/********************************************************************
+/**
  * Test of observable collection functionality.
  *
  * @author eso
  */
 public class ObservableCollectionTest
-	implements EventHandler<CollectionEvent<String, ?>>
-{
-	//~ Instance fields --------------------------------------------------------
+	implements EventHandler<CollectionEvent<String, ?>> {
 
 	private ObservableSet<String> aObservableCollection;
-	private EventType			  rExpectedEventType = EventType.ADD;
-	private String				  sTestValue;
 
-	//~ Methods ----------------------------------------------------------------
+	private EventType rExpectedEventType = EventType.ADD;
 
-	/***************************************
+	private String sTestValue;
+
+	/**
 	 * Handles collection events.
 	 *
 	 * @param rEvent The event
 	 */
 	@Override
-	public void handleEvent(CollectionEvent<String, ?> rEvent)
-	{
+	public void handleEvent(CollectionEvent<String, ?> rEvent) {
 		EventType rType = rEvent.getType();
 
 		assertEquals(rExpectedEventType, rType);
 
-		switch (rEvent.getType())
-		{
+		switch (rEvent.getType()) {
 			case ADD:
 			case REMOVE:
 			case REMOVE_ALL:
@@ -78,24 +72,22 @@ public class ObservableCollectionTest
 		}
 	}
 
-	/***************************************
+	/**
 	 * Test setup.
 	 */
 	@Before
-	public void setup()
-	{
+	public void setup() {
 		aObservableCollection =
 			new ObservableSet<String>(new LinkedHashSet<String>());
 
 		aObservableCollection.addListener(this);
 	}
 
-	/***************************************
+	/**
 	 * Tests adding of elements.
 	 */
 	@Test
-	public void testAdd()
-	{
+	public void testAdd() {
 		assertTrue(aObservableCollection.isEmpty());
 
 		aObservableCollection.add("T1");
@@ -115,12 +107,11 @@ public class ObservableCollectionTest
 		assertEquals(6, aObservableCollection.size());
 	}
 
-	/***************************************
+	/**
 	 * Tests clearing the collection.
 	 */
 	@Test
-	public void testClear()
-	{
+	public void testClear() {
 		initCollection(EventType.REMOVE_ALL);
 
 		aObservableCollection.clear();
@@ -128,18 +119,16 @@ public class ObservableCollectionTest
 		assertTrue(aObservableCollection.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Tests iterating.
 	 */
 	@Test
-	public void testIterator()
-	{
+	public void testIterator() {
 		initCollection(EventType.REMOVE);
 
 		int i = 0;
 
-		for (String sTest : aObservableCollection)
-		{
+		for (String sTest : aObservableCollection) {
 			assertEquals("T" + ++i, sTest);
 		}
 
@@ -149,8 +138,7 @@ public class ObservableCollectionTest
 
 		i = 0;
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			String sTest = "T" + ++i;
 
 			assertEquals(sTest, rIterator.next());
@@ -161,12 +149,11 @@ public class ObservableCollectionTest
 		assertTrue(aObservableCollection.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Tests removing of elements.
 	 */
 	@Test
-	public void testRemove()
-	{
+	public void testRemove() {
 		initCollection(EventType.REMOVE);
 
 		aObservableCollection.remove("T2");
@@ -176,13 +163,12 @@ public class ObservableCollectionTest
 		assertFalse(aObservableCollection.contains("T2"));
 	}
 
-	/***************************************
+	/**
 	 * Initializes the test collection.
 	 *
 	 * @param rEventType The expected event type for subsequent changes
 	 */
-	void initCollection(EventType rEventType)
-	{
+	void initCollection(EventType rEventType) {
 		assertTrue(aObservableCollection.isEmpty());
 
 		aObservableCollection.add("T1");

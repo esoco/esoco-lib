@@ -20,43 +20,32 @@ import de.esoco.lib.mapping.MethodMappingDefinition;
 
 import java.lang.reflect.Method;
 
-
-/********************************************************************
+/**
  * Extended delegation interception that implements a mapping of methods by
  * name. The actual mapping is performed by a MethodMappingDefinition instance.
  *
  * @author eso
  */
-public class MethodMapping implements Interception
-{
-	//~ Instance fields --------------------------------------------------------
+public class MethodMapping implements Interception {
 
 	private final MethodMappingDefinition rMapping;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new method mapping instance.
 	 *
 	 * @param rMapping The mapping definition
 	 */
-	public MethodMapping(MethodMappingDefinition rMapping)
-	{
+	public MethodMapping(MethodMappingDefinition rMapping) {
 		this.rMapping = rMapping;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * @see de.esoco.lib.proxy.interception.Interception#invoke(Object,
-	 *      java.lang.reflect.Method, java.lang.Object, java.lang.Object[])
+	 * java.lang.reflect.Method, java.lang.Object, java.lang.Object[])
 	 */
 	@Override
-	public Object invoke(Object   rProxy,
-						 Method   rOriginalMethod,
-						 Object   rTarget,
-						 Object[] rArgs) throws Exception
-	{
+	public Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
+		Object[] rArgs) throws Exception {
 		return rMapping.invoke(rOriginalMethod, rTarget, rArgs);
 	}
 }

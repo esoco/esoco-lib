@@ -18,27 +18,22 @@ package de.esoco.lib.comm.http;
 
 import de.esoco.lib.comm.http.HttpRequestHandler.HttpRequestMethodHandler;
 import de.esoco.lib.logging.Log;
-
 import org.obrel.space.ObjectSpace;
 import org.obrel.space.SynchronizedObjectSpace;
 
-
-/********************************************************************
+/**
  * A HTTP request method handler that retrieves the data of it's responses from
  * an {@link ObjectSpace}.
  *
  * @author eso
  */
-public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
-{
-	//~ Instance fields --------------------------------------------------------
+public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler {
 
-	private ObjectSpace<? super String> rObjectSpace;
-	private String					    sDefaultPath;
+	private final ObjectSpace<? super String> rObjectSpace;
 
-	//~ Constructors -----------------------------------------------------------
+	private final String sDefaultPath;
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rObjectSpace The object space to get response data from
@@ -46,106 +41,83 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler
 	 *                     request path is empty
 	 */
 	public ObjectSpaceHttpMethodHandler(
-		ObjectSpace<? super String> rObjectSpace,
-		String						sDefaultPath)
-	{
+		ObjectSpace<? super String> rObjectSpace, String sDefaultPath) {
 		this.rObjectSpace = new SynchronizedObjectSpace<>(rObjectSpace);
 		this.sDefaultPath = sDefaultPath;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public HttpResponse doGet(HttpRequest rRequest) throws HttpStatusException
-	{
+	public HttpResponse doGet(HttpRequest rRequest) throws HttpStatusException {
 		String sPath = rRequest.getPath();
 
-		if (sPath.isEmpty() || sPath.equals("/"))
-		{
+		if (sPath.isEmpty() || sPath.equals("/")) {
 			sPath = sDefaultPath;
 		}
 
-		try
-		{
+		try {
 			Object rData = rObjectSpace.get(sPath);
 
-			if (rData == null)
-			{
+			if (rData == null) {
 				// jump into catch below
 				throw new IllegalArgumentException();
 			}
 
 			return new HttpResponse(rData.toString());
-		}
-		catch (RuntimeException e)
-		{
+		} catch (RuntimeException e) {
 			throw new HttpStatusException(HttpStatusCode.NOT_FOUND,
-										  "No data at " + sPath);
+				"No data at " + sPath);
 		}
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public HttpResponse doPost(HttpRequest rRequest) throws HttpStatusException
-	{
+	public HttpResponse doPost(HttpRequest rRequest)
+		throws HttpStatusException {
 		return update(rRequest);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public HttpResponse doPut(HttpRequest rRequest) throws HttpStatusException
-	{
+	public HttpResponse doPut(HttpRequest rRequest) throws HttpStatusException {
 		return update(rRequest);
 	}
 
-	/***************************************
+	/**
 	 * Performs an update due to a POST or PUT request.
 	 *
-	 * @param  rRequest The update request
-	 *
+	 * @param rRequest The update request
 	 * @return The response
-	 *
 	 * @throws HttpStatusException If the update is not allowed
 	 */
-	private HttpResponse update(HttpRequest rRequest) throws HttpStatusException
-	{
+	private HttpResponse update(HttpRequest rRequest)
+		throws HttpStatusException {
 		String sPath = rRequest.getPath();
 		String sData = null;
 
-		try
-		{
+		try {
 			sData = rRequest.getBody();
 
 			rObjectSpace.put(sPath, sData);
 
 			return new HttpResponse("");
-		}
-		catch (HttpStatusException e)
-		{
+		} catch (HttpStatusException e) {
 			throw e;
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			Log.errorf(e, "ObjectSpace update failed: %s - %s", sPath, sData);
 
-			if (sData == null)
-			{
+			if (sData == null) {
 				throw new HttpStatusException(HttpStatusCode.BAD_REQUEST,
-											  "Could not access request data: " +
-											  e.getMessage());
-			}
-			else
-			{
+					"Could not access request data: " + e.getMessage());
+			} else {
 				throw new HttpStatusException(HttpStatusCode.NOT_ACCEPTABLE,
-											  "Invalid data '" + sData + "': " +
-											  e.getMessage());
+					"Invalid data '" + sData + "': " + e.getMessage());
 			}
 		}
 	}

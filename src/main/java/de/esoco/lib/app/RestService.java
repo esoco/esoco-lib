@@ -16,40 +16,33 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
-/********************************************************************
+/**
  * A service subclass that is only based on the REST service implementation of
  * the {@link Service} class.
  *
  * @author eso
  */
-public abstract class RestService extends Service
-{
-	//~ Constructors -----------------------------------------------------------
+public abstract class RestService extends Service {
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 */
-	public RestService()
-	{
+	public RestService() {
 		super(true);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Overridden to to nothing as stopping a REST service is done through it's
 	 * control API.
 	 */
 	@Override
-	public void stop()
-	{
+	public void stop() {
 	}
 
-	/***************************************
+	/**
 	 * Overridden to to nothing as the REST service is already running.
 	 */
 	@Override
-	protected void runService()
-	{
+	protected void runService() {
 	}
 }

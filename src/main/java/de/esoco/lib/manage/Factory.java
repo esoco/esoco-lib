@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * The base interface that must be provided by factory implementations. The
  * generic type parameters define the type of the elements created by this
  * factory (T), the element definition subtype needed to create new objects (D),
@@ -26,19 +26,16 @@ package de.esoco.lib.manage;
  * @author eso
  */
 @FunctionalInterface
-public interface Factory<T, D extends ElementDefinition<T>, E extends Exception>
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Factory<T, D extends ElementDefinition<T>,
+	E extends Exception> {
 
-	/***************************************
+	/**
 	 * Creates and returns a new element that corresponds to the given element
 	 * definition.
 	 *
-	 * @param  rDefinition The definition of the element to create
-	 *
+	 * @param rDefinition The definition of the element to create
 	 * @return The new element instance
-	 *
 	 * @throws E Any kind of exception may be thrown by factory implementations
 	 */
-	public T create(D rDefinition) throws E;
+	T create(D rDefinition) throws E;
 }

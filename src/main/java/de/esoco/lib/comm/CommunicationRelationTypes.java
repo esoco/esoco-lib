@@ -18,26 +18,22 @@ package de.esoco.lib.comm;
 
 import de.esoco.lib.comm.http.HttpRequestMethod;
 import de.esoco.lib.comm.http.HttpStatusCode;
+import org.obrel.core.RelationType;
+import org.obrel.core.RelationTypes;
+import org.obrel.type.CollectorType;
+import org.obrel.type.StandardTypes;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-
 import java.net.HttpURLConnection;
 import java.net.Socket;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import org.obrel.core.RelationType;
-import org.obrel.core.RelationTypes;
-import org.obrel.type.CollectorType;
-import org.obrel.type.StandardTypes;
 
 import static org.obrel.core.RelationTypeModifier.FINAL;
 import static org.obrel.core.RelationTypeModifier.READONLY;
@@ -46,17 +42,17 @@ import static org.obrel.core.RelationTypes.newInitialValueType;
 import static org.obrel.core.RelationTypes.newMapType;
 import static org.obrel.core.RelationTypes.newType;
 
-
-/********************************************************************
- * Contains standard relation type definitions for the communications framework.
+/**
+ * Contains standard relation type definitions for the communications
+ * framework.
  *
  * @author eso
  */
-public class CommunicationRelationTypes
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class CommunicationRelationTypes {
 
-	/** A reference to a communication endpoint. */
+	/**
+	 * A reference to a communication endpoint.
+	 */
 	public static final RelationType<Endpoint> ENDPOINT = newType();
 
 	/**
@@ -65,21 +61,31 @@ public class CommunicationRelationTypes
 	 */
 	public static final RelationType<String> ENDPOINT_ADDRESS = newType(FINAL);
 
-	/** A relation type to store an endpoint socket. */
+	/**
+	 * A relation type to store an endpoint socket.
+	 */
 	public static final RelationType<Socket> ENDPOINT_SOCKET = newType();
 
-	/** A relation type to store the input stream of a socket. */
+	/**
+	 * A relation type to store the input stream of a socket.
+	 */
 	public static final RelationType<InputStream> SOCKET_INPUT_STREAM =
 		newType();
 
-	/** A relation type to store the output stream of a socket. */
+	/**
+	 * A relation type to store the output stream of a socket.
+	 */
 	public static final RelationType<OutputStream> SOCKET_OUTPUT_STREAM =
 		newType();
 
-	/** A relation type to store a reader for a socket input stream. */
+	/**
+	 * A relation type to store a reader for a socket input stream.
+	 */
 	public static final RelationType<Reader> SOCKET_READER = newType();
 
-	/** A relation type to store a writer for a socket input stream. */
+	/**
+	 * A relation type to store a writer for a socket input stream.
+	 */
 	public static final RelationType<PrintWriter> SOCKET_WRITER = newType();
 
 	/**
@@ -96,10 +102,14 @@ public class CommunicationRelationTypes
 	public static final RelationType<Charset> RESPONSE_ENCODING =
 		newInitialValueType(StandardCharsets.UTF_8);
 
-	/** A user name for the authentication on a communication endpoint. */
+	/**
+	 * A user name for the authentication on a communication endpoint.
+	 */
 	public static final RelationType<String> USER_NAME = newType();
 
-	/** A password for the authentication on a communication endpoint. */
+	/**
+	 * A password for the authentication on a communication endpoint.
+	 */
 	public static final RelationType<String> PASSWORD = newType();
 
 	/**
@@ -115,16 +125,15 @@ public class CommunicationRelationTypes
 	 */
 	public static final RelationType<Collection<String>> REQUEST_HISTORY =
 		CollectorType.newCollector(String.class,
-								   (r, o) ->
-								   r.getType() == LAST_REQUEST ? o.toString()
-															   : null,
-								   READONLY);
+			(r, o) -> r.getType() == LAST_REQUEST ? o.toString() : null,
+			READONLY);
 
 	/**
 	 * Contains the time (in milliseconds) that the handling of a request has
 	 * consumed.
 	 */
-	public static final RelationType<Integer> REQUEST_HANDLING_TIME = newType();
+	public static final RelationType<Integer> REQUEST_HANDLING_TIME =
+		newType();
 
 	/**
 	 * The timeout in milliseconds after which an attempt of a network
@@ -136,7 +145,8 @@ public class CommunicationRelationTypes
 		newInitialValueType(60 * 1000);
 
 	/**
-	 * The maximum number of (concurrent) connections to or from a communication
+	 * The maximum number of (concurrent) connections to or from a
+	 * communication
 	 * component.
 	 */
 	public static final RelationType<Integer> MAX_CONNECTIONS = newType();
@@ -195,11 +205,15 @@ public class CommunicationRelationTypes
 	public static final RelationType<Integer> HTTP_MAX_HEADER_LINE_SIZE =
 		newInitialValueType(1024 * 8);
 
-	/** The method of an HTTP request. */
+	/**
+	 * The method of an HTTP request.
+	 */
 	public static final RelationType<HttpRequestMethod> HTTP_REQUEST_METHOD =
 		newType();
 
-	/** The target path of an HTTP request. */
+	/**
+	 * The target path of an HTTP request.
+	 */
 	public static final RelationType<HttpRequestMethod> HTTP_REQUEST_PATH =
 		newType();
 
@@ -207,8 +221,8 @@ public class CommunicationRelationTypes
 	 * The headers for an HTTP request. These must be set on a connection or
 	 * endpoint instance before a request is executed.
 	 */
-	public static final RelationType<Map<String, List<String>>> HTTP_REQUEST_HEADERS =
-		newMapType(true);
+	public static final RelationType<Map<String, List<String>>>
+		HTTP_REQUEST_HEADERS = newMapType(true);
 
 	/**
 	 * The headers of the response to an HTTP request. Will be available in a
@@ -216,32 +230,36 @@ public class CommunicationRelationTypes
 	 * mapping from header names to a list of header values in the order in
 	 * which they are returned by {@link HttpURLConnection#getHeaderFields()}.
 	 */
-	public static final RelationType<Map<String, List<String>>> HTTP_RESPONSE_HEADERS =
-		newMapType(true);
+	public static final RelationType<Map<String, List<String>>>
+		HTTP_RESPONSE_HEADERS = newMapType(true);
 
-	/** The host name of a proxy server. */
+	/**
+	 * The host name of a proxy server.
+	 */
 	public static final RelationType<String> PROXY_HOST = newType();
 
-	/** The port of a proxy server. */
+	/**
+	 * The port of a proxy server.
+	 */
 	public static final RelationType<Integer> PROXY_PORT = newType();
 
-	/** The optional user name for the connection to a proxy server. */
+	/**
+	 * The optional user name for the connection to a proxy server.
+	 */
 	public static final RelationType<String> PROXY_USER = newType();
 
-	/** The optional password for the connection to a proxy server. */
+	/**
+	 * The optional password for the connection to a proxy server.
+	 */
 	public static final RelationType<String> PROXY_PASSWORD = newType();
 
-	static
-	{
+	static {
 		RelationTypes.init(CommunicationRelationTypes.class);
 	}
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 */
-	private CommunicationRelationTypes()
-	{
+	private CommunicationRelationTypes() {
 	}
 }

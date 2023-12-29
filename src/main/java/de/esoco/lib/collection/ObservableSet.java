@@ -19,12 +19,10 @@ package de.esoco.lib.collection;
 import de.esoco.lib.event.ElementEvent.EventType;
 
 import java.io.Serializable;
-
 import java.util.HashSet;
 import java.util.Set;
 
-
-/********************************************************************
+/**
  * A set implementation that can be used to observe arbitrary set instances for
  * changes.
  *
@@ -32,46 +30,33 @@ import java.util.Set;
  */
 public class ObservableSet<E>
 	extends AbstractObservableCollection<E, Set<E>, CollectionEvent<E, Set<E>>>
-	implements Set<E>, Serializable
-{
-	//~ Static fields/initializers ---------------------------------------------
+	implements Set<E>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance that is backed by a {@link HashSet} instance.
 	 */
-	public ObservableSet()
-	{
+	public ObservableSet() {
 		this(new HashSet<E>());
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance that observes a certain set instance for changes.
 	 *
 	 * @param rObservedSet The set to observe for changes
 	 */
-	public ObservableSet(Set<E> rObservedSet)
-	{
+	public ObservableSet(Set<E> rObservedSet) {
 		super(rObservedSet);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	protected CollectionEvent<E, Set<E>> createEvent(EventType rType,
-													 E		   rElement,
-													 E		   rUpdateValue,
-													 int	   nIndex)
-	{
-		return new CollectionEvent<E, Set<E>>(rType,
-											  this,
-											  rElement,
-											  rUpdateValue);
+		E rElement, E rUpdateValue, int nIndex) {
+		return new CollectionEvent<E, Set<E>>(rType, this, rElement,
+			rUpdateValue);
 	}
 }

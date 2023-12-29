@@ -17,43 +17,36 @@
 package de.esoco.lib.datatype;
 
 import de.esoco.lib.datatype.DateRange.StandardDateRange;
+import org.junit.Test;
 
 import java.util.Calendar;
 import java.util.Date;
-
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-
-/********************************************************************
+/**
  * Test case for {@link DateRange}.
  *
  * @author eso
  */
-public class DateRangeTest
-{
-	//~ Methods ----------------------------------------------------------------
+public class DateRangeTest {
 
-	/***************************************
+	/**
 	 * test
 	 */
 	@Test
-	public void testCalculateForDatePeriod()
-	{
-		DateRange aRange =
-			DateRange.calculateFor(getDate(10, 1, 2000, 17, 10),
-								   Period.MONTHLY);
+	public void testCalculateForDatePeriod() {
+		DateRange aRange = DateRange.calculateFor(getDate(10, 1, 2000, 17, 10),
+			Period.MONTHLY);
 
 		assertEquals(getDate(1, 1, 2000, 0, 0), aRange.getStart());
 		assertEquals(getDate(1, 2, 2000, 0, 0), aRange.getEnd());
 
-		aRange =
-			DateRange.calculateFor(getDate(30, 11, 2000, 22, 44),
-								   Period.QUARTERLY);
+		aRange = DateRange.calculateFor(getDate(30, 11, 2000, 22, 44),
+			Period.QUARTERLY);
 
 		assertEquals(getDate(1, 10, 2000, 0, 0), aRange.getStart());
 		assertEquals(getDate(1, 1, 2001, 0, 0), aRange.getEnd());
@@ -71,42 +64,38 @@ public class DateRangeTest
 		assertEquals(getDate(1, 7, 2000, 10, 0), aRange.getEnd());
 	}
 
-	/***************************************
+	/**
 	 * test
 	 */
 	@Test
-	public void testCalculateForDateStandardDateRange()
-	{
-		DateRange aRange =
-			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
-								   StandardDateRange.TODAY);
+	public void testCalculateForDateStandardDateRange() {
+		DateRange aRange = DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+			StandardDateRange.TODAY);
 
 		assertEquals(getDate(1, 1, 2000, 0, 0), aRange.getStart());
 		assertEquals(getDate(2, 1, 2000, 0, 0), aRange.getEnd());
 
-		aRange =
-			DateRange.calculateFor(getDate(10, 1, 2000, 17, 10),
-								   StandardDateRange.YESTERDAY);
+		aRange = DateRange.calculateFor(getDate(10, 1, 2000, 17, 10),
+			StandardDateRange.YESTERDAY);
 
 		assertEquals(getDate(9, 1, 2000, 0, 0), aRange.getStart());
 		assertEquals(getDate(10, 1, 2000, 0, 0), aRange.getEnd());
 
-		aRange =
-			DateRange.calculateFor(getDate(1, 2, 2000, 17, 10),
-								   StandardDateRange.CURRENT_QUARTER);
+		aRange = DateRange.calculateFor(getDate(1, 2, 2000, 17, 10),
+			StandardDateRange.CURRENT_QUARTER);
 
 		assertEquals(getDate(1, 1, 2000, 0, 0), aRange.getStart());
 		assertEquals(getDate(1, 4, 2000, 0, 0), aRange.getEnd());
 	}
 
-	/***************************************
+	/**
 	 * test
 	 */
 	@Test
-	public void testContainsDate()
-	{
+	public void testContainsDate() {
 		DateRange aRange =
-			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10), Period.MONTHLY);
+			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+				Period.MONTHLY);
 
 		assertTrue(aRange.contains(getDate(15, 1, 2000, 12, 0)));
 		assertTrue(aRange.contains(getDate(1, 1, 2000, 0, 0)));
@@ -114,109 +103,85 @@ public class DateRangeTest
 		assertFalse(aRange.contains(getDate(1, 2, 2000, 0, 0)));
 	}
 
-	/***************************************
+	/**
 	 * test
 	 */
 	@Test
-	public void testContainsDateRange()
-	{
-		DateRange aRange =
-			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
-								   Period.QUARTERLY);
+	public void testContainsDateRange() {
+		DateRange aRange = DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+			Period.QUARTERLY);
 
-		assertTrue(aRange.contains(DateRange.calculateFor(getDate(1,
-																  1,
-																  2000,
-																  17,
-																  10),
-														  Period.MONTHLY)));
-		assertTrue(aRange.contains(DateRange.calculateFor(getDate(31,
-																  3,
-																  2000,
-																  23,
-																  59),
-														  Period.MONTHLY)));
+		assertTrue(aRange.contains(
+			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+				Period.MONTHLY)));
+		assertTrue(aRange.contains(
+			DateRange.calculateFor(getDate(31, 3, 2000, 23, 59),
+				Period.MONTHLY)));
 		assertTrue(aRange.contains(new DateRange(getDate(31, 3, 2000, 23, 59),
-												 getDate(1, 4, 2000, 0, 0))));
+			getDate(1, 4, 2000, 0, 0))));
 		assertFalse(aRange.contains(new DateRange(getDate(31, 3, 2000, 23, 59),
-												  getDate(1, 4, 2000, 0, 1))));
-		assertFalse(aRange.contains(new DateRange(getDate(31, 12, 1999, 23, 59),
-												  getDate(1, 1, 2000, 0, 1))));
+			getDate(1, 4, 2000, 0, 1))));
+		assertFalse(aRange.contains(new DateRange(getDate(31, 12, 1999, 23,
+			59),
+			getDate(1, 1, 2000, 0, 1))));
 	}
 
-	/***************************************
+	/**
 	 * test
 	 */
 	@Test
-	public void testEqualsObject()
-	{
-		DateRange aRange =
-			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
-								   Period.QUARTERLY);
+	public void testEqualsObject() {
+		DateRange aRange = DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+			Period.QUARTERLY);
 
-		assertEquals(aRange,
-					 DateRange.calculateFor(getDate(1, 1, 2000, 0, 0),
-											StandardDateRange.CURRENT_QUARTER));
-		assertEquals(aRange,
-					 new DateRange(getDate(1, 1, 2000, 0, 0),
-								   getDate(1, 4, 2000, 0, 0)));
+		assertEquals(aRange, DateRange.calculateFor(getDate(1, 1, 2000, 0, 0),
+			StandardDateRange.CURRENT_QUARTER));
+		assertEquals(aRange, new DateRange(getDate(1, 1, 2000, 0, 0),
+			getDate(1, 4, 2000, 0, 0)));
 
-		assertNotEquals(aRange,
-						new DateRange(getDate(1, 1, 2000, 0, 0),
-									  getDate(1, 4, 2000, 0, 1)));
+		assertNotEquals(aRange, new DateRange(getDate(1, 1, 2000, 0, 0),
+			getDate(1, 4, 2000, 0, 1)));
 	}
 
-	/***************************************
+	/**
 	 * test
 	 */
 	@Test
-	public void testOverlaps()
-	{
-		DateRange aRange =
-			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
-								   Period.QUARTERLY);
+	public void testOverlaps() {
+		DateRange aRange = DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+			Period.QUARTERLY);
 
-		assertTrue(aRange.overlaps(DateRange.calculateFor(getDate(1,
-																  1,
-																  2000,
-																  17,
-																  10),
-														  Period.MONTHLY)));
-		assertTrue(aRange.overlaps(DateRange.calculateFor(getDate(31,
-																  3,
-																  2000,
-																  23,
-																  59),
-														  Period.MONTHLY)));
+		assertTrue(aRange.overlaps(
+			DateRange.calculateFor(getDate(1, 1, 2000, 17, 10),
+				Period.MONTHLY)));
+		assertTrue(aRange.overlaps(
+			DateRange.calculateFor(getDate(31, 3, 2000, 23, 59),
+				Period.MONTHLY)));
 		assertTrue(aRange.overlaps(new DateRange(getDate(31, 3, 2000, 23, 59),
-												 getDate(1, 4, 2000, 0, 0))));
+			getDate(1, 4, 2000, 0, 0))));
 		assertTrue(aRange.overlaps(new DateRange(getDate(31, 3, 2000, 23, 59),
-												 getDate(1, 4, 2000, 0, 1))));
+			getDate(1, 4, 2000, 0, 1))));
 		assertTrue(aRange.overlaps(new DateRange(getDate(31, 12, 1999, 23, 59),
-												 getDate(1, 1, 2000, 0, 1))));
+			getDate(1, 1, 2000, 0, 1))));
 		assertFalse(aRange.overlaps(new DateRange(getDate(1, 4, 2000, 0, 0),
-												  getDate(1, 4, 2000, 0, 1))));
-		assertFalse(aRange.overlaps(new DateRange(getDate(31, 12, 1999, 23, 59),
-												  getDate(1, 1, 2000, 0, 0))));
+			getDate(1, 4, 2000, 0, 1))));
+		assertFalse(aRange.overlaps(new DateRange(getDate(31, 12, 1999, 23,
+			59),
+			getDate(1, 1, 2000, 0, 0))));
 	}
 
-	/***************************************
+	/**
 	 * Returns the test date.
 	 *
-	 * @param  nDay    The test date
-	 * @param  nMonth  The test date
-	 * @param  nYear   The test date
-	 * @param  nHour   The test date
-	 * @param  nMinute The test date
-	 *
+	 * @param nDay    The test date
+	 * @param nMonth  The test date
+	 * @param nYear   The test date
+	 * @param nHour   The test date
+	 * @param nMinute The test date
 	 * @return The test date
 	 */
-	private Date getDate(int nDay,
-						 int nMonth,
-						 int nYear,
-						 int nHour,
-						 int nMinute)
-	{
+	private Date getDate(int nDay, int nMonth, int nYear, int nHour,
+		int nMinute) {
 		Calendar aCalendar = Calendar.getInstance();
 
 		aCalendar.set(Calendar.YEAR, nYear);

@@ -25,28 +25,6 @@ import de.esoco.lib.manage.RunCheck;
 import de.esoco.lib.manage.Stoppable;
 import de.esoco.lib.security.Security;
 import de.esoco.lib.security.SecurityRelationTypes;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-
-import java.security.KeyStore;
-
-import java.util.ArrayDeque;
-import java.util.Iterator;
-import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import javax.net.ServerSocketFactory;
-
 import org.obrel.core.ObjectRelations;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
@@ -54,6 +32,23 @@ import org.obrel.core.RelationBuilder;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
 import org.obrel.type.StandardTypes;
+
+import javax.net.ServerSocketFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.security.KeyStore;
+import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENCRYPTION;
 import static de.esoco.lib.comm.CommunicationRelationTypes.LAST_REQUEST;
@@ -64,7 +59,6 @@ import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HANDLING_TIME
 import static de.esoco.lib.comm.CommunicationRelationTypes.REQUEST_HISTORY;
 import static de.esoco.lib.security.SecurityRelationTypes.CERTIFICATE;
 import static de.esoco.lib.security.SecurityRelationTypes.KEY_PASSWORD;
-
 import static org.obrel.core.RelationTypes.newType;
 import static org.obrel.type.MetaTypes.IMMUTABLE;
 import static org.obrel.type.StandardTypes.IP_ADDRESS;
@@ -72,8 +66,7 @@ import static org.obrel.type.StandardTypes.NAME;
 import static org.obrel.type.StandardTypes.PORT;
 import static org.obrel.type.StandardTypes.TIMER;
 
-
-/********************************************************************
+/**
  * A server that listens on a socket for requests. To create a new instance the
  * constructor expects an instance of {@link RequestHandlerFactory}. This
  * factory must then return new instances of the {@link RequestHandler}
@@ -125,116 +118,100 @@ import static org.obrel.type.StandardTypes.TIMER;
  *
  * @author eso
  */
-public class Server extends RelatedObject implements RelationBuilder<Server>,
-													 Runnable, RunCheck,
-													 Stoppable
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class Server extends RelatedObject
+	implements RelationBuilder<Server>, Runnable, RunCheck, Stoppable {
 
-	/** The request handler factory of this server. */
-	public static final RelationType<RequestHandlerFactory> REQUEST_HANDLER_FACTORY =
-		newType();
+	/**
+	 * The request handler factory of this server.
+	 */
+	public static final RelationType<RequestHandlerFactory>
+		REQUEST_HANDLER_FACTORY = newType();
 
-	static
-	{
+	static {
 		RelationTypes.init(Server.class);
 	}
 
-	//~ Instance fields --------------------------------------------------------
+	private final Lock aServerLock = new ReentrantLock();
 
 	private ServerSocket aServerSocket;
-	private boolean		 bRunning;
 
-	private Lock aServerLock = new ReentrantLock();
+	private boolean bRunning;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance with a certain type of request handler. The
 	 * request handler class must a have a no-argument constructor to allow the
 	 * creation of new instances for each request.
 	 *
-	 * @param rRequestHandlerFactory The class of the request handler to use for
+	 * @param rRequestHandlerFactory The class of the request handler to use
+	 *                                 for
 	 *                               client requests
 	 */
-	public Server(RequestHandlerFactory rRequestHandlerFactory)
-	{
+	public Server(RequestHandlerFactory rRequestHandlerFactory) {
 		set(REQUEST_HANDLER_FACTORY, rRequestHandlerFactory);
 		init(REQUEST_HISTORY);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Checks whether this server is currently running.
 	 *
 	 * @return TRUE if the server is running, FALSE if it has been stopped (or
-	 *         not started yet)
+	 * not started yet)
 	 */
 	@Override
-	public final boolean isRunning()
-	{
+	public final boolean isRunning() {
 		return bRunning;
 	}
 
-	/***************************************
+	/**
 	 * Starts this server instance on the port that is stored in the relation
 	 * {@link StandardTypes#PORT}. The server will listen to incoming client
 	 * requests and process each in a separate thread. The call to this method
-	 * will block while the server is running. To control a running server (e.g.
+	 * will block while the server is running. To control a running server
+	 * (e.g.
 	 * to stop it through the {@link #stop()} method) an application must start
 	 * the server in a separate thread.
 	 *
 	 * @throws CommunicationException If a communication error occurs
 	 */
 	@Override
-	public void run()
-	{
+	public void run() {
 		ObjectRelations.require(this, PORT);
 
-		if (bRunning)
-		{
+		if (bRunning) {
 			throw new IllegalStateException(
-				getServerName() +
-				" already started");
+				getServerName() + " already started");
 		}
 
 		Log.infof("%s started", getServerName());
 
-		try
-		{
+		try {
 			runServerLoop();
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			throw new CommunicationException(e);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Stops this server after all active client threads have finished. This
 	 * method will return immediately after the call, even if client requests
 	 * are still processed.
 	 */
 	@Override
-	public void stop()
-	{
-		if (bRunning)
-		{
+	public void stop() {
+		if (bRunning) {
 			bRunning = false;
 			Log.infof("%s stopped", getServerName());
 		}
 	}
 
-	/***************************************
+	/**
 	 * Creates a configuration object for the client requests. The default
 	 * implementation returns a new {@link Relatable} object with the copied
 	 * relations of this server.
 	 *
 	 * @return The relatable configuration object
 	 */
-	protected Relatable createRequestContext()
-	{
+	protected Relatable createRequestContext() {
 		Relatable aRequestConfig = new RelatedObject();
 
 		ObjectRelations.copyRelations(this, aRequestConfig, true);
@@ -243,79 +220,63 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 		return aRequestConfig;
 	}
 
-	/***************************************
+	/**
 	 * Creates the server socket to listen on when the server is started.
 	 *
-	 * @param  nPort The port to listen on
-	 *
+	 * @param nPort The port to listen on
 	 * @return The new server port
-	 *
 	 * @throws IOException If the socket could not be created
 	 */
-	protected ServerSocket createServerSocket(int nPort) throws IOException
-	{
+	protected ServerSocket createServerSocket(int nPort) throws IOException {
 		ServerSocketFactory aServerSocketFactory;
 
-		if (hasFlag(ENCRYPTION))
-		{
+		if (hasFlag(ENCRYPTION)) {
 			KeyStore rCertificate = get(CERTIFICATE);
 
-			if (rCertificate != null)
-			{
-				aServerSocketFactory =
-					Security.getSslContext(
-								rCertificate,
-								getOption(KEY_PASSWORD).orUse(""))
-							.getServerSocketFactory();
-			}
-			else
-			{
-				throw new IllegalStateException(
-					CERTIFICATE.getSimpleName() +
+			if (rCertificate != null) {
+				aServerSocketFactory = Security
+					.getSslContext(rCertificate,
+						getOption(KEY_PASSWORD).orUse(""))
+					.getServerSocketFactory();
+			} else {
+				throw new IllegalStateException(CERTIFICATE.getSimpleName() +
 					" parameter missing to enable SSL");
 			}
-		}
-		else
-		{
+		} else {
 			aServerSocketFactory = ServerSocketFactory.getDefault();
 		}
 
 		return aServerSocketFactory.createServerSocket(nPort);
 	}
 
-	/***************************************
+	/**
 	 * Handles a single client request. This method will be run in a separate
 	 * thread and the given socket is initialized for communication with the
 	 * client.
 	 *
-	 * @param  rClientSocket The socket for the communication with the client
-	 * @param  rContext      A relatable containing context data for the request
-	 *
+	 * @param rClientSocket The socket for the communication with the client
+	 * @param rContext      A relatable containing context data for the request
 	 * @throws CommunicationException If a communication error occurs
 	 */
 	@SuppressWarnings("boxing")
-	protected void handleClientRequest(Socket    rClientSocket,
-									   Relatable rContext)
-	{
+	protected void handleClientRequest(Socket rClientSocket,
+		Relatable rContext) {
 		RequestHandler rRequestHandler =
 			get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
 
 		rRequestHandler.init(TIMER);
 
-		try
-		{
-			InputStream  rClientIn	    = rClientSocket.getInputStream();
-			OutputStream rClientOut     = rClientSocket.getOutputStream();
-			InetAddress  rClientAddress = rClientSocket.getInetAddress();
+		try {
+			InputStream rClientIn = rClientSocket.getInputStream();
+			OutputStream rClientOut = rClientSocket.getOutputStream();
+			InetAddress rClientAddress = rClientSocket.getInetAddress();
 
-			Log.infof(
-				"%s: handling request from %s",
-				getServerName(),
+			Log.infof("%s: handling request from %s", getServerName(),
 				rClientAddress.getHostAddress());
 
 			rRequestHandler.set(IP_ADDRESS, rClientAddress);
 
-			InputStream  rInput  =
+			InputStream rInput =
 				new LimitedInputStream(rClientIn, get(MAX_REQUEST_SIZE));
 			OutputStream rOutput =
 				new LimitedOutputStream(rClientOut, get(MAX_RESPONSE_SIZE));
@@ -324,123 +285,92 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 
 			sRequest = sRequest.replaceAll("(\r\n|\r|\n)", "¶");
 
-			if (Log.isLevelEnabled(LogLevel.DEBUG))
-			{
+			if (Log.isLevelEnabled(LogLevel.DEBUG)) {
 				Log.debugf("Request: %s", sRequest);
 			}
 
 			aServerLock.lock();
 
-			try
-			{
+			try {
 				set(LAST_REQUEST, sRequest);
-				set(
-					REQUEST_HANDLING_TIME,
+				set(REQUEST_HANDLING_TIME,
 					rRequestHandler.get(TIMER).intValue());
 
-				if (!bRunning)
-				{
+				if (!bRunning) {
 					aServerSocket.close();
 				}
-			}
-			finally
-			{
+			} finally {
 				aServerLock.unlock();
 			}
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			Log.error("Client request handling failed", e);
-		}
-		finally
-		{
-			if (rRequestHandler instanceof Releasable)
-			{
+		} finally {
+			if (rRequestHandler instanceof Releasable) {
 				((Releasable) rRequestHandler).release();
 			}
 
-			try
-			{
+			try {
 				rClientSocket.close();
-			}
-			catch (IOException e)
-			{
+			} catch (IOException e) {
 				Log.error("Socket close failed", e);
 			}
 		}
 	}
 
-	/***************************************
+	/**
 	 * Runs the main server loop that listens for client requests and handles
 	 * them with the current request handler.
 	 *
 	 * @throws IOException If accessing the input or output streams fails
 	 */
 	@SuppressWarnings("boxing")
-	protected void runServerLoop() throws IOException
-	{
+	protected void runServerLoop() throws IOException {
 		Relatable aRequestContext = createRequestContext();
 
-		int nMaxConnections =
-			getOption(MAX_CONNECTIONS).orUse(
-				Math.max(4, ForkJoinPool.commonPool().getParallelism()));
+		int nMaxConnections = getOption(MAX_CONNECTIONS).orUse(
+			Math.max(4, ForkJoinPool.commonPool().getParallelism()));
 
 		Queue<CompletableFuture<Void>> aRequestHandlers =
 			new ArrayDeque<>(nMaxConnections);
 
 		aServerSocket = createServerSocket(get(PORT));
-		bRunning	  = true;
+		bRunning = true;
 
-		while (bRunning)
-		{
-			try
-			{
+		while (bRunning) {
+			try {
 				Socket rClientSocket = aServerSocket.accept();
 
 				Iterator<CompletableFuture<Void>> rHandlers =
 					aRequestHandlers.iterator();
 
 				// remove finished request handlers
-				while (rHandlers.hasNext())
-				{
-					if (rHandlers.next().isDone())
-					{
+				while (rHandlers.hasNext()) {
+					if (rHandlers.next().isDone()) {
 						rHandlers.remove();
 					}
 				}
 
-				if (aRequestHandlers.size() < nMaxConnections)
-				{
+				if (aRequestHandlers.size() < nMaxConnections) {
 					CompletableFuture<Void> aRequestHandler =
 						CompletableFuture.runAsync(
-							() ->
-								handleClientRequest(
-									rClientSocket,
-									aRequestContext));
+							() -> handleClientRequest(rClientSocket,
+								aRequestContext));
 
 					aRequestHandlers.add(aRequestHandler);
-				}
-				else
-				{
+				} else {
 					Log.warn(
-						"Maximum connections reached, rejecting connection from " +
-						rClientSocket.getInetAddress());
+						"Maximum connections reached, rejecting connection " +
+							"from " + rClientSocket.getInetAddress());
 
-					try
-					{
+					try {
 						rClientSocket.close();
-					}
-					catch (IOException e)
-					{
+					} catch (IOException e) {
 						Log.error(
 							"Closing rejected connection failed, continuing");
 					}
 				}
-			}
-			catch (SocketException e)
-			{
-				if (bRunning)
-				{
+			} catch (SocketException e) {
+				if (bRunning) {
 					// only throw if still running; if server has been
 					// terminated due to a client request the "socket closed"
 					// exception can be ignored
@@ -450,32 +380,29 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns the name of this server instance.
 	 *
 	 * @return The server name
 	 */
-	private String getServerName()
-	{
+	private String getServerName() {
 		String sName = get(NAME);
 
-		if (sName == null)
-		{
+		if (sName == null) {
 			sName = getClass().getSimpleName();
 		}
 
 		return sName;
 	}
 
-	//~ Inner Interfaces -------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * Defines the interface that needs to be implemented for server request
 	 * handlers. A request handler is a stateful object which means that for
 	 * each request a new instance will be created (or at least requested, see
-	 * {@link RequestHandlerFactory} for details). How exactly a handler will be
-	 * configured depends on the factory which receives an instance of {@link
-	 * Relatable} with the server configuration. It may either copy the
+	 * {@link RequestHandlerFactory} for details). How exactly a handler
+	 * will be
+	 * configured depends on the factory which receives an instance of
+	 * {@link Relatable} with the server configuration. It may either copy the
 	 * relations of the context into the handler or embed them.
 	 *
 	 * <p>This interface extends {@link Relatable} to allow the server to set
@@ -483,41 +410,38 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	 *
 	 * @author eso
 	 */
-	public static interface RequestHandler extends Relatable
-	{
-		//~ Methods ------------------------------------------------------------
+	public interface RequestHandler extends Relatable {
 
-		/***************************************
+		/**
 		 * Implements the handling of a single server request by reading the
 		 * request from an input stream, processing it, and writing an adequate
 		 * response to the given output stream. For each request a new instance
 		 * is used so it is not necessary
 		 *
 		 * <p>The implementation doesn't need to perform any kind of resource
-		 * management with the given stream parameters. That will be done by the
+		 * management with the given stream parameters. That will be done by
+		 * the
 		 * server implementation.</p>
 		 *
-		 * @param  rRequest  The request input stream
-		 * @param  rResponse The response output stream
-		 *
+		 * @param rRequest  The request input stream
+		 * @param rResponse The response output stream
 		 * @return A string description of the handled request (used for
-		 *         statistical purposes)
-		 *
+		 * statistical purposes)
 		 * @throws Exception Can throw any exception if handling the request
 		 *                   fails
 		 */
-		public String handleRequest(
-			InputStream  rRequest,
-			OutputStream rResponse) throws Exception;
+		String handleRequest(InputStream rRequest, OutputStream rResponse)
+			throws Exception;
 	}
 
-	/********************************************************************
+	/**
 	 * A functional interface for the implementation of factories that create
 	 * instances of {@link RequestHandler}. A {@link Server} will request a new
 	 * handler for each client request it receives. If an implementation wants
 	 * to re-use request handlers (e.g. in the case of costly initialization)
 	 * the returned handlers can implement the {@link Releasable} interface. In
-	 * that case the server will call that method after the request handling has
+	 * that case the server will call that method after the request handling
+	 * has
 	 * been completed, even in the case of an error. The implementation is
 	 * responsible to reset the handler into a re-usable state for subsequent
 	 * invocations, including the handler relations.
@@ -525,20 +449,18 @@ public class Server extends RelatedObject implements RelationBuilder<Server>,
 	 * @author eso
 	 */
 	@FunctionalInterface
-	public static interface RequestHandlerFactory
-	{
-		//~ Methods ------------------------------------------------------------
+	public interface RequestHandlerFactory {
 
-		/***************************************
+		/**
 		 * Returns a request handler instance for the given server. Typically
 		 * implementations should return a new request handler instance from
 		 * this method.
 		 *
-		 * @param  rContext A relatable context containing configuration data
-		 *                  for the request handler
-		 *
+		 * @param rContext A relatable context containing configuration data
+		 *                      for
+		 *                 the request handler
 		 * @return The request handler for the given configuration
 		 */
-		public RequestHandler getRequestHandler(Relatable rContext);
+		RequestHandler getRequestHandler(Relatable rContext);
 	}
 }

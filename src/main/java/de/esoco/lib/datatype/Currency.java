@@ -17,27 +17,21 @@
 package de.esoco.lib.datatype;
 
 import java.math.BigDecimal;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-
-/********************************************************************
+/**
  * An enumeration of currencies.
  */
-public enum Currency
-{
+public enum Currency {
 	AED, ANG, AUD, BTN, CHF, CZK, DKK, EUR, GBP, HKD, HRK, HUF, IDR, ILS, KZT,
 	LKR, NGN, NOK, PLN, RUB, RSD, THB, TRY, UAH, USD, JPY, ZAR;
 
-	//~ Static fields/initializers ---------------------------------------------
-
-	private static Map<Currency, BigDecimal> aEuroConversionRates =
+	private static final Map<Currency, BigDecimal> aEuroConversionRates =
 		new HashMap<Currency, BigDecimal>();
 
-	static
-	{
+	static {
 		aEuroConversionRates.put(EUR, BigDecimal.ONE);
 
 		// conversion rate on 26.08.2010 from google
@@ -74,33 +68,25 @@ public enum Currency
 		aEuroConversionRates.put(ZAR, new BigDecimal("0.107166719"));
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Converts a value into a certain currency with the exchange rate on a
 	 * certain date.
 	 *
-	 * @param  rCurrency The original currency of the value
-	 * @param  rValue    The value to convert
-	 * @param  rDate     The date to look up the exchange rate for
-	 *
+	 * @param rCurrency The original currency of the value
+	 * @param rValue    The value to convert
+	 * @param rDate     The date to look up the exchange rate for
 	 * @return The resulting BigDecimal value
 	 */
-	public BigDecimal convertTo(Currency   rCurrency,
-								BigDecimal rValue,
-								Date	   rDate)
-	{
-		if (rCurrency != EUR)
-		{
-			throw new UnsupportedOperationException("Only conversions to EURO are currently supported");
+	public BigDecimal convertTo(Currency rCurrency, BigDecimal rValue,
+		Date rDate) {
+		if (rCurrency != EUR) {
+			throw new UnsupportedOperationException(
+				"Only conversions to EURO are currently supported");
 		}
 
-		if (this == EUR)
-		{
+		if (this == EUR) {
 			return rValue;
-		}
-		else
-		{
+		} else {
 			assert aEuroConversionRates.get(this) != null;
 
 			return rValue.multiply(aEuroConversionRates.get(this));

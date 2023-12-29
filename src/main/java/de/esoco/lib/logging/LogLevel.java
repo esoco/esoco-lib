@@ -18,13 +18,11 @@ package de.esoco.lib.logging;
 
 import de.esoco.lib.property.HasOrder;
 
-
-/********************************************************************
+/**
  * Enumeration of the available log levels.
  *
  * @author eso
  */
-public enum LogLevel implements HasOrder
-{
+public enum LogLevel implements HasOrder {
 	TRACE, DEBUG, INFO, WARN, ERROR, FATAL
 }

@@ -16,41 +16,39 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.property;
 
-/********************************************************************
+/**
  * Property interface for integer ranges that have a minimum and a maximum
  * integer value.
  *
  * @author eso
  */
-public interface IntRangeAttribute
-{
-	//~ Methods ----------------------------------------------------------------
+public interface IntRangeAttribute {
 
-	/***************************************
+	/**
 	 * Returns the maximum value.
 	 *
 	 * @return The maximum value
 	 */
-	public int getMaximum();
+	int getMaximum();
 
-	/***************************************
+	/**
 	 * Returns the minimum value.
 	 *
 	 * @return The minimum value
 	 */
-	public int getMinimum();
+	int getMinimum();
 
-	/***************************************
+	/**
 	 * Sets the maximum value.
 	 *
 	 * @param nValue The new maximum value
 	 */
-	public void setMaximum(int nValue);
+	void setMaximum(int nValue);
 
-	/***************************************
+	/**
 	 * Sets the minimum value.
 	 *
 	 * @param nValue The new minimum value
 	 */
-	public void setMinimum(int nValue);
+	void setMinimum(int nValue);
 }

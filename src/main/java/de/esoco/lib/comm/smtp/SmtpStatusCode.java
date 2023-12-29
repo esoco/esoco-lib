@@ -18,51 +18,39 @@ package de.esoco.lib.comm.smtp;
 
 import de.esoco.lib.text.TextConvert;
 
-
-/********************************************************************
+/**
  * Enumeration of the SMTP status codes (incomplete).
  */
-public enum SmtpStatusCode
-{
+public enum SmtpStatusCode {
 	READY("220"), CLOSING("221"), AUTH_SUCCESS("235"), OK("250"),
 	START_MAIL("354");
 
-	//~ Instance fields --------------------------------------------------------
-
 	private final String sCode;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param sCode The status code (three-digit number as a decimal string)
 	 */
-	private SmtpStatusCode(String sCode)
-	{
+	SmtpStatusCode(String sCode) {
 		this.sCode = sCode;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the actual three-digit status code as a decimal string.
 	 *
 	 * @return The status code
 	 */
-	public String getCode()
-	{
+	public String getCode() {
 		return sCode;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public String toString()
-	{
-		return String.format("%s (%s)",
-							 sCode,
-							 TextConvert.capitalize(name(), " "));
+	public String toString() {
+		return String.format("%s (%s)", sCode,
+			TextConvert.capitalize(name(), " "));
 	}
 }

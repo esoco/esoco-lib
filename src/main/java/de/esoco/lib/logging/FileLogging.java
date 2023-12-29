@@ -20,40 +20,31 @@ import de.esoco.lib.expression.ThrowingSupplier;
 
 import java.io.FileWriter;
 
-
-/********************************************************************
+/**
  * A log aspect that appends log records to a file.
  *
  * @author eso
  */
-public class FileLogging extends StreamLogging
-{
-	//~ Instance fields --------------------------------------------------------
+public class FileLogging extends StreamLogging {
 
-	private String sFileName;
+	private final String sFileName;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance that logs to a certain file.
 	 *
 	 * @param sFileName The name of the log file
 	 */
-	public FileLogging(String sFileName)
-	{
+	public FileLogging(String sFileName) {
 		super(ThrowingSupplier.of(() -> new FileWriter(sFileName, true)));
 
 		this.sFileName = sFileName;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected String getLogInitMessage()
-	{
+	protected String getLogInitMessage() {
 		return "Starting logging to file " + sFileName;
 	}
 }

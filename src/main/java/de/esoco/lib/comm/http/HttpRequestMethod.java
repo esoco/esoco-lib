@@ -19,61 +19,48 @@ package de.esoco.lib.comm.http;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 
-
-/********************************************************************
+/**
  * An enumeration of the different HTTP request methods.
  */
-public enum HttpRequestMethod
-{
-	GET(false), HEAD(false), OPTIONS(true), TRACE(false), POST(true), PUT(true),
+public enum HttpRequestMethod {
+	GET(false), HEAD(false), OPTIONS(true), TRACE(false), POST(true),
+	PUT(true),
 	DELETE(false), CONNECT(true);
-
-	//~ Instance fields --------------------------------------------------------
 
 	private final boolean bDoesOutput;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param bDoesOutput TRUE if this method requires to send data to the
 	 *                    endpoint
 	 */
-	private HttpRequestMethod(boolean bDoesOutput)
-	{
+	HttpRequestMethod(boolean bDoesOutput) {
 		this.bDoesOutput = bDoesOutput;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Applies this request method to a connection for an HTTP URL.
 	 *
 	 * @param rConnection The connection to apply this method to
 	 */
-	public void applyTo(HttpURLConnection rConnection)
-	{
-		try
-		{
+	public void applyTo(HttpURLConnection rConnection) {
+		try {
 			rConnection.setRequestMethod(name());
 			rConnection.setDoOutput(bDoesOutput);
-		}
-		catch (ProtocolException e)
-		{
+		} catch (ProtocolException e) {
 			// this should not be possible
 			throw new IllegalStateException(e);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Check whether this request method also sends data to the communication
 	 * endpoint.
 	 *
 	 * @return TRUE if this method performs output
 	 */
-	public boolean doesOutput()
-	{
+	public boolean doesOutput() {
 		return bDoesOutput;
 	}
 }

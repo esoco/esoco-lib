@@ -18,52 +18,47 @@ package de.esoco.lib.collection;
 
 import de.esoco.lib.event.ElementEvent.EventType;
 import de.esoco.lib.event.EventHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
-/********************************************************************
+/**
  * Test of observable list functionality.
  *
  * @author eso
  */
-public class ObservableListTest implements EventHandler<ListEvent<String>>
-{
-	//~ Instance fields --------------------------------------------------------
+public class ObservableListTest implements EventHandler<ListEvent<String>> {
 
 	private ObservableList<String> aObservableList;
-	private EventType			   rExpectedEventType = EventType.ADD;
-	private String				   sTestValue;
-	private int					   nExpectedIndex;
 
-	//~ Methods ----------------------------------------------------------------
+	private EventType rExpectedEventType = EventType.ADD;
 
-	/***************************************
+	private String sTestValue;
+
+	private int nExpectedIndex;
+
+	/**
 	 * Handles collection events.
 	 *
 	 * @param rEvent The event
 	 */
 	@Override
-	public void handleEvent(ListEvent<String> rEvent)
-	{
+	public void handleEvent(ListEvent<String> rEvent) {
 		EventType rType = rEvent.getType();
 
 		assertEquals(rExpectedEventType, rType);
 		assertEquals(nExpectedIndex, rEvent.getIndex());
 
-		switch (rEvent.getType())
-		{
+		switch (rEvent.getType()) {
 			case ADD:
 				sTestValue = rEvent.getElement();
 				nExpectedIndex++;
@@ -83,23 +78,21 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		}
 	}
 
-	/***************************************
+	/**
 	 * Test setup.
 	 */
 	@Before
-	public void setup()
-	{
+	public void setup() {
 		aObservableList = new ObservableList<String>();
 
 		aObservableList.addListener(this);
 	}
 
-	/***************************************
+	/**
 	 * Tests adding of elements.
 	 */
 	@Test
-	public void testAdd()
-	{
+	public void testAdd() {
 		assertTrue(aObservableList.isEmpty());
 
 		aObservableList.add("T1");
@@ -136,12 +129,11 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		assertEquals(9, aObservableList.size());
 	}
 
-	/***************************************
+	/**
 	 * Tests clearing the collection.
 	 */
 	@Test
-	public void testClear()
-	{
+	public void testClear() {
 		initList(EventType.REMOVE_ALL);
 
 		nExpectedIndex = -1;
@@ -151,37 +143,33 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		assertTrue(aObservableList.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Tests iterating.
 	 */
 	@Test
-	public void testIterator()
-	{
+	public void testIterator() {
 		initList(null);
 
 		int i = 0;
 
-		for (String sTest : aObservableList)
-		{
+		for (String sTest : aObservableList) {
 			assertEquals("T" + ++i, sTest);
 		}
 
 		assertEquals(3, i);
 	}
 
-	/***************************************
+	/**
 	 * Tests removing from an iterator.
 	 */
 	@Test
-	public void testIteratorRemove()
-	{
+	public void testIteratorRemove() {
 		initList(EventType.REMOVE);
 
 		Iterator<String> rIterator = aObservableList.iterator();
-		int				 i		   = 0;
+		int i = 0;
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			String sTest = "T" + ++i;
 
 			assertEquals(sTest, rIterator.next());
@@ -192,18 +180,16 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		assertTrue(aObservableList.isEmpty());
 	}
 
-	/***************************************
+	/**
 	 * Tests list iterator functions.
 	 */
 	@Test
-	public void testListIterator()
-	{
+	public void testListIterator() {
 		initList(EventType.UPDATE);
 
 		ListIterator<String> rIterator = aObservableList.listIterator();
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			String sTest = rIterator.next();
 
 			rIterator.set("U" + sTest);
@@ -211,8 +197,7 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 			assertEquals("UT" + nExpectedIndex, sTestValue);
 		}
 
-		while (rIterator.hasPrevious())
-		{
+		while (rIterator.hasPrevious()) {
 			String sTest = rIterator.previous();
 
 			nExpectedIndex--;
@@ -229,32 +214,29 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		rIterator.add("T1");
 		assertEquals("RUT2", rIterator.next());
 
-		rIterator	   = aObservableList.listIterator();
+		rIterator = aObservableList.listIterator();
 		nExpectedIndex = 0;
 
 		rIterator.add("T0");
 		assertEquals("T1", rIterator.next());
 	}
 
-	/***************************************
+	/**
 	 * Tests list iterator functions.
 	 */
 	@Test
-	public void testListIteratorRemovePrevious()
-	{
+	public void testListIteratorRemovePrevious() {
 		initList(EventType.REMOVE);
 
 		ListIterator<String> rIterator = aObservableList.listIterator();
 
-		while (rIterator.hasNext())
-		{
+		while (rIterator.hasNext()) {
 			rIterator.next();
 		}
 
 		nExpectedIndex = 2;
 
-		while (rIterator.hasPrevious())
-		{
+		while (rIterator.hasPrevious()) {
 			rIterator.previous();
 			rIterator.remove();
 
@@ -263,12 +245,11 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		}
 	}
 
-	/***************************************
+	/**
 	 * Tests removing of elements.
 	 */
 	@Test
-	public void testRemove()
-	{
+	public void testRemove() {
 		initList(EventType.REMOVE);
 
 		nExpectedIndex = 1;
@@ -284,12 +265,11 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		assertFalse(aObservableList.contains("T3"));
 	}
 
-	/***************************************
+	/**
 	 * Tests adding of elements.
 	 */
 	@Test
-	public void testSet()
-	{
+	public void testSet() {
 		initList(EventType.UPDATE);
 
 		nExpectedIndex = 1;
@@ -299,13 +279,12 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		assertEquals(3, aObservableList.size());
 	}
 
-	/***************************************
+	/**
 	 * Initializes the list with a test dataset.
 	 *
 	 * @param rEventType The expected event type for subsequent changes
 	 */
-	void initList(EventType rEventType)
-	{
+	void initList(EventType rEventType) {
 		assertTrue(aObservableList.isEmpty());
 
 		aObservableList.add("T1");
@@ -313,6 +292,6 @@ public class ObservableListTest implements EventHandler<ListEvent<String>>
 		aObservableList.add("T3");
 
 		rExpectedEventType = rEventType;
-		nExpectedIndex     = 0;
+		nExpectedIndex = 0;
 	}
 }

@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
-
-/********************************************************************
+/**
  * A wrapper that forwards the output stream write methods to the corresponding
  * {@link RandomAccessFile} methods so that stream-based tools and classes can
  * be used on the file. Flushing or closing the stream has no effect, the
@@ -29,51 +28,41 @@ import java.io.RandomAccessFile;
  *
  * @author eso
  */
-public class RandomAccessFileOutputStream extends OutputStream
-{
-	//~ Instance fields --------------------------------------------------------
+public class RandomAccessFileOutputStream extends OutputStream {
 
-	private RandomAccessFile rRandomAccessFile;
+	private final RandomAccessFile rRandomAccessFile;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rFile The wrapped file
 	 */
-	public RandomAccessFileOutputStream(RandomAccessFile rFile)
-	{
+	public RandomAccessFileOutputStream(RandomAccessFile rFile) {
 		rRandomAccessFile = rFile;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(byte[] rBytes) throws IOException
-	{
+	public void write(byte[] rBytes) throws IOException {
 		rRandomAccessFile.write(rBytes);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException
-	{
+	public void write(int nByte) throws IOException {
 		rRandomAccessFile.write(nByte);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void write(byte[] rBytes, int nOffset, int nLength)
-		throws IOException
-	{
+		throws IOException {
 		rRandomAccessFile.write(rBytes, nOffset, nLength);
 	}
 }

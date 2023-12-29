@@ -20,8 +20,7 @@ import java.io.FilterReader;
 import java.io.IOException;
 import java.io.Reader;
 
-
-/********************************************************************
+/**
  * A wrapper for {@link Reader} instances that limits the number of characters
  * that can be read from it. It limits all (and only) characters read from the
  * stream, even if the {@link #mark(int)} and {@link #reset()} methods are used.
@@ -34,62 +33,52 @@ import java.io.Reader;
  *
  * @author eso
  */
-public class LimitedReader extends FilterReader
-{
-	//~ Instance fields --------------------------------------------------------
+public class LimitedReader extends FilterReader {
 
 	private int nRemainingLimit;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedReader The reader wrapped by this instance
 	 * @param nMax           The maximum number of characters that can be read
 	 *                       from this instance
 	 */
-	public LimitedReader(Reader rWrappedReader, int nMax)
-	{
+	public LimitedReader(Reader rWrappedReader, int nMax) {
 		super(rWrappedReader);
 
 		nRemainingLimit = nMax;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the remaining limit that can be read.
 	 *
 	 * @return The remaining limit
 	 */
-	public int getRemainingLimit()
-	{
+	public int getRemainingLimit() {
 		return nRemainingLimit;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read() throws IOException
-	{
+	public int read() throws IOException {
 		checkLimit();
 		nRemainingLimit--;
 
 		return super.read();
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(char[] rBuffer, int nOffset, int nLength) throws IOException
-	{
+	public int read(char[] rBuffer, int nOffset, int nLength)
+		throws IOException {
 		checkLimit();
 
-		if (nRemainingLimit < nLength)
-		{
+		if (nRemainingLimit < nLength) {
 			nLength = nRemainingLimit;
 		}
 
@@ -100,28 +89,23 @@ public class LimitedReader extends FilterReader
 		return nRead;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	public String toString()
-	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLimit,
-							 in);
+	public String toString() {
+		return String.format("%s(%d, %s)", getClass().getSimpleName(),
+			nRemainingLimit, in);
 	}
 
-	/***************************************
+	/**
 	 * Checks whether the limit has been reached.
 	 *
 	 * @throws StreamLimitException If the limit has been reached
 	 */
-	protected void checkLimit() throws StreamLimitException
-	{
-		if (nRemainingLimit == 0)
-		{
+	protected void checkLimit() throws StreamLimitException {
+		if (nRemainingLimit == 0) {
 			throw new StreamLimitException("Input limit reached", true);
 		}
 	}

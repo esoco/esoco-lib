@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * Management interface that allows to stop an object. Whether an object can be
  * started again (if it also implements {@link de.esoco.lib.manage.Startable})
  * depends on the actual implementation and should be documented accordingly.
@@ -27,16 +27,14 @@ package de.esoco.lib.manage;
  *
  * @author eso
  */
-public interface Stoppable
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Stoppable {
 
-	/***************************************
+	/**
 	 * Stops the object's execution. It is recommended that implementations
 	 * handle problems that occur while stopping gracefully. In cases where the
 	 * problem is caused by inconsistencies in the runtime environment or
 	 * similar issues (or will cause them) a documented RuntimeException should
 	 * be thrown.
 	 */
-	public void stop();
+	void stop();
 }

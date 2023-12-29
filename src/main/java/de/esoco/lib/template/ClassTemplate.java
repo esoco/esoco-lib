@@ -18,37 +18,29 @@ package de.esoco.lib.template;
 
 import org.obrel.type.StandardTypes;
 
-
-/********************************************************************
+/**
  * A concrete template implementation that can create instances of the described
  * type from the type's class.
  *
  * @author eso
  */
-public class ClassTemplate<T> extends Template<T>
-{
-	//~ Instance fields --------------------------------------------------------
+public class ClassTemplate<T> extends Template<T> {
 
 	private final Class<? extends T> rClass;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance for a certain type class.
 	 *
 	 * @param rClass       The class of the template's class
 	 * @param sDescription The template description
 	 */
-	public ClassTemplate(Class<? extends T> rClass, String sDescription)
-	{
+	public ClassTemplate(Class<? extends T> rClass, String sDescription) {
 		this.rClass = rClass;
 
 		set(StandardTypes.DESCRIPTION, sDescription);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance of the type class described by this template by
 	 * invoking an empty constructor through reflection. Throws a
 	 * RuntimeException if the constructor invocation fails.
@@ -56,14 +48,10 @@ public class ClassTemplate<T> extends Template<T>
 	 * @return A new instance of the template's type
 	 */
 	@Override
-	protected T create()
-	{
-		try
-		{
+	protected T create() {
+		try {
 			return rClass.newInstance();
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}

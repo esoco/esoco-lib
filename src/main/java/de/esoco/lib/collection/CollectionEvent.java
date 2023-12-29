@@ -20,20 +20,18 @@ import de.esoco.lib.event.ElementEvent;
 
 import java.util.Collection;
 
-
-/********************************************************************
+/**
  * An element event subclass that contains informations related to collection
  * modifications. Basically all element event types can occur but which types
- * are actually used depends on the type of collection that generated the event.
+ * are actually used depends on the type of collection that generated the
+ * event.
  *
  * @author eso
  */
 public class CollectionEvent<E, C extends Collection<E>>
-	extends ElementEvent<C, E, E>
-{
-	//~ Constructors -----------------------------------------------------------
+	extends ElementEvent<C, E, E> {
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rType        The event type
@@ -41,11 +39,8 @@ public class CollectionEvent<E, C extends Collection<E>>
 	 * @param rElement     The collection element affected by this event
 	 * @param rUpdateValue The new element value in case of update events
 	 */
-	public CollectionEvent(EventType rType,
-						   C		 rSource,
-						   E		 rElement,
-						   E		 rUpdateValue)
-	{
+	public CollectionEvent(EventType rType, C rSource, E rElement,
+		E rUpdateValue) {
 		super(rType, rSource, rElement, rUpdateValue);
 	}
 }

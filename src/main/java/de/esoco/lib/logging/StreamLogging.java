@@ -20,27 +20,21 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-
 import java.util.Collection;
 import java.util.function.Supplier;
 
-
-/********************************************************************
+/**
  * A log aspect that writes log data to streams. The {@link Writer} to write the
  * log records to must be provided by a {@link Supplier} function that is handed
  * to the constructor {@link StreamLogging}.
  *
  * @author eso
  */
-public class StreamLogging extends LogAspect<String>
-{
-	//~ Instance fields --------------------------------------------------------
+public class StreamLogging extends LogAspect<String> {
 
-	private Supplier<Writer> fGetWriter;
+	private final Supplier<Writer> fGetWriter;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance that get's the target writer from a function. If
 	 * the logging target is a stream the supplier function could wrap it into
 	 * an {@link OutputStreamWriter}, for example. The writer returned by the
@@ -51,32 +45,26 @@ public class StreamLogging extends LogAspect<String>
 	 *
 	 * @param fGetWriter A function that returns the target writer
 	 */
-	public StreamLogging(Supplier<Writer> fGetWriter)
-	{
+	public StreamLogging(Supplier<Writer> fGetWriter) {
 		this.fGetWriter = fGetWriter;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected String createLogObject(LogRecord rLogRecord)
-	{
+	protected String createLogObject(LogRecord rLogRecord) {
 		return rLogRecord.format(get(MIN_STACK_LOG_LEVEL));
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void processLogObjects(Collection<String> aLogs) throws Exception
-	{
-		try (Writer aOutput = fGetWriter.get())
-		{
-			for (String sLog : aLogs)
-			{
+	protected void processLogObjects(Collection<String> aLogs)
+		throws Exception {
+		try (Writer aOutput = fGetWriter.get()) {
+			for (String sLog : aLogs) {
 				aOutput.write(sLog);
 				aOutput.write('\n');
 			}

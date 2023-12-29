@@ -20,8 +20,7 @@ import de.esoco.lib.mapping.MethodMappingDefinition;
 
 import java.lang.reflect.Method;
 
-
-/********************************************************************
+/**
  * Subclass of the delegation interception that redirects method calls to
  * another object than the proxy's original target. As with delegations it is
  * possible to define a mapping to different methods by providing an instance of
@@ -29,55 +28,46 @@ import java.lang.reflect.Method;
  *
  * @author eso
  */
-public class Redirection extends Delegation
-{
-	//~ Instance fields --------------------------------------------------------
+public class Redirection extends Delegation {
 
 	private final Object rRedirectionTarget;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a redirection that uses a 1:1 method mapping to invoke the
 	 * methods of a different target object.
 	 *
 	 * @param rTarget The target object to be invoked instead of the proxy's
 	 *                original target
 	 */
-	public Redirection(Object rTarget)
-	{
+	public Redirection(Object rTarget) {
 		rRedirectionTarget = rTarget;
 	}
 
-	/***************************************
-	 * Constructor that creates a specific method mapping for the invocations of
+	/**
+	 * Constructor that creates a specific method mapping for the
+	 * invocations of
 	 * a different target object.
 	 *
 	 * @param rTarget  The target object to be invoked instead of the proxy's
 	 *                 original target
 	 * @param rMapping The mapping definition
 	 */
-	public Redirection(Object rTarget, MethodMappingDefinition rMapping)
-	{
+	public Redirection(Object rTarget, MethodMappingDefinition rMapping) {
 		super(rMapping);
 
 		rRedirectionTarget = rTarget;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Invokes the superclass' invoke() method, but with this redirection's
 	 * target instead of the argument target object.
 	 *
 	 * @see Delegation#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public Object invoke(Object   rProxy,
-						 Method   rOriginalMethod,
-						 Object   rTarget,
-						 Object[] rArgs) throws Exception
-	{
-		return super.invoke(rProxy, rOriginalMethod, rRedirectionTarget, rArgs);
+	public Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
+		Object[] rArgs) throws Exception {
+		return super.invoke(rProxy, rOriginalMethod, rRedirectionTarget,
+			rArgs);
 	}
 }

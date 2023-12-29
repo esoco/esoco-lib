@@ -18,13 +18,11 @@ package de.esoco.lib.comm.http;
 
 import de.esoco.lib.net.NetUtil;
 
-
-/********************************************************************
+/**
  * An enumeration of the standard HTTP 1.1 status codes as defined in the HTTP
  * RFC 2616.
  */
-public enum HttpStatusCode
-{
+public enum HttpStatusCode {
 	CONTINUE(100, "Continue"), SWITCHING_PROTOCOLS(101, "Switching Protocols"),
 	PROCESSING(102, "Processing"), OK(200, "OK"), CREATED(201, "Created"),
 	ACCEPTED(202, "Accepted"),
@@ -72,186 +70,158 @@ public enum HttpStatusCode
 	NOT_EXTENDED(510, "Not Extended"),
 	NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required");
 
-	//~ Instance fields --------------------------------------------------------
+	private final int nStatusCode;
 
-	private final int    nStatusCode;
 	private final String sReasonPhrase;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param nCode   The integer status code
 	 * @param sReason The reason phrase describing the status code
 	 */
-	private HttpStatusCode(int nCode, String sReason)
-	{
-		nStatusCode   = nCode;
+	HttpStatusCode(int nCode, String sReason) {
+		nStatusCode = nCode;
 		sReasonPhrase = sReason;
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Throws an {@link HttpStatusException} with the code {@link #BAD_REQUEST}
 	 * and an error message.
 	 *
-	 * @param  sMessage The error message
-	 *
+	 * @param sMessage The error message
 	 * @throws HttpStatusException Always throws this exception
 	 */
-	public static void badRequest(String sMessage) throws HttpStatusException
-	{
+	public static void badRequest(String sMessage) throws HttpStatusException {
 		throw new HttpStatusException(HttpStatusCode.BAD_REQUEST, sMessage);
 	}
 
-	/***************************************
+	/**
 	 * Returns the status code instance for a certain integer code value.
 	 *
-	 * @param  nStatusCode The integer status code
-	 *
+	 * @param nStatusCode The integer status code
 	 * @return The matching status code instance
-	 *
-	 * @throws IllegalArgumentException If no instance for the given code exists
+	 * @throws IllegalArgumentException If no instance for the given code
+	 *                                  exists
 	 */
-	public static HttpStatusCode valueOf(int nStatusCode)
-	{
-		for (HttpStatusCode eStatusCode : values())
-		{
-			if (eStatusCode.nStatusCode == nStatusCode)
-			{
+	public static HttpStatusCode valueOf(int nStatusCode) {
+		for (HttpStatusCode eStatusCode : values()) {
+			if (eStatusCode.nStatusCode == nStatusCode) {
 				return eStatusCode;
 			}
 		}
 
-		throw new IllegalArgumentException("No " +
-										   HttpStatusCode.class.getSimpleName() +
-										   " instance with code " +
-										   nStatusCode);
+		throw new IllegalArgumentException(
+			"No " + HttpStatusCode.class.getSimpleName() +
+				" instance with code " + nStatusCode);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the integer status code.
 	 *
 	 * @return The integer status code
 	 */
-	public final int getCode()
-	{
+	public final int getCode() {
 		return nStatusCode;
 	}
 
-	/***************************************
+	/**
 	 * Returns the reason phrase.
 	 *
 	 * @return The reason phrase string
 	 */
-	public final String getReasonPhrase()
-	{
+	public final String getReasonPhrase() {
 		return sReasonPhrase;
 	}
 
-	/***************************************
+	/**
 	 * Returns the full HTTP response status line for this status code,
 	 * including CRLF at the end of the line.
 	 *
 	 * @return The status line
 	 */
-	public final String getStatusLine()
-	{
-		StringBuilder aStatusLine = new StringBuilder("HTTP/1.1 ");
+	public final String getStatusLine() {
 
-		aStatusLine.append(nStatusCode);
-		aStatusLine.append(' ');
-		aStatusLine.append(sReasonPhrase);
-		aStatusLine.append(NetUtil.CRLF);
+		String aStatusLine =
+			"HTTP/1.1 " + nStatusCode + ' ' + sReasonPhrase + NetUtil.CRLF;
 
-		return aStatusLine.toString();
+		return aStatusLine;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this code represents a client error.
 	 *
 	 * @return TRUE for a client error
 	 */
-	public final boolean isClientError()
-	{
+	public final boolean isClientError() {
 		return nStatusCode >= 400 && nStatusCode <= 499;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this code represents a client error.
 	 *
 	 * @return TRUE for a client error
 	 */
-	public final boolean isError()
-	{
+	public final boolean isError() {
 		return nStatusCode >= 400;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this code represents an informational status message due
 	 * to ongoing processing on the server side.
 	 *
 	 * @return TRUE for an informational status message
 	 */
-	public final boolean isInformational()
-	{
+	public final boolean isInformational() {
 		return nStatusCode >= 100 && nStatusCode <= 199;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this code represents a redirection.
 	 *
 	 * @return TRUE for a redirection
 	 */
-	public final boolean isRedirection()
-	{
+	public final boolean isRedirection() {
 		return nStatusCode >= 300 && nStatusCode <= 399;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this code represents a server error.
 	 *
 	 * @return TRUE for a server error
 	 */
-	public final boolean isServerError()
-	{
+	public final boolean isServerError() {
 		return nStatusCode >= 500 && nStatusCode <= 599;
 	}
 
-	/***************************************
+	/**
 	 * Checks whether this code represents a successful request.
 	 *
 	 * @return TRUE for a successful request
 	 */
-	public final boolean isSuccess()
-	{
+	public final boolean isSuccess() {
 		return nStatusCode >= 200 && nStatusCode <= 299;
 	}
 
-	/***************************************
-	 * Returns a string representation of this status code as it is used in HTTP
+	/**
+	 * Returns a string representation of this status code as it is used in
+	 * HTTP
 	 * responses.
 	 *
 	 * @return The HTTP response string, containing HTTP version, status code,
-	 *         reason phrase, and trailing CRLF
+	 * reason phrase, and trailing CRLF
 	 */
-	public String toResponseString()
-	{
+	public String toResponseString() {
 		return String.format("HTTP/1.1 %s\r\n", this);
 	}
 
-	/***************************************
+	/**
 	 * Returns a string representation of this status code.
 	 *
 	 * @return The status code reason phrase, separate by a single space
 	 */
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return nStatusCode + " " + sReasonPhrase;
 	}
 }

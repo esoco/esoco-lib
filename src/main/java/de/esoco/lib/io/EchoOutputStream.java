@@ -20,54 +20,43 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-
-/********************************************************************
+/**
  * An output stream that echos all bytes that are written to a wrapped output
  * stream to another output stream.
  *
  * @author eso
  */
-public class EchoOutputStream extends FilterOutputStream
-{
-	//~ Instance fields --------------------------------------------------------
+public class EchoOutputStream extends FilterOutputStream {
 
 	private final OutputStream rEchoStream;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedStream The wrapped output stream
 	 * @param rEchoStream    The stream to echo the output to
 	 */
-	public EchoOutputStream(
-		OutputStream rWrappedStream,
-		OutputStream rEchoStream)
-	{
+	public EchoOutputStream(OutputStream rWrappedStream,
+		OutputStream rEchoStream) {
 		super(rWrappedStream);
 
 		this.rEchoStream = rEchoStream;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void flush() throws IOException
-	{
+	public void flush() throws IOException {
 		super.flush();
 		rEchoStream.flush();
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException
-	{
+	public void write(int nByte) throws IOException {
 		super.write(nByte);
 
 		rEchoStream.write(nByte);

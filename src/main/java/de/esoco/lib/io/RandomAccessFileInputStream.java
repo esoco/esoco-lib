@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-
-/********************************************************************
+/**
  * A wrapper that forwards the input stream read methods to the corresponding
  * {@link RandomAccessFile} methods so that stream-based tools can be used on
  * the file. It doesn't support the optional available/mark/reset methods.
@@ -30,50 +29,41 @@ import java.io.RandomAccessFile;
  *
  * @author eso
  */
-public class RandomAccessFileInputStream extends InputStream
-{
-	//~ Instance fields --------------------------------------------------------
+public class RandomAccessFileInputStream extends InputStream {
 
-	private RandomAccessFile rRandomAccessFile;
+	private final RandomAccessFile rRandomAccessFile;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rFile The wrapped file
 	 */
-	public RandomAccessFileInputStream(RandomAccessFile rFile)
-	{
+	public RandomAccessFileInputStream(RandomAccessFile rFile) {
 		this.rRandomAccessFile = rFile;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read() throws IOException
-	{
+	public int read() throws IOException {
 		return rRandomAccessFile.read();
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBytes) throws IOException
-	{
+	public int read(byte[] rBytes) throws IOException {
 		return rRandomAccessFile.read(rBytes);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBytes, int nOffset, int nLength) throws IOException
-	{
+	public int read(byte[] rBytes, int nOffset, int nLength)
+		throws IOException {
 		return rRandomAccessFile.read(rBytes, nOffset, nLength);
 	}
 }

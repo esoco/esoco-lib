@@ -16,13 +16,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * Implementations of this interface define the elements which can be created by
  * a certain factory implementation. The generic type parameter T defines the
  * type of the elements defined by a subclass.
  *
  * @author eso
  */
-public interface ElementDefinition<T>
-{
+public interface ElementDefinition<T> {
 }

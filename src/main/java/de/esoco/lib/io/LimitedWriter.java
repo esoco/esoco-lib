@@ -20,8 +20,7 @@ import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-
-/********************************************************************
+/**
  * A wrapper for {@link Writer} instances that limits the number of characters
  * that can be written to it. If the limit is exceeded any further attempt at
  * writing will throw a {@link StreamLimitException}. The remaining limit can be
@@ -29,65 +28,50 @@ import java.io.Writer;
  *
  * @author eso
  */
-public class LimitedWriter extends FilterWriter
-{
-	//~ Instance fields --------------------------------------------------------
+public class LimitedWriter extends FilterWriter {
 
 	private int nRemainingLimit;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedWriter The writer wrapped by this instance
 	 * @param nMax           The maximum number of characters that can be
 	 *                       written to this instance
 	 */
-	public LimitedWriter(Writer rWrappedWriter, int nMax)
-	{
+	public LimitedWriter(Writer rWrappedWriter, int nMax) {
 		super(rWrappedWriter);
 
 		nRemainingLimit = nMax;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the remaining limit that can be written.
 	 *
 	 * @return The remaining limit
 	 */
-	public int getRemainingLimit()
-	{
+	public int getRemainingLimit() {
 		return nRemainingLimit;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	public String toString()
-	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLimit,
-							 out);
+	public String toString() {
+		return String.format("%s(%d, %s)", getClass().getSimpleName(),
+			nRemainingLimit, out);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException
-	{
-		if (nRemainingLimit-- > 0)
-		{
+	public void write(int nByte) throws IOException {
+		if (nRemainingLimit-- > 0) {
 			super.write(nByte);
-		}
-		else
-		{
+		} else {
 			throw new StreamLimitException("Output limit reached", false);
 		}
 	}

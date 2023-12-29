@@ -16,94 +16,75 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.app;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 import javax.naming.spi.NamingManager;
+import java.util.HashMap;
+import java.util.Map;
 
-
-/********************************************************************
+/**
  * A {@link InitialContext} implementation for usage in local applications that
  * don't have access to an application server infrastructure.
  *
  * @author eso
  */
-public class LocalInitialContext extends InitialContext
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class LocalInitialContext extends InitialContext {
 
-	private static Map<String, Object> aContextRegistry = new HashMap<>();
+	private static final Map<String, Object> aContextRegistry =
+		new HashMap<>();
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
-	 *
-	 * @throws NamingException
 	 */
-	public LocalInitialContext() throws NamingException
-	{
+	public LocalInitialContext() throws NamingException {
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Registers this class with the {@link NamingManager} as the default
 	 * initial context for JNDI lookups.
 	 *
 	 * @param rContextFactory The factory for local initial contexts
 	 */
 	public static void registerLocalContext(
-		InitialContextFactory rContextFactory)
-	{
-		try
-		{
-			NamingManager.setInitialContextFactoryBuilder(env -> rContextFactory);
-		}
-		catch (NamingException e)
-		{
+		InitialContextFactory rContextFactory) {
+		try {
+			NamingManager.setInitialContextFactoryBuilder(
+				env -> rContextFactory);
+		} catch (NamingException e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Registers an object under a certain JDNI name in the global registry for
 	 * the local context.
 	 *
 	 * @param sName   The name to register the object under
 	 * @param rObject The resource object
 	 */
-	public static void registerResource(String sName, Object rObject)
-	{
+	public static void registerResource(String sName, Object rObject) {
 		aContextRegistry.put(sName, rObject);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Object lookup(String sName) throws NamingException
-	{
-		if (aContextRegistry.containsKey(sName))
-		{
+	public Object lookup(String sName) throws NamingException {
+		if (aContextRegistry.containsKey(sName)) {
 			return aContextRegistry.get(sName);
 		}
 
 		throw new NamingException("Unable to find object " + sName);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected Context getDefaultInitCtx()
-	{
+	protected Context getDefaultInitCtx() {
 		// return THIS to prevent endless recursion with a default initial
 		// context injected by the environment (e.g. Eclipse injects a Jetty
 		// context into the environment)

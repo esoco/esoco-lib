@@ -19,52 +19,37 @@ package de.esoco.lib.collection;
 import de.esoco.lib.event.ElementEvent.EventType;
 
 import java.io.Serializable;
-
 import java.util.Collection;
 
-
-/********************************************************************
+/**
  * A collection implementation that can be used to observe arbitrary collections
  * for changes.
  *
  * @author eso
  */
-public class ObservableCollection<E>
-	extends AbstractObservableCollection<E, Collection<E>,
-										 CollectionEvent<E, Collection<E>>>
-	implements Serializable
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class ObservableCollection<E> extends
+	AbstractObservableCollection<E, Collection<E>, CollectionEvent<E,
+		Collection<E>>>
+	implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance that observes a certain collection.
 	 *
 	 * @param rObservedCollection The collection to be observed
 	 */
-	public ObservableCollection(Collection<E> rObservedCollection)
-	{
+	public ObservableCollection(Collection<E> rObservedCollection) {
 		super(rObservedCollection);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected CollectionEvent<E, Collection<E>> createEvent(
-		EventType rType,
-		E		  rElement,
-		E		  rUpdateValue,
-		int		  nIndex)
-	{
-		return new CollectionEvent<E, Collection<E>>(rType,
-													 this,
-													 rElement,
-													 rUpdateValue);
+	protected CollectionEvent<E, Collection<E>> createEvent(EventType rType,
+		E rElement, E rUpdateValue, int nIndex) {
+		return new CollectionEvent<E, Collection<E>>(rType, this, rElement,
+			rUpdateValue);
 	}
 }

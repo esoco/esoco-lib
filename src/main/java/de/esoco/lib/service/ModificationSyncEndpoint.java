@@ -23,7 +23,6 @@ import de.esoco.lib.comm.http.HttpStatusCode;
 import de.esoco.lib.json.JsonBuilder;
 
 import java.net.HttpURLConnection;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -33,8 +32,7 @@ import static de.esoco.lib.service.ModificationSyncService.JSON_REQUEST_CONTEXT;
 import static de.esoco.lib.service.ModificationSyncService.JSON_REQUEST_FORCE_FLAG;
 import static de.esoco.lib.service.ModificationSyncService.JSON_REQUEST_TARGET_ID;
 
-
-/********************************************************************
+/**
  * The HTTP endpoint for interaction with the {@link ModificationSyncService}
  * REST service. The endpoint itself uses the standard HTTP endpoint
  * implementation. An instance can be created by invoking the standard method
@@ -44,98 +42,85 @@ import static de.esoco.lib.service.ModificationSyncService.JSON_REQUEST_TARGET_I
  *
  * @author eso
  */
-public class ModificationSyncEndpoint extends HttpEndpoint
-{
-	//~ Static methods ---------------------------------------------------------
+public class ModificationSyncEndpoint extends HttpEndpoint {
 
-	/***************************************
+	/**
 	 * Static helper method that creates the data record for a forced
 	 * synchronization request. This should only be used by management code for
 	 * the handling of invalid locks.
 	 *
-	 * @param  sClient   A unique identifier of the client making the request
-	 * @param  sContext  The name of the synchronization context
-	 * @param  sTargetId The unique ID of the target to synchronize
-	 *
+	 * @param sClient   A unique identifier of the client making the request
+	 * @param sContext  The name of the synchronization context
+	 * @param sTargetId The unique ID of the target to synchronize
 	 * @return The data record for use with {@link SyncRequest}
 	 */
-	public static SyncData forceSyncRequest(String sClient,
-											String sContext,
-											String sTargetId)
-	{
+	public static SyncData forceSyncRequest(String sClient, String sContext,
+		String sTargetId) {
 		return new SyncData(sClient, sContext, sTargetId, true);
 	}
 
-	/***************************************
-	 * Returns a request method that will query the current locks. The result is
+	/**
+	 * Returns a request method that will query the current locks. The
+	 * result is
 	 * a map that contains entries for the lock contexts. Each context entry
 	 * contains another mapping from target IDs to the addresses of the clients
 	 * that hold the locks.
 	 *
 	 * @return The request method
 	 */
-	public static SyncRequest getCurrentLocks()
-	{
+	public static SyncRequest getCurrentLocks() {
 		return new SyncRequest(HttpRequestMethod.GET, "current_locks");
 	}
 
-	/***************************************
+	/**
 	 * Returns a request method that will release a lock on an certain target.
 	 *
 	 * @return The request method
 	 */
-	public static SyncRequest releaseLock()
-	{
+	public static SyncRequest releaseLock() {
 		return new SyncRequest(HttpRequestMethod.POST, "release_lock");
 	}
 
-	/***************************************
+	/**
 	 * Returns a request method that will lock a certain target.
 	 *
 	 * @return The request method
 	 */
-	public static SyncRequest requestLock()
-	{
+	public static SyncRequest requestLock() {
 		return new SyncRequest(HttpRequestMethod.POST, "request_lock");
 	}
 
-	/***************************************
+	/**
 	 * Static helper method that creates the data record for a synchronization
 	 * request.
 	 *
-	 * @param  sClient   A unique identifier of the client making the request
-	 * @param  sContext  The name of the synchronization context
-	 * @param  sTargetId The unique ID of the target to synchronize
-	 *
+	 * @param sClient   A unique identifier of the client making the request
+	 * @param sContext  The name of the synchronization context
+	 * @param sTargetId The unique ID of the target to synchronize
 	 * @return The data record for use with {@link SyncRequest}
 	 */
-	public static SyncData syncRequest(String sClient,
-									   String sContext,
-									   String sTargetId)
-	{
+	public static SyncData syncRequest(String sClient, String sContext,
+		String sTargetId) {
 		return new SyncData(sClient, sContext, sTargetId, false);
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * A simple data record that contains the data needed for a synchronization
 	 * request and a method to convert it into JSON.
 	 *
 	 * @author eso
 	 */
-	public static class SyncData
-	{
-		//~ Instance fields ----------------------------------------------------
+	public static class SyncData {
 
-		private final String  sClient;
-		private final String  sContext;
-		private final String  sTargetId;
+		private final String sClient;
+
+		private final String sContext;
+
+		private final String sTargetId;
+
 		private final boolean bForceRequest;
 
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Creates a new instance.
 		 *
 		 * @param sClient       A unique identifier of the client making the
@@ -145,35 +130,28 @@ public class ModificationSyncEndpoint extends HttpEndpoint
 		 * @param bForceRequest TRUE to force the request execution even if the
 		 *                      requirements are not met
 		 */
-		public SyncData(String  sClient,
-						String  sContext,
-						String  sTargetId,
-						boolean bForceRequest)
-		{
-			this.sClient	   = sClient;
-			this.sContext	   = sContext;
-			this.sTargetId     = sTargetId;
+		public SyncData(String sClient, String sContext, String sTargetId,
+			boolean bForceRequest) {
+			this.sClient = sClient;
+			this.sContext = sContext;
+			this.sTargetId = sTargetId;
 			this.bForceRequest = bForceRequest;
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Formats this data record into a JSON request string as required by
 		 * the modification sync service.
 		 *
 		 * @return The JSON request
 		 */
-		public String toJson()
-		{
+		public String toJson() {
 			Map<String, Object> aRequestData = new LinkedHashMap<>(3);
 
 			aRequestData.put(JSON_REQUEST_CLIENT, sClient);
 			aRequestData.put(JSON_REQUEST_CONTEXT, sContext);
 			aRequestData.put(JSON_REQUEST_TARGET_ID, sTargetId);
 
-			if (bForceRequest)
-			{
+			if (bForceRequest) {
 				aRequestData.put(JSON_REQUEST_FORCE_FLAG, Boolean.TRUE);
 			}
 
@@ -181,42 +159,31 @@ public class ModificationSyncEndpoint extends HttpEndpoint
 		}
 	}
 
-	/********************************************************************
-	 * The base class for request methods to the {@link
-	 * ModificationSyncEndpoint}.
+	/**
+	 * The base class for request methods to the
+	 * {@link ModificationSyncEndpoint}.
 	 *
 	 * @author eso
 	 */
-	public static class SyncRequest extends HttpRequest<SyncData, String>
-	{
-		//~ Constructors -------------------------------------------------------
+	public static class SyncRequest extends HttpRequest<SyncData, String> {
 
-		/***************************************
+		/**
 		 * Creates a new instance.
 		 *
 		 * @param eMethod     The request method
 		 * @param sRequestUrl sMethodName The name of the request method
 		 */
-		SyncRequest(HttpRequestMethod eMethod, String sRequestUrl)
-		{
-			super(sRequestUrl,
-				  null,
-				  eMethod,
-				  "/api/sync/" + sRequestUrl,
-				  data -> data != null ? data.toJson() : "",
-				  identity());
+		SyncRequest(HttpRequestMethod eMethod, String sRequestUrl) {
+			super(sRequestUrl, null, eMethod, "/api/sync/" + sRequestUrl,
+				data -> data != null ? data.toJson() : "", identity());
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * {@inheritDoc}
 		 */
 		@Override
 		protected String handleHttpError(HttpURLConnection rUrlConnection,
-										 Exception		   eHttpException,
-										 HttpStatusCode    eStatusCode)
-		{
+			Exception eHttpException, HttpStatusCode eStatusCode) {
 			return eStatusCode.toString();
 		}
 	}

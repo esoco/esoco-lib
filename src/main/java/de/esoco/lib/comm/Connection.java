@@ -17,64 +17,47 @@
 package de.esoco.lib.comm;
 
 import de.esoco.lib.manage.Closeable;
+import org.obrel.core.RelatedObject;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.obrel.core.RelatedObject;
-
 import static de.esoco.lib.comm.CommunicationRelationTypes.ENDPOINT_ADDRESS;
 import static de.esoco.lib.comm.CommunicationRelationTypes.PASSWORD;
 import static de.esoco.lib.comm.CommunicationRelationTypes.USER_NAME;
-
 import static org.obrel.type.MetaTypes.CLOSED;
 
-
-/********************************************************************
+/**
  * The base class for all kinds of connections handled by the communication
  * framework.
  *
  * @author eso
  */
-public class Connection extends RelatedObject implements Closeable
-{
-	//~ Instance fields --------------------------------------------------------
+public class Connection extends RelatedObject implements Closeable {
 
 	private final Endpoint rEndpoint;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a connection to a certain endpoint. Private because only to be
 	 * used by factory methods.
 	 *
 	 * @param rEndpoint The connection endpoint
 	 */
-	Connection(Endpoint rEndpoint)
-	{
+	Connection(Endpoint rEndpoint) {
 		this.rEndpoint = rEndpoint;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void close()
-	{
-		try
-		{
+	public void close() {
+		try {
 			rEndpoint.closeConnection(this);
-		}
-		catch (Exception e)
-		{
-			if (e instanceof CommunicationException)
-			{
+		} catch (Exception e) {
+			if (e instanceof CommunicationException) {
 				throw (CommunicationException) e;
-			}
-			else
-			{
+			} else {
 				throw new CommunicationException(e);
 			}
 		}
@@ -82,53 +65,46 @@ public class Connection extends RelatedObject implements Closeable
 		set(CLOSED);
 	}
 
-	/***************************************
+	/**
 	 * Returns the endpoint of this instance.
 	 *
 	 * @return The connection endpoint
 	 */
-	public final Endpoint getEndpoint()
-	{
+	public final Endpoint getEndpoint() {
 		return rEndpoint;
 	}
 
-	/***************************************
+	/**
 	 * Returns the current password for this connection, either from the
 	 * relations or from the URI.
 	 *
 	 * @return The password
 	 */
-	public String getPassword()
-	{
+	public String getPassword() {
 		return get(PASSWORD);
 	}
 
-	/***************************************
+	/**
 	 * Returns an {@link URI} instance for the final endpoint of this
 	 * connection.
 	 *
 	 * @return The URI object for this connection
 	 */
-	public URI getUri()
-	{
-		try
-		{
+	public URI getUri() {
+		try {
 			return new URI(getEndpoint().get(ENDPOINT_ADDRESS));
-		}
-		catch (URISyntaxException e)
-		{
+		} catch (URISyntaxException e) {
 			throw new CommunicationException(e);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Returns the current user name for this connection, either from the
 	 * relations or from the URI.
 	 *
 	 * @return The user name
 	 */
-	public String getUserName()
-	{
+	public String getUserName() {
 		return get(USER_NAME);
 	}
 }

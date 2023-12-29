@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.logging;
 
-/********************************************************************
+/**
  * An enumeration of the possible extents to which logging should be performed.
  * This considers a different aspect than the log level which can be evaluated
  * by a log handler. The log extent is not evaluated by the the logging
@@ -29,22 +29,18 @@ package de.esoco.lib.logging;
  * includes all lower extents (i.e. a {@link #SUCCESS} extent should also log
  * warnings and errors.</p>
  */
-public enum LogExtent
-{
+public enum LogExtent {
 	NOTHING, ERRORS, WARNINGS, SUCCESS;
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
-	 * Checks whether a certain log extent is included in this instance. This is
+	/**
+	 * Checks whether a certain log extent is included in this instance.
+	 * This is
 	 * the case if the other extent is lower or equal than this extent.
 	 *
-	 * @param  eExtent The other log extent to check against
-	 *
+	 * @param eExtent The other log extent to check against
 	 * @return TRUE if this extent includes the other extent
 	 */
-	public boolean logs(LogExtent eExtent)
-	{
+	public boolean logs(LogExtent eExtent) {
 		return eExtent.ordinal() <= ordinal();
 	}
 }

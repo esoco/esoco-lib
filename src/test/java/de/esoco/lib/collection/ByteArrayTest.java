@@ -21,40 +21,32 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-
-/********************************************************************
+/**
  * Test suite for the ByteArray class.
  *
  * @author eso
  */
-public class ByteArrayTest
-{
-	//~ Instance fields --------------------------------------------------------
+public class ByteArrayTest {
 
 	private ByteArray aTestArray;
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Set up test data.
 	 */
 	@Before
-	public void setUp()
-	{
+	public void setUp() {
 		aTestArray = new ByteArray(10);
 
-		for (byte b = 0; b < 10; b++)
-		{
+		for (byte b = 0; b < 10; b++) {
 			aTestArray.push(b);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Test array access.
 	 */
 	@Test
-	public void testArrayAccess()
-	{
+	public void testArrayAccess() {
 		assertEquals(5, aTestArray.get(5));
 
 		aTestArray.push((byte) 123);
@@ -92,29 +84,27 @@ public class ByteArrayTest
 		assertEquals(30, aTestArray.getCapacity());
 	}
 
-	/***************************************
+	/**
 	 * Test {@link ByteArray#fromJson(String)}
 	 */
 	@Test
-	public void testFromJson()
-	{
+	public void testFromJson() {
 		assertEquals(new ByteArray(), new ByteArray().fromJson("\"0x\""));
 
 		assertEquals(aTestArray,
-					 new ByteArray().fromJson("\"0x00010203040506070809\""));
+			new ByteArray().fromJson("\"0x00010203040506070809\""));
 
 		aTestArray.add((byte) 128);
 		aTestArray.add((byte) 255);
 		assertEquals(aTestArray,
-					 new ByteArray().fromJson("\"0x0001020304050607080980FF\""));
+			new ByteArray().fromJson("\"0x0001020304050607080980FF\""));
 	}
 
-	/***************************************
+	/**
 	 * Test {@link ByteArray#toJson()}.
 	 */
 	@Test
-	public void testToJson()
-	{
+	public void testToJson() {
 		assertEquals("\"0x\"", new ByteArray().toJson());
 
 		assertEquals("\"0x00010203040506070809\"", aTestArray.toJson());
@@ -125,6 +115,7 @@ public class ByteArrayTest
 
 		aTestArray.add((byte) 128);
 		aTestArray.add((byte) 255);
-		assertEquals("\"0x000102030405060708090A0F80FF\"", aTestArray.toJson());
+		assertEquals("\"0x000102030405060708090A0F80FF\"",
+			aTestArray.toJson());
 	}
 }

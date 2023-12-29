@@ -17,70 +17,61 @@
 package de.esoco.lib.proxy.interception;
 
 import de.esoco.lib.reflect.ReflectUtil;
+import org.obrel.core.Relatable;
+import org.obrel.core.RelatedObject;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.obrel.core.Relatable;
-import org.obrel.core.RelatedObject;
-
-
-/********************************************************************
+/**
  * Proxy implementation that intercepts method calls on an interface and
  * forwards them to an application-specific interception handler.
  *
  * @author eso
  */
-public class InterceptionProxy<T> extends RelatedObject
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class InterceptionProxy<T> extends RelatedObject {
 
-	/** Standard interception that forwards a method call to the target */
+	/**
+	 * Standard interception that forwards a method call to the target
+	 */
 	public static final Interception FORWARD = new Delegation();
 
-	/** Standard interception instance that simply ignores a method call */
-	public static final Interception IGNORE =
-		new Interception()
-		{
-			@Override
-			public Object invoke(Object   rProxy,
-								 Method   rOriginalMethod,
-								 Object   rTarget,
-								 Object[] rArgs) throws Exception
-			{
-				return null;
-			}
-		};
+	/**
+	 * Standard interception instance that simply ignores a method call
+	 */
+	public static final Interception IGNORE = new Interception() {
+		@Override
+		public Object invoke(Object rProxy, Method rOriginalMethod,
+			Object rTarget, Object[] rArgs) throws Exception {
+			return null;
+		}
+	};
 
-	//~ Instance fields --------------------------------------------------------
+	private final Class<?>[] rProxyInterfaces;
 
-	private Class<?>[]   rProxyInterfaces;
-	private Interception rDefaultInterception = FORWARD;
-	InterceptionAdvice   rInterceptionAdvice  = null;
-
-	private Map<Method, Interception> aInterceptions =
+	private final Map<Method, Interception> aInterceptions =
 		new HashMap<Method, Interception>();
 
-	//~ Constructors -----------------------------------------------------------
+	InterceptionAdvice rInterceptionAdvice = null;
 
-	/***************************************
+	private Interception rDefaultInterception = FORWARD;
+
+	/**
 	 * Creates a new instance. By default all method calls on created proxies
 	 * will be forwarded to methods in target objects with the same name and
 	 * parameters.
 	 *
 	 * @param rInterface The interface to be implemented by this proxy
 	 */
-	public InterceptionProxy(Class<T> rInterface)
-	{
+	public InterceptionProxy(Class<T> rInterface) {
 		rProxyInterfaces = new Class[] { rInterface };
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance for proxies that by default forward all method
 	 * calls to the same methods in target objects. If the second argument is
 	 * TRUE proxies created by this instance will support object relations even
@@ -90,56 +81,44 @@ public class InterceptionProxy<T> extends RelatedObject
 	 * @param rInterface       The interface to be implemented by this proxy
 	 * @param bRelationSupport TRUE to support object relations
 	 */
-	public InterceptionProxy(Class<T> rInterface, boolean bRelationSupport)
-	{
+	public InterceptionProxy(Class<T> rInterface, boolean bRelationSupport) {
 		this(rInterface);
 
-		if (bRelationSupport)
-		{
+		if (bRelationSupport) {
 			assert Relatable.class.isAssignableFrom(rInterface);
 
 			setInterception(new RelatableInterception());
 		}
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the target object of a particular InterceptionProxy instance.
 	 *
-	 * @param  rProxyInstance The proxy instance to return the target of
-	 *
+	 * @param rProxyInstance The proxy instance to return the target of
 	 * @return The target object of the proxy instance
-	 *
 	 * @throws IllegalArgumentException If the argument is not an instance of
 	 *                                  InterceptionProxy
 	 */
-	public static Object getTarget(Object rProxyInstance)
-	{
+	public static Object getTarget(Object rProxyInstance) {
 		InvocationHandler ih = Proxy.getInvocationHandler(rProxyInstance);
 
-		if (ih instanceof InterceptionProxy<?>.InterceptionHandler)
-		{
+		if (ih instanceof InterceptionProxy<?>.InterceptionHandler) {
 			return ((InterceptionProxy<?>.InterceptionHandler) ih).rTarget;
-		}
-		else
-		{
+		} else {
 			throw new IllegalArgumentException(
-				"Not an interception proxy: " +
-				rProxyInstance);
+				"Not an interception proxy: " + rProxyInstance);
 		}
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Adds advice that will be executed around (i.e. before and/or after) the
 	 * method calls of other interceptions. If other advice has been added
 	 * previously the new advice will be executed around the first one(s) by
 	 * successively invoking the advice instances.
 	 *
-	 * <p>It is safe to add an InterceptionAdvice instance that has been used on
-	 * another proxy before. If the argument advice object already contains a
+	 * <p>It is safe to add an InterceptionAdvice instance that has been used
+	 * on another proxy before. If the argument advice object already
+	 * contains a
 	 * chained advice it will be copied by a call to it's clone() method. That
 	 * implies that all InterceptionAdvice subclasses must implement a valid
 	 * clone() method if they contain fields that need to be treated specially
@@ -152,14 +131,11 @@ public class InterceptionProxy<T> extends RelatedObject
 	 *
 	 * @param rAdvice The advice object to be added
 	 */
-	public void addAdvice(InterceptionAdvice rAdvice)
-	{
-		if (rInterceptionAdvice != null)
-		{
+	public void addAdvice(InterceptionAdvice rAdvice) {
+		if (rInterceptionAdvice != null) {
 			InterceptionAdvice rNext = rAdvice.getNextAdvice();
 
-			if (rNext != null && rNext != rInterceptionAdvice)
-			{
+			if (rNext != null && rNext != rInterceptionAdvice) {
 				// prevent breaking other advice chains but allow re-use  of
 				// instances; therefore only create a copy if necessary
 				rAdvice = (InterceptionAdvice) rAdvice.clone();
@@ -171,33 +147,32 @@ public class InterceptionProxy<T> extends RelatedObject
 		rInterceptionAdvice = rAdvice;
 	}
 
-	/***************************************
+	/**
 	 * Returns the default interception of this proxy.
 	 *
 	 * @return The default interception (NULL if not set)
 	 */
-	public Interception getDefaultInterception()
-	{
+	public Interception getDefaultInterception() {
 		return rDefaultInterception;
 	}
 
-	/***************************************
+	/**
 	 * Returns the interception for a certain method, or NULL if none has been
 	 * set.
 	 *
-	 * @param  rMethod The method for which to return the interception
-	 *
+	 * @param rMethod The method for which to return the interception
 	 * @return The matching (or default) interception or NULL
 	 */
-	public Interception getInterception(Method rMethod)
-	{
+	public Interception getInterception(Method rMethod) {
 		return aInterceptions.get(rMethod);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new proxy instance that implements the interception proxy's
-	 * interface and forwards call on that interface to a certain target object.
-	 * What exactly this forwarding means depends on the interceptions used. For
+	 * interface and forwards call on that interface to a certain target
+	 * object.
+	 * What exactly this forwarding means depends on the interceptions used.
+	 * For
 	 * example, a value object interception could apply calls to set and get
 	 * methods to a generic value container (like a Map).
 	 *
@@ -209,193 +184,158 @@ public class InterceptionProxy<T> extends RelatedObject
 	 * proxy configuration are made. This will prevent unexpected side
 	 * effects.</p>
 	 *
-	 * @param  rTarget The target object of calls on the proxy interface
-	 *
+	 * @param rTarget The target object of calls on the proxy interface
 	 * @return An instance of the proxy interface using a LimitedAccessProxy
-	 *         instance to forward methods calls to the target
+	 * instance to forward methods calls to the target
 	 */
 	@SuppressWarnings("unchecked")
-	public T newProxyInstance(Object rTarget)
-	{
-		return (T) Proxy.newProxyInstance(
-			rProxyInterfaces[0].getClassLoader(),
-			rProxyInterfaces,
-			new InterceptionHandler(rTarget));
+	public T newProxyInstance(Object rTarget) {
+		return (T) Proxy.newProxyInstance(rProxyInterfaces[0].getClassLoader(),
+			rProxyInterfaces, new InterceptionHandler(rTarget));
 	}
 
-	/***************************************
+	/**
 	 * Sets the default interception of this proxy that will be invoked if no
 	 * method-specific interception can be found. The default setting of a new
-	 * proxy instance will forward calls to the same method in the target object
+	 * proxy instance will forward calls to the same method in the target
+	 * object
 	 * (if available).
 	 *
 	 * @param rDefault The default interception (NULL to disable)
 	 */
-	public void setDefaultInterception(Interception rDefault)
-	{
+	public void setDefaultInterception(Interception rDefault) {
 		rDefaultInterception = rDefault;
 	}
 
-	/***************************************
+	/**
 	 * Adds a method interception for all methods it is registered for.
 	 *
 	 * @param rInterception The method interception to add
 	 */
-	public void setInterception(MethodInterception rInterception)
-	{
-		for (Method rMethod : rInterception.getMethodMap().keySet())
-		{
+	public void setInterception(MethodInterception rInterception) {
+		for (Method rMethod : rInterception.getMethodMap().keySet()) {
 			setInterception(rMethod, rInterception);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Sets an interception for a method of the proxy interface with a certain
 	 * name and an arbitrary parameter list. If multiple methods with the same
 	 * name exist the interception will be registered for all of them.
 	 *
-	 * @param  sMethod       The name of the method to intercept
-	 * @param  rInterception The interception to be invoked in place of the
-	 *                       method
-	 *
+	 * @param sMethod       The name of the method to intercept
+	 * @param rInterception The interception to be invoked in place of the
+	 *                      method
 	 * @throws IllegalArgumentException If
 	 */
-	public void setInterception(String sMethod, Interception rInterception)
-	{
+	public void setInterception(String sMethod, Interception rInterception) {
 		List<Method> aMethodList =
 			ReflectUtil.getPublicMethods(rProxyInterfaces[0], sMethod);
 
-		if (aMethodList.size() > 0)
-		{
-			for (Method m : aMethodList)
-			{
+		if (aMethodList.size() > 0) {
+			for (Method m : aMethodList) {
 				setInterception(m, rInterception);
 			}
-		}
-		else
-		{
+		} else {
 			throw new IllegalArgumentException("No such method: " + sMethod);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Adds an interception for a particular method to this proxy.
 	 *
-	 * @param  rMethod       The method to intercept
-	 * @param  rInterception The interception to be used
-	 *
+	 * @param rMethod       The method to intercept
+	 * @param rInterception The interception to be used
 	 * @throws IllegalArgumentException If one of the arguments is invalid
 	 */
-	public void setInterception(Method rMethod, Interception rInterception)
-	{
-		if (rMethod == null ||
-			!rMethod.getDeclaringClass().isAssignableFrom(rProxyInterfaces[0]))
-		{
+	public void setInterception(Method rMethod, Interception rInterception) {
+		if (rMethod == null || !rMethod
+			.getDeclaringClass()
+			.isAssignableFrom(rProxyInterfaces[0])) {
 			throw new IllegalArgumentException("Invalid method: " + rMethod);
 		}
 
-		if (rInterception == null)
-		{
-			throw new IllegalArgumentException("Interception must not be null");
+		if (rInterception == null) {
+			throw new IllegalArgumentException(
+				"Interception must not be " + "null");
 		}
 
 		aInterceptions.put(rMethod, rInterception);
 	}
 
-	/***************************************
+	/**
 	 * Returns the interception that has been defined for a certain method.
-	 * Depending on the internal state this method will return either a specific
+	 * Depending on the internal state this method will return either a
+	 * specific
 	 * interception for the given method or a default interception. If no
 	 * interception matching interception has been defined an
 	 * IllegalArgumentException will be thrown.
 	 *
-	 * @param  rMethod The method for which to return the interception
-	 *
+	 * @param rMethod The method for which to return the interception
 	 * @return The matching interception
-	 *
 	 * @throws IllegalArgumentException If no interception has been defined for
 	 *                                  the given method (and no default
 	 *                                  interception exists)
 	 */
-	protected Interception getDefinedInterception(Method rMethod)
-	{
+	protected Interception getDefinedInterception(Method rMethod) {
 		Interception rInterception = getInterception(rMethod);
 
-		if (rInterception == null)
-		{
+		if (rInterception == null) {
 			rInterception = rDefaultInterception;
 		}
 
-		if (rInterception == null)
-		{
+		if (rInterception == null) {
 			throw new IllegalArgumentException(
-				"No interception for method " +
-				rMethod.getName());
+				"No interception for method " + rMethod.getName());
 		}
 
 		return rInterception;
 	}
 
-	//~ Inner Classes ----------------------------------------------------------
-
-	/********************************************************************
+	/**
 	 * The invocation handler for interception proxies.
 	 */
-	class InterceptionHandler extends RelatedObject implements InvocationHandler
-	{
-		//~ Instance fields ----------------------------------------------------
+	class InterceptionHandler extends RelatedObject
+		implements InvocationHandler {
 
 		final Object rTarget;
 
-		//~ Constructors -------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Creates a new instance.
 		 *
 		 * @param rTarget The target object for method invocations
 		 */
-		InterceptionHandler(Object rTarget)
-		{
+		InterceptionHandler(Object rTarget) {
 			this.rTarget = rTarget;
 		}
 
-		//~ Methods ------------------------------------------------------------
-
-		/***************************************
+		/**
 		 * Handles interceptions that may be defined for certain methods. If an
 		 * interception exists for the invoked method it's invoke() method will
-		 * be called with this interception handler's target object as the first
+		 * be called with this interception handler's target object as the
+		 * first
 		 * argument. If the interception proxy contains advice, it will be
 		 * invoked around the actual interception.
 		 *
 		 * @see InvocationHandler#invoke(java.lang.Object,
-		 *      java.lang.reflect.Method, java.lang.Object[])
+		 * java.lang.reflect.Method, java.lang.Object[])
 		 */
 		@Override
 		public Object invoke(Object rProxy, Method rMethod, Object[] rArgs)
-			throws Throwable
-		{
+			throws Throwable {
 			Interception rInterception = getDefinedInterception(rMethod);
 
 			// if relation support is enabled and a method of the Relatable
 			// interface is invoked, forward any method calls to this
 			// interception handler instance
-			if (rInterception instanceof RelatableInterception)
-			{
+			if (rInterception instanceof RelatableInterception) {
 				rProxy = this;
 			}
 
-			if (rInterceptionAdvice != null)
-			{
-				return rInterceptionAdvice.advise(
-					rInterception,
-					rProxy,
-					rMethod,
-					rTarget,
-					rArgs);
-			}
-			else
-			{
+			if (rInterceptionAdvice != null) {
+				return rInterceptionAdvice.advise(rInterception, rProxy,
+					rMethod, rTarget, rArgs);
+			} else {
 				return rInterception.invoke(rProxy, rMethod, rTarget, rArgs);
 			}
 		}

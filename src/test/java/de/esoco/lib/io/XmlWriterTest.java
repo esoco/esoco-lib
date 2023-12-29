@@ -16,94 +16,79 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.io;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
-
 import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 
 import static org.junit.Assert.assertEquals;
 
-
-/********************************************************************
+/**
  * Unit test for the {@link XmlWriter} class.
  *
  * @author eso
  */
-public class XmlWriterTest
-{
-	//~ Instance fields --------------------------------------------------------
+public class XmlWriterTest {
 
-	private XmlWriter	    aXmlWriter;
-	private Writer		    aWriter;
+	private XmlWriter aXmlWriter;
+
+	private Writer aWriter;
+
 	private DocumentBuilder aDocumentBuilder;
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Test class setup.
 	 */
 	@BeforeClass
-	public static void setUpBeforeClass()
-	{
+	public static void setUpBeforeClass() {
 	}
 
-	/***************************************
+	/**
 	 * Test class tear down.
 	 */
 	@AfterClass
-	public static void tearDownAfterClass()
-	{
+	public static void tearDownAfterClass() {
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Test set up.
 	 *
 	 * @throws Exception If setup fails
 	 */
 	@Before
-	public void setUp() throws Exception
-	{
-		aWriter    = new StringWriter();
+	public void setUp() throws Exception {
+		aWriter = new StringWriter();
 		aXmlWriter = new XmlWriter(aWriter, "1.0", "UTF-8", Boolean.TRUE);
 
 		aDocumentBuilder =
 			DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	}
 
-	/***************************************
+	/**
 	 * Test tear down.
 	 */
 	@After
-	public void tearDown()
-	{
+	public void tearDown() {
 		aXmlWriter = null;
 	}
 
-	/***************************************
+	/**
 	 * Tests the creation of an empty XML file.
-	 *
-	 * @throws Exception
 	 */
 	@SuppressWarnings("boxing")
 	@Test
-	public void testEmptyFile() throws Exception
-	{
+	public void testEmptyFile() throws Exception {
 		aXmlWriter.startElement("test");
 		aXmlWriter.endElement();
 
@@ -119,14 +104,11 @@ public class XmlWriterTest
 		assertEquals("test", rTestElement.item(0).getNodeName());
 	}
 
-	/***************************************
+	/**
 	 * Tests the creation of a single element XML file.
-	 *
-	 * @throws Exception
 	 */
 	@Test
-	public void testNestedElements() throws Exception
-	{
+	public void testNestedElements() throws Exception {
 		aXmlWriter.startElement("test");
 		aXmlWriter.writeAttribute("attr1", "value1");
 		aXmlWriter.writeAttribute("attr2", "value2");
@@ -138,11 +120,10 @@ public class XmlWriterTest
 		aXmlWriter.endElement();
 		aXmlWriter.endElement();
 		aXmlWriter.startElement("test-c2");
-		aXmlWriter.writeElement("test-c2-1",
-								"c2-1-attr1",
-								"c2-1-value1",
-								"c2-1-test-text");
-		aXmlWriter.writeElement("test-c2-2", "c2-2-attr1", "c2-2-value1", null);
+		aXmlWriter.writeElement("test-c2-1", "c2-1-attr1", "c2-1-value1",
+			"c2-1-test-text");
+		aXmlWriter.writeElement("test-c2-2", "c2-2-attr1", "c2-2-value1",
+			null);
 		aXmlWriter.endElement();
 		aXmlWriter.endElement();
 
@@ -155,19 +136,16 @@ public class XmlWriterTest
 
 		assertEquals(2, rAttributes.getLength());
 		assertEquals("value1",
-					 rAttributes.getNamedItem("attr1").getNodeValue());
+			rAttributes.getNamedItem("attr1").getNodeValue());
 		assertEquals("value2",
-					 rAttributes.getNamedItem("attr2").getNodeValue());
+			rAttributes.getNamedItem("attr2").getNodeValue());
 	}
 
-	/***************************************
+	/**
 	 * Tests the creation of a single element XML file.
-	 *
-	 * @throws Exception
 	 */
 	@Test
-	public void testSingleElement() throws Exception
-	{
+	public void testSingleElement() throws Exception {
 		aXmlWriter.startElement("test");
 		aXmlWriter.writeAttribute("attr1", "value1");
 		aXmlWriter.writeAttribute("attr2", "value2");
@@ -181,23 +159,20 @@ public class XmlWriterTest
 
 		assertEquals(2, rAttributes.getLength());
 		assertEquals("value1",
-					 rAttributes.getNamedItem("attr1").getNodeValue());
+			rAttributes.getNamedItem("attr1").getNodeValue());
 		assertEquals("value2",
-					 rAttributes.getNamedItem("attr2").getNodeValue());
+			rAttributes.getNamedItem("attr2").getNodeValue());
 	}
 
-	/***************************************
+	/**
 	 * Parses the result string and returns a {@link Document} object for it.
 	 *
 	 * @return The result document
-	 *
-	 * @throws Exception
 	 */
-	private Document createResultDocument() throws Exception
-	{
+	private Document createResultDocument() throws Exception {
 		aXmlWriter.close();
 
-		return aDocumentBuilder.parse(new InputSource(new StringReader(aWriter
-																	   .toString())));
+		return aDocumentBuilder.parse(
+			new InputSource(new StringReader(aWriter.toString())));
 	}
 }

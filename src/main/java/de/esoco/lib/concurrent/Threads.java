@@ -18,50 +18,39 @@ package de.esoco.lib.concurrent;
 
 import java.util.concurrent.TimeUnit;
 
-
-/********************************************************************
+/**
  * Contains helper functions for the handing of threads.
  *
  * @author eso
  */
-public class Threads
-{
-	//~ Constructors -----------------------------------------------------------
+public class Threads {
 
-	/***************************************
+	/**
 	 * Private, only static use.
 	 */
-	private Threads()
-	{
+	private Threads() {
 	}
 
-	//~ Static methods ---------------------------------------------------------
-
-	/***************************************
-	 * Invokes {@link Thread#sleep(long)} and ignores any occurring {@link
-	 * InterruptedException}.
+	/**
+	 * Invokes {@link Thread#sleep(long)} and ignores any occurring
+	 * {@link InterruptedException}.
 	 *
 	 * @param nMillis The milliseconds to wait
 	 */
-	public static void sleep(long nMillis)
-	{
+	public static void sleep(long nMillis) {
 		sleep(nMillis, TimeUnit.MILLISECONDS);
 	}
 
-	/***************************************
+	/**
 	 * A variant of {@link #sleep(long)} that accepts a {@link TimeUnit}.
 	 *
 	 * @param nTime The time to sleep
 	 * @param eUnit The time unit
 	 */
-	public static void sleep(long nTime, TimeUnit eUnit)
-	{
-		try
-		{
+	public static void sleep(long nTime, TimeUnit eUnit) {
+		try {
 			eUnit.sleep(nTime);
-		}
-		catch (InterruptedException e)
-		{
+		} catch (InterruptedException e) {
 			// just continue
 		}
 	}

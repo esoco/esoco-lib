@@ -18,21 +18,18 @@ package de.esoco.lib.template;
 
 import org.obrel.core.RelatedObject;
 
-
-/********************************************************************
+/**
  * Base class for templates that describe a certain type that can be created
  * from the template at runtime. Instances of the described type can be created
  * by invoking the method {@link #create()}.
  *
  * @author eso
  */
-public abstract class Template<T> extends RelatedObject
-{
-	//~ Methods ----------------------------------------------------------------
+public abstract class Template<T> extends RelatedObject {
 
-	/***************************************
-	 * Creates a new instance of the type that is described by this template. It
-	 * is recommended to use only types that can be created without throwing
+	/**
+	 * Creates a new instance of the type that is described by this template .
+	 * It is recommended to use only types that can be created without throwing
 	 * exceptions and (if necessary) provide something like an init() method
 	 * that can be invoked for complex initialization after creation. But
 	 * applications should still be aware of possible runtime exceptions when

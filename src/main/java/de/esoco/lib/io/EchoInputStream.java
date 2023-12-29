@@ -21,63 +21,52 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-
-/********************************************************************
+/**
  * An input stream that echos all bytes that are read from a wrapped input
  * stream to an output stream.
  *
  * @author eso
  */
-public class EchoInputStream extends FilterInputStream
-{
-	//~ Instance fields --------------------------------------------------------
+public class EchoInputStream extends FilterInputStream {
 
 	private final OutputStream rEchoStream;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedStream The wrapped input stream
 	 * @param rEchoStream    The stream to echo the input to
 	 */
-	public EchoInputStream(InputStream  rWrappedStream,
-						   OutputStream rEchoStream)
-	{
+	public EchoInputStream(InputStream rWrappedStream,
+		OutputStream rEchoStream) {
 		super(rWrappedStream);
 
 		this.rEchoStream = rEchoStream;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read() throws IOException
-	{
+	public int read() throws IOException {
 		int nByte = super.read();
 
-		if (nByte >= 0)
-		{
+		if (nByte >= 0) {
 			rEchoStream.write(nByte);
 		}
 
 		return nByte;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBuffer, int nOffset, int nLength) throws IOException
-	{
+	public int read(byte[] rBuffer, int nOffset, int nLength)
+		throws IOException {
 		int nRead = super.read(rBuffer, nOffset, nLength);
 
-		if (nRead >= 0)
-		{
+		if (nRead >= 0) {
 			rEchoStream.write(rBuffer, nOffset, nRead);
 		}
 

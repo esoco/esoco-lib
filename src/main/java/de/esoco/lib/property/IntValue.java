@@ -16,19 +16,17 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.property;
 
-/********************************************************************
+/**
  * Provides readonly access to an integer value.
  *
  * @author eso
  */
-public interface IntValue
-{
-	//~ Methods ----------------------------------------------------------------
+public interface IntValue {
 
-	/***************************************
+	/**
 	 * Returns the integer value.
 	 *
 	 * @return The integer value
 	 */
-	public int getValue();
+	int getValue();
 }

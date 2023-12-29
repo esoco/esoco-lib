@@ -18,48 +18,37 @@ package de.esoco.lib.collection;
 
 import junit.framework.TestCase;
 
-
-/********************************************************************
+/**
  * Test suite for the IntArray class.
  *
  * @author eso
  */
-public class IntArrayTest extends TestCase
-{
-	//~ Instance fields --------------------------------------------------------
+public class IntArrayTest extends TestCase {
 
 	IntArray aTestArray;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Default constructor.
 	 */
-	public IntArrayTest()
-	{
+	public IntArrayTest() {
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Set up data for all tests.
 	 */
 	@Override
-	public void setUp()
-	{
+	public void setUp() {
 		aTestArray = new IntArray(10);
 
-		for (int i = 0; i < 10; i++)
-		{
+		for (int i = 0; i < 10; i++) {
 			aTestArray.push(i);
 		}
 	}
 
-	/***************************************
+	/**
 	 * Test array access.
 	 */
-	public void testArrayAccess()
-	{
+	public void testArrayAccess() {
 		assertEquals(5, aTestArray.get(5));
 
 		aTestArray.push(123);

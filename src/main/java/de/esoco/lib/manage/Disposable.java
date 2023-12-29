@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * Interface for objects that require disposal to end their life-cycle. If an
  * object implements this interface it normally signals that it acquires special
  * resources that need to freed explicitly when the objects is no longer needed
@@ -26,16 +26,16 @@ package de.esoco.lib.manage;
  *
  * @author eso
  */
-public interface Disposable
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Disposable {
 
-	/***************************************
+	/**
 	 * The method that must be invoked to end the object's life-cycle. It is
-	 * recommended that implementations handle multiple invocations and problems
-	 * that occur while disposing gracefully. In cases where a problem is caused
+	 * recommended that implementations handle multiple invocations and
+	 * problems
+	 * that occur while disposing gracefully. In cases where a problem is
+	 * caused
 	 * by inconsistencies in the runtime environment or similar issues (or will
 	 * cause them) a documented RuntimeException should be thrown.
 	 */
-	public void dispose();
+	void dispose();
 }

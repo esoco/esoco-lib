@@ -16,29 +16,27 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * Interface for objects that are transactional, i.e. support the committing or
  * rollback of state changes.
  *
  * @author eso
  */
-public interface Transactional
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Transactional {
 
-	/***************************************
+	/**
 	 * This method must be invoked to make any changes that have been made to
 	 * the state of the implementing object (or underlying objects) permanent.
 	 *
 	 * @throws Exception Any exception may be thrown if the operation fails
 	 */
-	public void commit() throws Exception;
+	void commit() throws Exception;
 
-	/***************************************
+	/**
 	 * This method must be invoked to revert any changes that have been made to
 	 * the state of the implementing object (or underlying objects).
 	 *
 	 * @throws Exception Any exception may be thrown if the operation fails
 	 */
-	public void rollback() throws Exception;
+	void rollback() throws Exception;
 }

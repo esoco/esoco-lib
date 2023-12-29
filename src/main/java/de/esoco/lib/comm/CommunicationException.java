@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.comm;
 
-/********************************************************************
+/**
  * The base class for all exceptions that can occur in the communications
  * framework. It is derived from {@link RuntimeException} because errors can
  * occur during all communication phases and should therefore always be
@@ -24,67 +24,57 @@ package de.esoco.lib.comm;
  *
  * @author eso
  */
-public class CommunicationException extends RuntimeException
-{
-	//~ Static fields/initializers ---------------------------------------------
+public class CommunicationException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * @see RuntimeException#RuntimeException()
 	 */
-	public CommunicationException()
-	{
+	public CommunicationException() {
 	}
 
-	/***************************************
+	/**
 	 * @see RuntimeException#RuntimeException(String)
 	 */
-	public CommunicationException(String sMessage)
-	{
+	public CommunicationException(String sMessage) {
 		super(sMessage);
 	}
 
-	/***************************************
+	/**
 	 * @see RuntimeException#RuntimeException(Throwable)
 	 */
-	public CommunicationException(Throwable eCause)
-	{
+	public CommunicationException(Throwable eCause) {
 		super(eCause);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance with a formatted message.
 	 *
 	 * @param sMessageFormat The message format
 	 * @param rFormatArgs    The format arguments
 	 */
-	public CommunicationException(String sMessageFormat, Object... rFormatArgs)
-	{
+	public CommunicationException(String sMessageFormat,
+		Object... rFormatArgs) {
 		this(String.format(sMessageFormat, rFormatArgs));
 	}
 
-	/***************************************
+	/**
 	 * @see RuntimeException#RuntimeException(String, Throwable)
 	 */
-	public CommunicationException(String sMessage, Throwable eCause)
-	{
+	public CommunicationException(String sMessage, Throwable eCause) {
 		super(sMessage, eCause);
 	}
 
-	/***************************************
+	/**
 	 * Creates a new instance with a formatted message and a causing exception.
 	 *
 	 * @param eCause         The causing exception
 	 * @param sMessageFormat The message format
 	 * @param rFormatArgs    The format arguments
 	 */
-	public CommunicationException(Throwable eCause,
-								  String    sMessageFormat,
-								  Object... rFormatArgs)
-	{
+	public CommunicationException(Throwable eCause, String sMessageFormat,
+		Object... rFormatArgs) {
 		this(String.format(sMessageFormat, rFormatArgs), eCause);
 	}
 }

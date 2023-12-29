@@ -20,52 +20,42 @@ import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-
-/********************************************************************
+/**
  * A {@link Writer} that echos all characters that are written to a wrapped
  * writer to another writer.
  *
  * @author eso
  */
-public class EchoWriter extends FilterWriter
-{
-	//~ Instance fields --------------------------------------------------------
+public class EchoWriter extends FilterWriter {
 
 	private final Writer rEchoWriter;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedWriter The wrapped writer
 	 * @param rEchoWriter    The writer to echo the output to
 	 */
-	public EchoWriter(Writer rWrappedWriter, Writer rEchoWriter)
-	{
+	public EchoWriter(Writer rWrappedWriter, Writer rEchoWriter) {
 		super(rWrappedWriter);
 
 		this.rEchoWriter = rEchoWriter;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void flush() throws IOException
-	{
+	public void flush() throws IOException {
 		super.flush();
 		rEchoWriter.flush();
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException
-	{
+	public void write(int nByte) throws IOException {
 		super.write(nByte);
 
 		rEchoWriter.write(nByte);

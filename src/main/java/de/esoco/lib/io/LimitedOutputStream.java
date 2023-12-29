@@ -20,8 +20,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-
-/********************************************************************
+/**
  * An output stream wrapper that limits the number of bytes that can be written
  * to the stream. If the limit is exceeded any further attempt at writing to the
  * stream will throw a {@link StreamLimitException}. The remaining limit can be
@@ -29,65 +28,50 @@ import java.io.OutputStream;
  *
  * @author eso
  */
-public class LimitedOutputStream extends FilterOutputStream
-{
-	//~ Instance fields --------------------------------------------------------
+public class LimitedOutputStream extends FilterOutputStream {
 
 	private int nRemainingLimit;
 
-	//~ Constructors -----------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 *
 	 * @param rWrappedStream The stream wrapped by this instance
 	 * @param nMaxBytes      The maximum number of bytes that can be written to
 	 *                       this instance
 	 */
-	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes)
-	{
+	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes) {
 		super(rWrappedStream);
 
 		nRemainingLimit = nMaxBytes;
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Returns the remaining limit that can be written.
 	 *
 	 * @return The remaining limit
 	 */
-	public int getRemainingLimit()
-	{
+	public int getRemainingLimit() {
 		return nRemainingLimit;
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	public String toString()
-	{
-		return String.format("%s(%d, %s)",
-							 getClass().getSimpleName(),
-							 nRemainingLimit,
-							 out);
+	public String toString() {
+		return String.format("%s(%d, %s)", getClass().getSimpleName(),
+			nRemainingLimit, out);
 	}
 
-	/***************************************
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException
-	{
-		if (nRemainingLimit-- > 0)
-		{
+	public void write(int nByte) throws IOException {
+		if (nRemainingLimit-- > 0) {
 			super.write(nByte);
-		}
-		else
-		{
+		} else {
 			throw new StreamLimitException("Output limit reached", false);
 		}
 	}

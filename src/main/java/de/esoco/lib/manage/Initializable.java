@@ -16,20 +16,18 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * Management interface that allows to initialize an object.
  *
  * @author eso
  */
-public interface Initializable
-{
-	//~ Methods ----------------------------------------------------------------
+public interface Initializable {
 
-	/***************************************
+	/**
 	 * Initializes the object.
 	 *
 	 * @throws Exception May throw any kind of exception if the initialization
 	 *                   failed
 	 */
-	public void init() throws Exception;
+	void init() throws Exception;
 }

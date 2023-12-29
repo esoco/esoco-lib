@@ -16,25 +16,23 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-/********************************************************************
+/**
  * A management interface that provides a way to check if an object's thread or
  * task execution is still running. Where appropriate, this interface should be
- * implemented in conjunction with the other management interfaces {@link
- * de.esoco.lib.manage.Stoppable} and {@link de.esoco.lib.manage.Startable}.
- * Additionally it can be used separately for objects that automatically stop
- * running after some time.
+ * implemented in conjunction with the other management interfaces
+ * {@link de.esoco.lib.manage.Stoppable} and
+ * {@link de.esoco.lib.manage.Startable}. Additionally it can be used separately
+ * for objects that automatically stop running after some time.
  *
  * @author eso
  */
-public interface RunCheck
-{
-	//~ Methods ----------------------------------------------------------------
+public interface RunCheck {
 
-	/***************************************
+	/**
 	 * Returns TRUE if the object is currently executing a task. Returns FALSE
 	 * either when it has already finished or not yet started execution.
 	 *
 	 * @return TRUE if the task is still running
 	 */
-	public boolean isRunning();
+	boolean isRunning();
 }

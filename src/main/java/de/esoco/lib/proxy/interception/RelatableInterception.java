@@ -17,35 +17,28 @@
 package de.esoco.lib.proxy.interception;
 
 import de.esoco.lib.reflect.ReflectUtil;
-
-import java.lang.reflect.Method;
-
 import org.obrel.core.Relatable;
 import org.obrel.core.RelatedObject;
 
+import java.lang.reflect.Method;
 
-/********************************************************************
+/**
  * Method interception for methods of the interface {@link Relatable}. These
  * method are redirected to the corresponding InterceptionHandler instance which
  * extends {@link RelatedObject} for this purpose.
  *
  * @author eso
  */
-class RelatableInterception extends MethodInterception
-{
-	//~ Constructors -----------------------------------------------------------
+class RelatableInterception extends MethodInterception {
 
-	/***************************************
+	/**
 	 * Creates a new instance.
 	 */
-	public RelatableInterception()
-	{
+	public RelatableInterception() {
 		super(Relatable.class);
 	}
 
-	//~ Methods ----------------------------------------------------------------
-
-	/***************************************
+	/**
 	 * Overridden to invoke the original method on the interception handler.
 	 * Upon invocation of a relation-specific method the handler replaces the
 	 * first argument (normally the proxy) with itself.
@@ -53,15 +46,13 @@ class RelatableInterception extends MethodInterception
 	 * @see MethodInterception#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public Object invoke(Object   rInterceptionHandler,
-						 Method   rOriginalMethod,
-						 Object   rTarget,
-						 Object[] rArgs) throws Exception
-	{
-		return ReflectUtil.invoke(rInterceptionHandler, rOriginalMethod, rArgs);
+	public Object invoke(Object rInterceptionHandler, Method rOriginalMethod,
+		Object rTarget, Object[] rArgs) throws Exception {
+		return ReflectUtil.invoke(rInterceptionHandler, rOriginalMethod,
+			rArgs);
 	}
 
-	/***************************************
+	/**
 	 * Overridden to return the original method instead of mapping it to this
 	 * class. The original method will then be invoked on the interception
 	 * handler.
@@ -69,8 +60,7 @@ class RelatableInterception extends MethodInterception
 	 * @see MethodInterception#mapMethod(Method)
 	 */
 	@Override
-	protected Method mapMethod(Method rMethod)
-	{
+	protected Method mapMethod(Method rMethod) {
 		return rMethod;
 	}
 }
