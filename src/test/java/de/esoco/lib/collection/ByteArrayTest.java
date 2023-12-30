@@ -16,10 +16,10 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test suite for the ByteArray class.
@@ -28,17 +28,17 @@ import static org.junit.Assert.assertEquals;
  */
 public class ByteArrayTest {
 
-	private ByteArray aTestArray;
+	private ByteArray testArray;
 
 	/**
 	 * Set up test data.
 	 */
-	@Before
+	@BeforeEach
 	public void setUp() {
-		aTestArray = new ByteArray(10);
+		testArray = new ByteArray(10);
 
 		for (byte b = 0; b < 10; b++) {
-			aTestArray.push(b);
+			testArray.push(b);
 		}
 	}
 
@@ -47,41 +47,41 @@ public class ByteArrayTest {
 	 */
 	@Test
 	public void testArrayAccess() {
-		assertEquals(5, aTestArray.get(5));
+		assertEquals(5, testArray.get(5));
 
-		aTestArray.push((byte) 123);
+		testArray.push((byte) 123);
 
-		assertEquals(11, aTestArray.getSize());
-		assertEquals(123, aTestArray.pop());
-		assertEquals(10, aTestArray.getSize());
-		assertEquals(20, aTestArray.getCapacity());
+		assertEquals(11, testArray.getSize());
+		assertEquals(123, testArray.pop());
+		assertEquals(10, testArray.getSize());
+		assertEquals(20, testArray.getCapacity());
 
-		aTestArray.set((byte) 45, 9);
-		assertEquals(45, aTestArray.get(9));
+		testArray.set((byte) 45, 9);
+		assertEquals(45, testArray.get(9));
 
-		aTestArray.insert((byte) 122, 2);
-		assertEquals(11, aTestArray.getSize());
-		assertEquals(122, aTestArray.get(2));
-		assertEquals(2, aTestArray.get(3));
+		testArray.insert((byte) 122, 2);
+		assertEquals(11, testArray.getSize());
+		assertEquals(122, testArray.get(2));
+		assertEquals(2, testArray.get(3));
 
-		aTestArray.remove(2);
-		assertEquals(2, aTestArray.get(2));
-		assertEquals(10, aTestArray.getSize());
+		testArray.remove(2);
+		assertEquals(2, testArray.get(2));
+		assertEquals(10, testArray.getSize());
 
-		aTestArray.insertAscending((byte) 5, 0);
-		assertEquals(5, aTestArray.get(6));
-		assertEquals(11, aTestArray.getSize());
+		testArray.insertAscending((byte) 5, 0);
+		assertEquals(5, testArray.get(6));
+		assertEquals(11, testArray.getSize());
 
-		aTestArray.insertAscending((byte) 1, 8);
-		assertEquals(1, aTestArray.get(8));
+		testArray.insertAscending((byte) 1, 8);
+		assertEquals(1, testArray.get(8));
 
-		aTestArray.setSize(20);
-		assertEquals(20, aTestArray.getSize());
-		assertEquals(0, aTestArray.get(19));
-		assertEquals(20, aTestArray.getCapacity());
+		testArray.setSize(20);
+		assertEquals(20, testArray.getSize());
+		assertEquals(0, testArray.get(19));
+		assertEquals(20, testArray.getCapacity());
 
-		aTestArray.add((byte) 42);
-		assertEquals(30, aTestArray.getCapacity());
+		testArray.add((byte) 42);
+		assertEquals(30, testArray.getCapacity());
 	}
 
 	/**
@@ -91,12 +91,12 @@ public class ByteArrayTest {
 	public void testFromJson() {
 		assertEquals(new ByteArray(), new ByteArray().fromJson("\"0x\""));
 
-		assertEquals(aTestArray,
+		assertEquals(testArray,
 			new ByteArray().fromJson("\"0x00010203040506070809\""));
 
-		aTestArray.add((byte) 128);
-		aTestArray.add((byte) 255);
-		assertEquals(aTestArray,
+		testArray.add((byte) 128);
+		testArray.add((byte) 255);
+		assertEquals(testArray,
 			new ByteArray().fromJson("\"0x0001020304050607080980FF\""));
 	}
 
@@ -107,15 +107,14 @@ public class ByteArrayTest {
 	public void testToJson() {
 		assertEquals("\"0x\"", new ByteArray().toJson());
 
-		assertEquals("\"0x00010203040506070809\"", aTestArray.toJson());
+		assertEquals("\"0x00010203040506070809\"", testArray.toJson());
 
-		aTestArray.add((byte) 10);
-		aTestArray.add((byte) 15);
-		assertEquals("\"0x000102030405060708090A0F\"", aTestArray.toJson());
+		testArray.add((byte) 10);
+		testArray.add((byte) 15);
+		assertEquals("\"0x000102030405060708090A0F\"", testArray.toJson());
 
-		aTestArray.add((byte) 128);
-		aTestArray.add((byte) 255);
-		assertEquals("\"0x000102030405060708090A0F80FF\"",
-			aTestArray.toJson());
+		testArray.add((byte) 128);
+		testArray.add((byte) 255);
+		assertEquals("\"0x000102030405060708090A0F80FF\"", testArray.toJson());
 	}
 }

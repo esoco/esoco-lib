@@ -39,54 +39,53 @@ public final class LogRecord {
 	private static final int MAX_CAUSE_STACK_SIZE = 50;
 
 	// stack frames to be omitted from returned stacks
-	private static int nStackOverhead = -1;
+	private static int stackOverhead = -1;
 
-	private final LogLevel rLevel;
+	private final LogLevel level;
 
-	private final String sMessageFormat;
+	private final String messageFormat;
 
-	private final Object[] rMessageValues;
+	private final Object[] messageValues;
 
-	private final Throwable rCause;
+	private final Throwable cause;
 
-	private final long nTime;
+	private final long time;
 
-	private final Thread rLogThread;
+	private final Thread logThread;
 
-	private final StackTraceElement[] aLogStack;
+	private final StackTraceElement[] logStack;
 
 	/**
 	 * Creates a new instance for a certain log level, message, and an error
 	 * object of type Throwable. The log time is initialized to the current
 	 * system time.
 	 *
-	 * @param rLevel         The log level this record has been logged for
-	 * @param rCause         The log cause (may be NULL)
-	 * @param sMessageFormat The format string for the log message
-	 * @param rMessageValues The log message values to be inserted into the
-	 *                       format string or NULL if no formatting is
-	 *                       necessary
+	 * @param level         The log level this record has been logged for
+	 * @param cause         The log cause (may be NULL)
+	 * @param messageFormat The format string for the log message
+	 * @param messageValues The log message values to be inserted into the
+	 *                      format string or NULL if no formatting is necessary
 	 */
-	public LogRecord(LogLevel rLevel, Throwable rCause, String sMessageFormat,
-		Object... rMessageValues) {
-		this.rLevel = rLevel;
-		this.rCause = rCause;
-		this.sMessageFormat = sMessageFormat;
-		this.rMessageValues = rMessageValues;
-		this.nTime = System.currentTimeMillis();
-		rLogThread = Thread.currentThread();
+	public LogRecord(LogLevel level, Throwable cause, String messageFormat,
+		Object... messageValues) {
+		this.level = level;
+		this.cause = cause;
+		this.messageFormat = messageFormat;
+		this.messageValues = messageValues;
+		this.time = System.currentTimeMillis();
+		logThread = Thread.currentThread();
 
-		StackTraceElement[] rStackTrace = rLogThread.getStackTrace();
+		StackTraceElement[] stackTrace = logThread.getStackTrace();
 
-		if (nStackOverhead == -1) {
-			nStackOverhead =
-				getStackOverhead(getClass().getPackage(), rStackTrace);
+		if (stackOverhead == -1) {
+			stackOverhead =
+				getStackOverhead(getClass().getPackage(), stackTrace);
 		}
 
-		int nLength = rStackTrace.length - nStackOverhead;
+		int length = stackTrace.length - stackOverhead;
 
-		aLogStack = new StackTraceElement[nLength];
-		System.arraycopy(rStackTrace, nStackOverhead, aLogStack, 0, nLength);
+		logStack = new StackTraceElement[length];
+		System.arraycopy(stackTrace, stackOverhead, logStack, 0, length);
 	}
 
 	/**
@@ -99,46 +98,46 @@ public final class LogRecord {
 	 * must occur at least once in the stack trace or else the returned value
 	 * will equal the stack size.
 	 *
-	 * @param rPackage    The package to search for
-	 * @param rStackTrace The stack trace to analyze
+	 * @param pkg        The package to search for
+	 * @param stackTrace The stack trace to analyze
 	 * @return The index of the first stack trace element after the last entry
 	 * with the given package
 	 */
-	public static int getStackOverhead(Package rPackage,
-		StackTraceElement[] rStackTrace) {
-		String sPackage = rPackage.getName();
-		int nMax = rStackTrace.length - 1;
-		int nOverhead = 0;
+	public static int getStackOverhead(Package pkg,
+		StackTraceElement[] stackTrace) {
+		String packageName = pkg.getName();
+		int max = stackTrace.length - 1;
+		int overhead = 0;
 
-		while (nOverhead < nMax &&
-			!rStackTrace[nOverhead].getClassName().startsWith(sPackage)) {
-			nOverhead++;
+		while (overhead < max &&
+			!stackTrace[overhead].getClassName().startsWith(packageName)) {
+			overhead++;
 		}
 
-		while (nOverhead < nMax &&
-			rStackTrace[nOverhead].getClassName().startsWith(sPackage)) {
-			nOverhead++;
+		while (overhead < max &&
+			stackTrace[overhead].getClassName().startsWith(packageName)) {
+			overhead++;
 		}
 
-		return nOverhead;
+		return overhead;
 	}
 
 	/**
 	 * Converts this record into a string with the same format as the standard
 	 * log handler.
 	 *
-	 * @param eMinStackLevel The minimum log level for which to add a stack
-	 *                       trace
+	 * @param minStackLevel The minimum log level for which to add a stack
+	 *                      trace
 	 * @return The formatted log record string
 	 */
-	public String format(LogLevel eMinStackLevel) {
-		String sLog = Log.DEFAULT_FORMAT.apply(this);
+	public String format(LogLevel minStackLevel) {
+		String log = Log.DEFAULT_FORMAT.apply(this);
 
-		if (rLevel.compareTo(eMinStackLevel) >= 0) {
-			sLog += "\n" + Log.CAUSE_TRACE.evaluate(this);
+		if (level.compareTo(minStackLevel) >= 0) {
+			log += "\n" + Log.CAUSE_TRACE.evaluate(this);
 		}
 
-		return sLog;
+		return log;
 	}
 
 	/**
@@ -147,7 +146,7 @@ public final class LogRecord {
 	 * @return The error causing the log record (may be NULL)
 	 */
 	public Throwable getCause() {
-		return rCause;
+		return cause;
 	}
 
 	/**
@@ -157,19 +156,19 @@ public final class LogRecord {
 	 * @return An array of stack trace elements
 	 */
 	public List<String> getCauseStackTrace() {
-		List<String> aFullStackTrace = new ArrayList<String>();
-		Throwable e = rCause;
-		String sPrefix = "\t| ";
+		List<String> fullStackTrace = new ArrayList<String>();
+		Throwable e = cause;
+		String prefix = "\t| ";
 
 		while (e != null) {
-			int nStackElements = 0;
+			int stackElements = 0;
 
-			aFullStackTrace.add("   Caused by " + e);
+			fullStackTrace.add("   Caused by " + e);
 
-			for (StackTraceElement rStackTraceElement : e.getStackTrace()) {
-				aFullStackTrace.add(sPrefix + rStackTraceElement.toString());
+			for (StackTraceElement stackTraceElement : e.getStackTrace()) {
+				fullStackTrace.add(prefix + stackTraceElement.toString());
 
-				if (++nStackElements >= MAX_CAUSE_STACK_SIZE) {
+				if (++stackElements >= MAX_CAUSE_STACK_SIZE) {
 					break;
 				}
 			}
@@ -177,7 +176,7 @@ public final class LogRecord {
 			e = e.getCause();
 		}
 
-		return aFullStackTrace;
+		return fullStackTrace;
 	}
 
 	/**
@@ -186,7 +185,7 @@ public final class LogRecord {
 	 * @return The log level
 	 */
 	public LogLevel getLevel() {
-		return rLevel;
+		return level;
 	}
 
 	/**
@@ -230,7 +229,7 @@ public final class LogRecord {
 	 * @return The Log Class
 	 */
 	public StackTraceElement getLogLocation() {
-		return aLogStack[0];
+		return logStack[0];
 	}
 
 	/**
@@ -248,11 +247,11 @@ public final class LogRecord {
 	 * @return The package name
 	 */
 	public String getLogPackage() {
-		String sClass = getLogLocation().getClassName();
-		int nPos = sClass.lastIndexOf('.');
+		String className = getLogLocation().getClassName();
+		int pos = className.lastIndexOf('.');
 
-		if (nPos > 0) {
-			return sClass.substring(0, nPos);
+		if (pos > 0) {
+			return className.substring(0, pos);
 		} else {
 			return "";
 		}
@@ -267,7 +266,7 @@ public final class LogRecord {
 	 * @return An array of stack trace elements
 	 */
 	public StackTraceElement[] getLogStackTrace() {
-		return aLogStack;
+		return logStack;
 	}
 
 	/**
@@ -276,7 +275,7 @@ public final class LogRecord {
 	 * @return The log thread
 	 */
 	public Thread getLogThread() {
-		return rLogThread;
+		return logThread;
 	}
 
 	/**
@@ -285,9 +284,9 @@ public final class LogRecord {
 	 * @return The log message
 	 */
 	public String getMessage() {
-		return rMessageValues != null ?
-		       String.format(sMessageFormat, rMessageValues) :
-		       sMessageFormat;
+		return messageValues != null ?
+		       String.format(messageFormat, messageValues) :
+		       messageFormat;
 	}
 
 	/**
@@ -296,7 +295,7 @@ public final class LogRecord {
 	 * @return The log message format
 	 */
 	public String getMessageFormat() {
-		return sMessageFormat;
+		return messageFormat;
 	}
 
 	/**
@@ -305,7 +304,7 @@ public final class LogRecord {
 	 * @return The log message values
 	 */
 	public Object[] getMessageValues() {
-		return rMessageValues;
+		return messageValues;
 	}
 
 	/**
@@ -324,7 +323,7 @@ public final class LogRecord {
 	 * @return The log time in milliseconds
 	 */
 	public long getTime() {
-		return nTime;
+		return time;
 	}
 
 	/**
@@ -335,8 +334,8 @@ public final class LogRecord {
 	@Override
 	public String toString() {
 
-		String sb = "LogRecord[" + rLevel + ',' +
-			DateFormat.getInstance().format(new Date(nTime)) + ',' + "\"" +
+		String sb = "LogRecord[" + level + ',' +
+			DateFormat.getInstance().format(new Date(time)) + ',' + "\"" +
 			getMessage() + "\"]";
 
 		return sb;

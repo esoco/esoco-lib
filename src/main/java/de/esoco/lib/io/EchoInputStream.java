@@ -29,19 +29,19 @@ import java.io.OutputStream;
  */
 public class EchoInputStream extends FilterInputStream {
 
-	private final OutputStream rEchoStream;
+	private final OutputStream echoStream;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The wrapped input stream
-	 * @param rEchoStream    The stream to echo the input to
+	 * @param wrappedStream The wrapped input stream
+	 * @param echoStream    The stream to echo the input to
 	 */
-	public EchoInputStream(InputStream rWrappedStream,
-		OutputStream rEchoStream) {
-		super(rWrappedStream);
+	public EchoInputStream(InputStream wrappedStream,
+		OutputStream echoStream) {
+		super(wrappedStream);
 
-		this.rEchoStream = rEchoStream;
+		this.echoStream = echoStream;
 	}
 
 	/**
@@ -49,27 +49,24 @@ public class EchoInputStream extends FilterInputStream {
 	 */
 	@Override
 	public int read() throws IOException {
-		int nByte = super.read();
+		int b = super.read();
 
-		if (nByte >= 0) {
-			rEchoStream.write(nByte);
+		if (b >= 0) {
+			echoStream.write(b);
 		}
-
-		return nByte;
+		return b;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBuffer, int nOffset, int nLength)
-		throws IOException {
-		int nRead = super.read(rBuffer, nOffset, nLength);
+	public int read(byte[] buffer, int offset, int length) throws IOException {
+		int read = super.read(buffer, offset, length);
 
-		if (nRead >= 0) {
-			rEchoStream.write(rBuffer, nOffset, nRead);
+		if (read >= 0) {
+			echoStream.write(buffer, offset, read);
 		}
-
-		return nRead;
+		return read;
 	}
 }

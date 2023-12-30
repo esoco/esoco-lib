@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  */
 public class StreamLogging extends LogAspect<String> {
 
-	private final Supplier<Writer> fGetWriter;
+	private final Supplier<Writer> getWriter;
 
 	/**
 	 * Creates a new instance that get's the target writer from a function. If
@@ -43,33 +43,32 @@ public class StreamLogging extends LogAspect<String> {
 	 * taken into account when creating the actual writer, e.g. by opening a
 	 * {@link FileWriter} or {@link FileOutputStream} in append mode.
 	 *
-	 * @param fGetWriter A function that returns the target writer
+	 * @param getWriter A function that returns the target writer
 	 */
-	public StreamLogging(Supplier<Writer> fGetWriter) {
-		this.fGetWriter = fGetWriter;
+	public StreamLogging(Supplier<Writer> getWriter) {
+		this.getWriter = getWriter;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected String createLogObject(LogRecord rLogRecord) {
-		return rLogRecord.format(get(MIN_STACK_LOG_LEVEL));
+	protected String createLogObject(LogRecord logRecord) {
+		return logRecord.format(get(MIN_STACK_LOG_LEVEL));
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void processLogObjects(Collection<String> aLogs)
-		throws Exception {
-		try (Writer aOutput = fGetWriter.get()) {
-			for (String sLog : aLogs) {
-				aOutput.write(sLog);
-				aOutput.write('\n');
+	protected void processLogObjects(Collection<String> logs) throws Exception {
+		try (Writer output = getWriter.get()) {
+			for (String log : logs) {
+				output.write(log);
+				output.write('\n');
 			}
 
-			aOutput.flush();
+			output.flush();
 		}
 	}
 }

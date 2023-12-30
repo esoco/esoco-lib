@@ -37,24 +37,24 @@ public interface MethodDatatypeMapper {
 	 * Checks if this mapper applies to a particular datatype. This method must
 	 * return TRUE for all datatypes that are covered by this mapper.
 	 *
-	 * @param rOriginalMethod The original method that has been invoked
-	 * @param rDatatype       The datatype to check
+	 * @param originalMethod The original method that has been invoked
+	 * @param datatype       The datatype to check
 	 * @return TRUE if this mapper should be used to map parameters of the
 	 * given
 	 * type
 	 */
-	boolean appliesTo(Method rOriginalMethod, Class<?> rDatatype);
+	boolean appliesTo(Method originalMethod, Class<?> datatype);
 
 	/**
 	 * Maps the argument datatype into another type. This should normally be
 	 * implemented both ways, i.e. the mapped type should also be a valid
 	 * argument to this method.
 	 *
-	 * @param rOriginalMethod The original method that has been invoked
-	 * @param rDatatype       The datatype to map
+	 * @param originalMethod The original method that has been invoked
+	 * @param datatype       The datatype to map
 	 * @return The converted type
 	 */
-	Class<?> mapType(Method rOriginalMethod, Class<?> rDatatype);
+	Class<?> mapType(Method originalMethod, Class<?> datatype);
 
 	/**
 	 * Maps the argument value into another type. The actual value itself
@@ -63,10 +63,10 @@ public interface MethodDatatypeMapper {
 	 * type). This should normally be implemented both ways, i.e. the mapped
 	 * value should also be a valid argument to this method.
 	 *
-	 * @param rTarget         The target object of the method call
-	 * @param rOriginalMethod The original method that has been invoked
-	 * @param rValue          The value to map the datatype of
+	 * @param target         The target object of the method call
+	 * @param originalMethod The original method that has been invoked
+	 * @param value          The value to map the datatype of
 	 * @return The converted value
 	 */
-	Object mapValue(Object rTarget, Method rOriginalMethod, Object rValue);
+	Object mapValue(Object target, Method originalMethod, Object value);
 }

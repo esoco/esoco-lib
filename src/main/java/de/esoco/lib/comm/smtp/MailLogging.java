@@ -43,29 +43,29 @@ import static de.esoco.lib.comm.smtp.Email.email;
  */
 public class MailLogging extends LogAspect<Email> {
 
-	private final Endpoint aMailServer;
+	private final Endpoint mailServer;
 
-	private final Email aEmailTemplate = email();
+	private final Email emailTemplate = email();
 
 	/**
 	 * Creates a new instance and sets the minimum log level to ERROR.
 	 *
-	 * @param sSmtpEndpointUrl The endpoint URL of the SMTP server
+	 * @param smtpEndpointUrl The endpoint URL of the SMTP server
 	 */
-	public MailLogging(String sSmtpEndpointUrl) {
+	public MailLogging(String smtpEndpointUrl) {
 		set(MIN_LOG_LEVEL, LogLevel.ERROR);
 
-		aMailServer = Endpoint.at(sSmtpEndpointUrl);
+		mailServer = Endpoint.at(smtpEndpointUrl);
 	}
 
 	/**
 	 * Sets the sender of the logging emails.
 	 *
-	 * @param sSender The email sender
+	 * @param sender The email sender
 	 * @return This instance for fluent invocation
 	 */
-	public MailLogging from(String sSender) {
-		aEmailTemplate.from(sSender);
+	public MailLogging from(String sender) {
+		emailTemplate.from(sender);
 
 		return this;
 	}
@@ -73,13 +73,13 @@ public class MailLogging extends LogAspect<Email> {
 	/**
 	 * Sets the authentication credentials.
 	 *
-	 * @param sUserName The user name for authentication with the mail server
-	 * @param sPassword The authentication password
+	 * @param userName The user name for authentication with the mail server
+	 * @param password The authentication password
 	 * @return This instance for fluent invocation
 	 */
-	public MailLogging loginAs(String sUserName, String sPassword) {
-		aMailServer.set(USER_NAME, sUserName);
-		aMailServer.set(PASSWORD, sPassword);
+	public MailLogging loginAs(String userName, String password) {
+		mailServer.set(USER_NAME, userName);
+		mailServer.set(PASSWORD, password);
 
 		return this;
 	}
@@ -87,11 +87,11 @@ public class MailLogging extends LogAspect<Email> {
 	/**
 	 * Sets the receiver of the logging emails.
 	 *
-	 * @param sReceiver The email receiver
+	 * @param receiver The email receiver
 	 * @return This instance for fluent invocation
 	 */
-	public MailLogging to(String sReceiver) {
-		aEmailTemplate.to(sReceiver);
+	public MailLogging to(String receiver) {
+		emailTemplate.to(receiver);
 
 		return this;
 	}
@@ -105,25 +105,25 @@ public class MailLogging extends LogAspect<Email> {
 	@Override
 	public String toString() {
 		return String.format("%s(%s)", super.toString(),
-			aMailServer.get(ENDPOINT_ADDRESS));
+			mailServer.get(ENDPOINT_ADDRESS));
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected Email createLogObject(LogRecord rLogRecord) {
-		String sMessage = rLogRecord.format(get(MIN_STACK_LOG_LEVEL));
-		Email aEmail = new Email();
+	protected Email createLogObject(LogRecord logRecord) {
+		String message = logRecord.format(get(MIN_STACK_LOG_LEVEL));
+		Email email = new Email();
 
-		ObjectRelations.copyRelations(aEmailTemplate, aEmail, false);
+		ObjectRelations.copyRelations(emailTemplate, email, false);
 
-		aEmail.subject(
-			String.format("[%1$s]%2$tF %2$tT: %3$s", rLogRecord.getLevel(),
-				new Date(rLogRecord.getTime()), rLogRecord.getMessage()));
-		aEmail.message(sMessage);
+		email.subject(
+			String.format("[%1$s]%2$tF %2$tT: %3$s", logRecord.getLevel(),
+				new Date(logRecord.getTime()), logRecord.getMessage()));
+		email.message(message);
 
-		return aEmail;
+		return email;
 	}
 
 	/**
@@ -132,20 +132,20 @@ public class MailLogging extends LogAspect<Email> {
 	@Override
 	protected String getLogInitMessage() {
 		return "Starting logging to mail server at " +
-			aMailServer.get(ENDPOINT_ADDRESS);
+			mailServer.get(ENDPOINT_ADDRESS);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void processLogObjects(Collection<Email> rLogEmails)
+	protected void processLogObjects(Collection<Email> logEmails)
 		throws Exception {
-		EndpointFunction<Email, Void> fSendMail =
-			SmtpEndpoint.sendMail().on(aMailServer);
+		EndpointFunction<Email, Void> sendMail =
+			SmtpEndpoint.sendMail().on(mailServer);
 
-		for (Email rEmail : rLogEmails) {
-			fSendMail.send(rEmail);
+		for (Email email : logEmails) {
+			sendMail.send(email);
 		}
 	}
 }

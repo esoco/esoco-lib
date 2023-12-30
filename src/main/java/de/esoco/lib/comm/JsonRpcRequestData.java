@@ -28,24 +28,24 @@ public class JsonRpcRequestData extends JsonObject {
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rId     The ID of the request (a string or an integer number)
-	 * @param sMethod The RPC method to call
+	 * @param id     The ID of the request (a string or an integer number)
+	 * @param method The RPC method to call
 	 */
-	public JsonRpcRequestData(Object rId, String sMethod) {
+	public JsonRpcRequestData(Object id, String method) {
 		set("jsonrpc", "2.0");
-		set("id", rId);
-		set("method", sMethod);
+		set("id", id);
+		set("method", method);
 	}
 
 	/**
 	 * Adds or removes parameters to this request.
 	 *
-	 * @param rParams The parameters to add or NULL to remove all parameters
+	 * @param params The parameters to add or NULL to remove all parameters
 	 * @return This instance for fluent invocation
 	 */
-	public JsonRpcRequestData withParams(Object rParams) {
-		if (rParams != null) {
-			set("params", rParams);
+	public JsonRpcRequestData withParams(Object params) {
+		if (params != null) {
+			set("params", params);
 		} else {
 			remove("params");
 		}

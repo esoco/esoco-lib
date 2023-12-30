@@ -27,27 +27,27 @@ public enum HttpRequestMethod {
 	PUT(true),
 	DELETE(false), CONNECT(true);
 
-	private final boolean bDoesOutput;
+	private final boolean doesOutput;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param bDoesOutput TRUE if this method requires to send data to the
-	 *                    endpoint
+	 * @param doesOutput TRUE if this method requires to send data to the
+	 *                   endpoint
 	 */
-	HttpRequestMethod(boolean bDoesOutput) {
-		this.bDoesOutput = bDoesOutput;
+	HttpRequestMethod(boolean doesOutput) {
+		this.doesOutput = doesOutput;
 	}
 
 	/**
 	 * Applies this request method to a connection for an HTTP URL.
 	 *
-	 * @param rConnection The connection to apply this method to
+	 * @param connection The connection to apply this method to
 	 */
-	public void applyTo(HttpURLConnection rConnection) {
+	public void applyTo(HttpURLConnection connection) {
 		try {
-			rConnection.setRequestMethod(name());
-			rConnection.setDoOutput(bDoesOutput);
+			connection.setRequestMethod(name());
+			connection.setDoOutput(doesOutput);
 		} catch (ProtocolException e) {
 			// this should not be possible
 			throw new IllegalStateException(e);
@@ -61,6 +61,6 @@ public enum HttpRequestMethod {
 	 * @return TRUE if this method performs output
 	 */
 	public boolean doesOutput() {
-		return bDoesOutput;
+		return doesOutput;
 	}
 }

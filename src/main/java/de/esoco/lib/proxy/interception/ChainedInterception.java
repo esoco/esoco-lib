@@ -26,21 +26,21 @@ import java.lang.reflect.Method;
  */
 public abstract class ChainedInterception implements Interception {
 
-	private Interception rNext = null;
+	private Interception next = null;
 
 	/**
 	 * Creates a new instance chained to a certain interception. The argument
 	 * interception will be invoked after this one.
 	 *
-	 * @param rNextInterception The next interception in the chain
+	 * @param nextInterception The next interception in the chain
 	 */
-	public ChainedInterception(Interception rNextInterception) {
-		if (rNextInterception == null) {
+	public ChainedInterception(Interception nextInterception) {
+		if (nextInterception == null) {
 			throw new IllegalArgumentException(
 				"Interception argument must not be null");
 		}
 
-		rNext = rNextInterception;
+		next = nextInterception;
 	}
 
 	/**
@@ -56,7 +56,7 @@ public abstract class ChainedInterception implements Interception {
 	 * @return The next interception
 	 */
 	public final Interception getNextInterception() {
-		return rNext;
+		return next;
 	}
 
 	/**
@@ -66,9 +66,9 @@ public abstract class ChainedInterception implements Interception {
 	 * @see Interception#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public final Object invoke(Object rProxy, Method rOriginalMethod,
-		Object rTarget, Object[] rArgs) throws Exception {
-		return invokeChain(null, rProxy, rOriginalMethod, rTarget, rArgs);
+	public final Object invoke(Object proxy, Method originalMethod,
+		Object target, Object[] args) throws Exception {
+		return invokeChain(null, proxy, originalMethod, target, args);
 	}
 
 	/**
@@ -78,30 +78,27 @@ public abstract class ChainedInterception implements Interception {
 	 * created by the InterceptionProxy class) it will be invoked. Else the
 	 * argument interception will be invoked.
 	 *
-	 * @param rInterception The interception to be executed after all advice
+	 * @param interception The interception to be executed after all advice
 	 * @see Interception#invoke(Object, Method, Object, Object[])
 	 */
-	Object invokeChain(Interception rInterception, Object rProxy,
-		Method rOriginalMethod, Object rTarget, Object[] rArgs)
-		throws Exception {
+	Object invokeChain(Interception interception, Object proxy,
+		Method originalMethod, Object target, Object[] args) throws Exception {
 		Object result = null;
 
-		if (rInterception == null) {
+		if (interception == null) {
 			// called without interception from interception proxy? Then invoke
 			// the next interception in chain
-			result = rNext.invoke(rProxy, rOriginalMethod, rTarget, rArgs);
-		} else if (rNext != null) {
+			result = next.invoke(proxy, originalMethod, target, args);
+		} else if (next != null) {
 			// invoked from interception proxy, therefore continue down the
 			//chain
 			result =
-				((ChainedInterception) rNext).invokeChain(rInterception,
-					rProxy,
-					rOriginalMethod, rTarget, rArgs);
+				((ChainedInterception) next).invokeChain(interception, proxy,
+					originalMethod, target, args);
 		} else {
 			// finally, when end of chain reached, invoke the argument
 			//interception
-			result =
-				rInterception.invoke(rProxy, rOriginalMethod, rTarget, rArgs);
+			result = interception.invoke(proxy, originalMethod, target, args);
 		}
 
 		return result;

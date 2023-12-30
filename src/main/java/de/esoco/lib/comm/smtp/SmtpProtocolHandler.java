@@ -49,49 +49,49 @@ import static de.esoco.lib.comm.smtp.SmtpStatusCode.START_MAIL;
  */
 public class SmtpProtocolHandler {
 
-	private final String sClient;
+	private final String client;
 
-	private final DataOutputStream rOutput;
+	private final DataOutputStream output;
 
-	private final BufferedReader rInput;
+	private final BufferedReader input;
 
 	/**
 	 * Creates a new instance from output and input streams. The streams will
 	 * not be closed by this instance, this needs to be handled by the invoking
 	 * code.
 	 *
-	 * @param sClient       sOrigin The client name or address
-	 * @param rOutputStream The output stream
-	 * @param rInputStream  The input stream
+	 * @param client       origin The client name or address
+	 * @param outputStream The output stream
+	 * @param inputStream  The input stream
 	 */
-	public SmtpProtocolHandler(String sClient, OutputStream rOutputStream,
-		InputStream rInputStream) {
-		this.sClient = sClient;
-		this.rOutput = new DataOutputStream(rOutputStream);
-		this.rInput = new BufferedReader(new InputStreamReader(rInputStream));
+	public SmtpProtocolHandler(String client, OutputStream outputStream,
+		InputStream inputStream) {
+		this.client = client;
+		this.output = new DataOutputStream(outputStream);
+		this.input = new BufferedReader(new InputStreamReader(inputStream));
 	}
 
 	/**
 	 * Performs the SMTP connection handshake.
 	 *
-	 * @param sUser     The user for authentication
-	 * @param sPassword The user's password
+	 * @param user     The user for authentication
+	 * @param password The user's password
 	 */
-	public void connect(String sUser, String sPassword) {
+	public void connect(String user, String password) {
 		checkResponse(READY);
 
-		if (sUser != null) {
-			send("EHLO " + sClient).skipResponses(OK);
+		if (user != null) {
+			send("EHLO " + client).skipResponses(OK);
 
-			String sAuthPlain =
-				String.format("%1$s\u0000%1$s\u0000%2$s", sUser, sPassword);
+			String authPlain =
+				String.format("%1$s\u0000%1$s\u0000%2$s", user, password);
 
-			sAuthPlain = "AUTH PLAIN " +
-				Base64.getEncoder().encodeToString(sAuthPlain.getBytes());
+			authPlain = "AUTH PLAIN " +
+				Base64.getEncoder().encodeToString(authPlain.getBytes());
 
-			send(sAuthPlain).checkResponse(OK, AUTH_SUCCESS);
+			send(authPlain).checkResponse(OK, AUTH_SUCCESS);
 		} else {
-			send("HELO " + sClient).checkOk();
+			send("HELO " + client).checkOk();
 		}
 	}
 
@@ -105,27 +105,27 @@ public class SmtpProtocolHandler {
 	/**
 	 * Sends an email after connecting (see {@link #connect(String, String)}).
 	 *
-	 * @param rEmail The email data
+	 * @param email The email data
 	 */
-	public void send(Email rEmail) {
-		String sSenderName = rEmail.get(SENDER_NAME);
-		String sSenderAddress = rEmail.get(SENDER_ADDRESS);
-		String sRecipientName = rEmail.get(RECIPIENT_NAME);
-		String sRecipientAddress = rEmail.get(RECIPIENT_ADDRESS);
+	public void send(Email email) {
+		String senderName = email.get(SENDER_NAME);
+		String senderAddress = email.get(SENDER_ADDRESS);
+		String recipientName = email.get(RECIPIENT_NAME);
+		String recipientAddress = email.get(RECIPIENT_ADDRESS);
 
-		send("MAIL FROM:<%s>", sSenderAddress).checkOk();
-		send("RCPT TO:<%s>", sRecipientAddress).checkOk();
+		send("MAIL FROM:<%s>", senderAddress).checkOk();
+		send("RCPT TO:<%s>", recipientAddress).checkOk();
 		send("DATA").checkResponse(OK, START_MAIL);
 		send("Date: %s",
 			DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now()));
-		sendAddress("From", sSenderName, sSenderAddress);
-		sendAddress("To", sRecipientName, sRecipientAddress);
-		send("Subject: %s", rEmail.get(SUBJECT));
+		sendAddress("From", senderName, senderAddress);
+		sendAddress("To", recipientName, recipientAddress);
+		send("Subject: %s", email.get(SUBJECT));
 		send("Mime-Version: 1.0");
 		send("Content-Type: text/plain; charset=\"utf-8\"");
 		send("Content-Transfer-Encoding: quoted-printable");
 		send("");
-		send(rEmail.get(MESSAGE));
+		send(email.get(MESSAGE));
 		send(".").checkOk();
 	}
 
@@ -143,26 +143,26 @@ public class SmtpProtocolHandler {
 	 * Reads a response string from the socket and throws an exception if it
 	 * doesn't start with an expected status code.
 	 *
-	 * @param eExpectedStatusCodes One or more expected status codes of the
-	 *                             response
+	 * @param expectedStatusCodes One or more expected status codes of the
+	 *                            response
 	 * @return The received response
 	 * @throws CommunicationException If the response does not begin with
 	 * one of
 	 *                                the given status codes
 	 */
-	String checkResponse(SmtpStatusCode... eExpectedStatusCodes) {
+	String checkResponse(SmtpStatusCode... expectedStatusCodes) {
 		try {
-			String sResponse = rInput.readLine();
+			String response = input.readLine();
 
-			for (SmtpStatusCode eStatus : eExpectedStatusCodes) {
-				if (sResponse.startsWith(eStatus.getCode())) {
-					return sResponse;
+			for (SmtpStatusCode status : expectedStatusCodes) {
+				if (response.startsWith(status.getCode())) {
+					return response;
 				}
 			}
 
 			throw new CommunicationException(
 				"Expected one of [%s] but response was %s",
-				Arrays.asList(eExpectedStatusCodes), sResponse);
+				Arrays.asList(expectedStatusCodes), response);
 		} catch (IOException e) {
 			throw new CommunicationException(e);
 		}
@@ -171,13 +171,13 @@ public class SmtpProtocolHandler {
 	/**
 	 * Sends a data string to the SMTP server.
 	 *
-	 * @param sDataFormat A format string for data to send
-	 * @param rFormatArgs Format arguments to be inserted into the data
+	 * @param dataFormat A format string for data to send
+	 * @param formatArgs Format arguments to be inserted into the data
 	 * @return This instance for fluent invocation
 	 */
-	SmtpProtocolHandler send(String sDataFormat, Object... rFormatArgs) {
+	SmtpProtocolHandler send(String dataFormat, Object... formatArgs) {
 		try {
-			rOutput.writeBytes(String.format(sDataFormat + "\n", rFormatArgs));
+			output.writeBytes(String.format(dataFormat + "\n", formatArgs));
 		} catch (IOException e) {
 			throw new CommunicationException(e);
 		}
@@ -188,27 +188,27 @@ public class SmtpProtocolHandler {
 	/**
 	 * Sends an email address field string to the server.
 	 *
-	 * @param sField   The field name
-	 * @param sName    The name of address
-	 * @param sAddress The email address
+	 * @param field   The field name
+	 * @param name    The name of address
+	 * @param address The email address
 	 */
-	void sendAddress(String sField, String sName, String sAddress) {
-		if (sName != null) {
-			send("%s: %s <%s>", sField, sName, sAddress);
+	void sendAddress(String field, String name, String address) {
+		if (name != null) {
+			send("%s: %s <%s>", field, name, address);
 		} else {
-			send("%s: %s", sField, sAddress);
+			send("%s: %s", field, address);
 		}
 	}
 
 	/**
 	 * Skips one or more status codes responses.
 	 *
-	 * @param eStatusCodes The status codes to skip
+	 * @param statusCodes The status codes to skip
 	 */
-	void skipResponses(SmtpStatusCode... eStatusCodes) {
+	void skipResponses(SmtpStatusCode... statusCodes) {
 		try {
-			while (rInput.ready()) {
-				checkResponse(eStatusCodes);
+			while (input.ready()) {
+				checkResponse(statusCodes);
 			}
 		} catch (IOException e) {
 			throw new CommunicationException(e);

@@ -31,31 +31,31 @@ import org.obrel.core.RelatedObject;
 public class EndpointFunction<I, O> extends RelatedObject
 	implements BinaryFunction<I, Relatable, O> {
 
-	private final Endpoint rEndpoint;
+	private final Endpoint endpoint;
 
-	private final CommunicationMethod<I, O> fMethod;
+	private final CommunicationMethod<I, O> method;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rEndpoint The endpoint to invoke the method on
-	 * @param fMethod   The communication method to invoke
+	 * @param endpoint The endpoint to invoke the method on
+	 * @param method   The communication method to invoke
 	 */
-	public EndpointFunction(Endpoint rEndpoint,
-		CommunicationMethod<I, O> fMethod) {
-		this.rEndpoint = rEndpoint;
-		this.fMethod = fMethod;
+	public EndpointFunction(Endpoint endpoint,
+		CommunicationMethod<I, O> method) {
+		this.endpoint = endpoint;
+		this.method = method;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public O evaluate(I rInput, Relatable rParams) {
-		try (Connection rConnection = rEndpoint.connect(rParams)) {
-			set(Endpoint.ENDPOINT_CONNECTION, rConnection);
+	public O evaluate(I input, Relatable params) {
+		try (Connection connection = endpoint.connect(params)) {
+			set(Endpoint.ENDPOINT_CONNECTION, connection);
 
-			return fMethod.evaluate(rInput, rConnection);
+			return method.evaluate(input, connection);
 		}
 	}
 
@@ -83,11 +83,11 @@ public class EndpointFunction<I, O> extends RelatedObject
 	 * A semantic variant of {@link #evaluate(Object)} to send data to the
 	 * endpoint.
 	 *
-	 * @param rInput The input of the endpoint request
+	 * @param input The input of the endpoint request
 	 * @return The result of the endpoint request
 	 */
-	public O send(I rInput) {
-		return evaluate(rInput);
+	public O send(I input) {
+		return evaluate(input);
 	}
 
 	/**
@@ -96,8 +96,8 @@ public class EndpointFunction<I, O> extends RelatedObject
 	 * @see Function#then(Function)
 	 */
 	@Override
-	public <T> EndpointFunction<I, T> then(Function<? super O, T> fOther) {
-		return new EndpointFunction<>(rEndpoint,
-			new CommunicationChain<>(fMethod, fOther));
+	public <T> EndpointFunction<I, T> then(Function<? super O, T> other) {
+		return new EndpointFunction<>(endpoint,
+			new CommunicationChain<>(method, other));
 	}
 }

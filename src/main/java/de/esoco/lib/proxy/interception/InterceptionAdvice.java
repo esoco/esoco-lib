@@ -46,7 +46,7 @@ import java.lang.reflect.Method;
  */
 public abstract class InterceptionAdvice implements Cloneable {
 
-	InterceptionAdvice rNextAdvice = null;
+	InterceptionAdvice nextAdvice = null;
 
 	/**
 	 * Creates a copy of this advice object. This method is used by the
@@ -73,7 +73,7 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * @return The next advice object or NULL for none
 	 */
 	public final InterceptionAdvice getNextAdvice() {
-		return rNextAdvice;
+		return nextAdvice;
 	}
 
 	/**
@@ -86,21 +86,22 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * {@link InterceptionAdvice#invoke(Interception, Object, Method, Object,
 	 * Object[]) super.invoke()} to support the chaining of advice.</p>
 	 *
-	 * @param rInterception The interception to be advised.
-	 * @param rProxy        The proxy on which the method has been invoked
-	 * @param rMethod       The original method that has been invoked
-	 * @param rTarget       The object on which the method shall be invoked
-	 * @param rArgs         The original method arguments
+	 * @param interception The interception to be advised.
+	 * @param proxy        The proxy on which the method has been invoked
+	 * @param method       The original method that has been invoked
+	 * @param target       The object on which the method shall be invoked
+	 * @param args         The original method arguments
 	 * @return The result of the interception invocation
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	public Object invoke(Interception rInterception, Object rProxy,
-		Method rMethod, Object rTarget, Object[] rArgs) throws Exception {
-		if (rNextAdvice != null) {
-			return rNextAdvice.advise(rInterception, rProxy, rMethod, rTarget,
-				rArgs);
+	public Object invoke(Interception interception, Object proxy,
+		Method method,
+		Object target, Object[] args) throws Exception {
+		if (nextAdvice != null) {
+			return nextAdvice.advise(interception, proxy, method, target,
+				args);
 		} else {
-			return rInterception.invoke(rProxy, rMethod, rTarget, rArgs);
+			return interception.invoke(proxy, method, target, args);
 		}
 	}
 
@@ -116,30 +117,30 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * to support the chaining of advice that may have been setup by the
 	 * InterceptionProxy class.</p>
 	 *
-	 * @param rInterception The interception to be advised.
-	 * @param rProxy        The proxy on which the method has been invoked
-	 * @param rMethod       The original method that has been invoked
-	 * @param rTarget       The object on which the method shall be invoked
-	 * @param rArgs         The original method arguments
+	 * @param interception The interception to be advised.
+	 * @param proxy        The proxy on which the method has been invoked
+	 * @param method       The original method that has been invoked
+	 * @param target       The object on which the method shall be invoked
+	 * @param args         The original method arguments
 	 * @return The result of the interception invocation
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected Object advise(Interception rInterception, Object rProxy,
-		Method rMethod, Object rTarget, Object[] rArgs) throws Exception {
-		Object rResult;
+	protected Object advise(Interception interception, Object proxy,
+		Method method, Object target, Object[] args) throws Exception {
+		Object result;
 
-		before(rTarget, rMethod, rArgs);
+		before(target, method, args);
 
 		try {
-			rResult = invoke(rInterception, rProxy, rMethod, rTarget, rArgs);
+			result = invoke(interception, proxy, method, target, args);
 		} catch (Throwable t) {
-			afterThrow(t, rTarget, rMethod, rArgs);
+			afterThrow(t, target, method, args);
 			throw t;
 		}
 
-		afterReturn(rResult, rTarget, rMethod, rArgs);
+		afterReturn(result, target, method, args);
 
-		return rResult;
+		return result;
 	}
 
 	/**
@@ -150,12 +151,12 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * {@link #afterReturn(Object, Object, Method, Object[]) afterReturn()} and
 	 * {@link #afterThrow(Throwable, Object, Method, Object[]) afterThrow()}.
 	 *
-	 * @param rInvoked The object the methpd has been invoked on
-	 * @param rMethod  The invoked method
-	 * @param rArgs    The method arguments
+	 * @param invoked The object the methpd has been invoked on
+	 * @param method  The invoked method
+	 * @param args    The method arguments
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected void after(Object rInvoked, Method rMethod, Object[] rArgs)
+	protected void after(Object invoked, Method method, Object[] args)
 		throws Exception {
 	}
 
@@ -167,15 +168,15 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * {@link #after(Object, Method, Object[]) after()} which by default does
 	 * nothing.
 	 *
-	 * @param rReturn  The return value of the method call
-	 * @param rInvoked The object on which the method had been invoked
-	 * @param rMethod  The original method that has been invoked
-	 * @param rArgs    The original method arguments
+	 * @param toReturn The return value of the method call
+	 * @param invoked  The object on which the method had been invoked
+	 * @param method   The original method that has been invoked
+	 * @param args     The original method arguments
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected void afterReturn(Object rReturn, Object rInvoked, Method rMethod,
-		Object[] rArgs) throws Exception {
-		after(rInvoked, rMethod, rArgs);
+	protected void afterReturn(Object toReturn, Object invoked, Method method,
+		Object[] args) throws Exception {
+		after(invoked, method, args);
 	}
 
 	/**
@@ -184,27 +185,27 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * {@link #after(Object, Method, Object[]) after()} which by default does
 	 * nothing.
 	 *
-	 * @param rThrown  The exception thrown
-	 * @param rInvoked The object on which the method had been invoked
-	 * @param rMethod  The original method that has been invoked
-	 * @param rArgs    The original method arguments
+	 * @param thrown  The exception thrown
+	 * @param invoked The object on which the method had been invoked
+	 * @param method  The original method that has been invoked
+	 * @param args    The original method arguments
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected void afterThrow(Throwable rThrown, Object rInvoked,
-		Method rMethod, Object[] rArgs) throws Exception {
-		after(rInvoked, rMethod, rArgs);
+	protected void afterThrow(Throwable thrown, Object invoked, Method method,
+		Object[] args) throws Exception {
+		after(invoked, method, args);
 	}
 
 	/**
 	 * This method can be implemented to perform actions before an interception
 	 * will be exectuted. The default implementation does nothing.
 	 *
-	 * @param rTarget The object on which the method will been invoked
-	 * @param rMethod The original method that has been invoked
-	 * @param rArgs   The original method arguments
+	 * @param target The object on which the method will been invoked
+	 * @param method The original method that has been invoked
+	 * @param args   The original method arguments
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected void before(Object rTarget, Method rMethod, Object[] rArgs)
+	protected void before(Object target, Method method, Object[] args)
 		throws Exception {
 	}
 
@@ -214,9 +215,9 @@ public abstract class InterceptionAdvice implements Cloneable {
 	 * multiple
 	 * advice together.
 	 *
-	 * @param rAdvice The next advice in the chain
+	 * @param advice The next advice in the chain
 	 */
-	final void setNextAdvice(InterceptionAdvice rAdvice) {
-		rNextAdvice = rAdvice;
+	final void setNextAdvice(InterceptionAdvice advice) {
+		nextAdvice = advice;
 	}
 }

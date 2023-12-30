@@ -41,14 +41,14 @@ public interface IntRangeAttribute {
 	/**
 	 * Sets the maximum value.
 	 *
-	 * @param nValue The new maximum value
+	 * @param value The new maximum value
 	 */
-	void setMaximum(int nValue);
+	void setMaximum(int value);
 
 	/**
 	 * Sets the minimum value.
 	 *
-	 * @param nValue The new minimum value
+	 * @param value The new minimum value
 	 */
-	void setMinimum(int nValue);
+	void setMinimum(int value);
 }

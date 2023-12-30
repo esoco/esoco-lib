@@ -34,19 +34,19 @@ import java.io.InputStream;
  */
 public class LimitedInputStream extends FilterInputStream {
 
-	private int nRemainingLength;
+	private int remainingLength;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The stream wrapped by this instance
-	 * @param nMax           The maximum number of bytes that can be read from
-	 *                       this instance
+	 * @param wrappedStream The stream wrapped by this instance
+	 * @param max           The maximum number of bytes that can be read from
+	 *                      this instance
 	 */
-	public LimitedInputStream(InputStream rWrappedStream, int nMax) {
-		super(rWrappedStream);
+	public LimitedInputStream(InputStream wrappedStream, int max) {
+		super(wrappedStream);
 
-		nRemainingLength = nMax;
+		remainingLength = max;
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class LimitedInputStream extends FilterInputStream {
 	 * @return The remaining limit
 	 */
 	public int getRemainingLimit() {
-		return nRemainingLength;
+		return remainingLength;
 	}
 
 	/**
@@ -64,7 +64,7 @@ public class LimitedInputStream extends FilterInputStream {
 	@Override
 	public int read() throws IOException {
 		checkLimit();
-		nRemainingLength--;
+		remainingLength--;
 
 		return super.read();
 	}
@@ -73,19 +73,18 @@ public class LimitedInputStream extends FilterInputStream {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBuffer, int nOffset, int nLength)
-		throws IOException {
+	public int read(byte[] buffer, int offset, int length) throws IOException {
 		checkLimit();
 
-		if (nRemainingLength < nLength) {
-			nLength = nRemainingLength;
+		if (remainingLength < length) {
+			length = remainingLength;
 		}
 
-		int nRead = super.read(rBuffer, nOffset, nLength);
+		int read = super.read(buffer, offset, length);
 
-		nRemainingLength -= nRead;
+		remainingLength -= read;
 
-		return nRead;
+		return read;
 	}
 
 	/**
@@ -95,7 +94,7 @@ public class LimitedInputStream extends FilterInputStream {
 	@SuppressWarnings("boxing")
 	public String toString() {
 		return String.format("%s(%d, %s)", getClass().getSimpleName(),
-			nRemainingLength, in);
+			remainingLength, in);
 	}
 
 	/**
@@ -104,7 +103,7 @@ public class LimitedInputStream extends FilterInputStream {
 	 * @throws StreamLimitException If the limit has been reached
 	 */
 	protected void checkLimit() throws StreamLimitException {
-		if (nRemainingLength == 0) {
+		if (remainingLength == 0) {
 			throw new StreamLimitException("Input limit reached", true);
 		}
 	}

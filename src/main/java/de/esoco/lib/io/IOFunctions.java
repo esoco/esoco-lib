@@ -44,14 +44,14 @@ public class IOFunctions {
 	 * The pattern will be converted into a regular expression by means of the
 	 * method {@link TextUtil#simplePatternToRegEx(String)}.
 	 *
-	 * @param sPattern The simple filename pattern
+	 * @param regex The simple filename regex
 	 * @return The filename filter predicate
 	 */
-	public static PatternFilenameFilter ifFilenameLike(String sPattern) {
-		Pattern aPattern =
-			Pattern.compile(TextUtil.simplePatternToRegEx(sPattern));
+	public static PatternFilenameFilter ifFilenameLike(String regex) {
+		Pattern pattern =
+			Pattern.compile(TextUtil.simplePatternToRegEx(regex));
 
-		return new PatternFilenameFilter(aPattern);
+		return new PatternFilenameFilter(pattern);
 	}
 
 	/**
@@ -59,11 +59,11 @@ public class IOFunctions {
 	 * {@link FilenameFilter}
 	 * that matches filenames against a regular expression.
 	 *
-	 * @param sRegex The regular expression
+	 * @param regex The regular expression
 	 * @return The filename filter predicate
 	 */
-	public static PatternFilenameFilter ifFilenameMatches(String sRegex) {
-		return new PatternFilenameFilter(Pattern.compile(sRegex));
+	public static PatternFilenameFilter ifFilenameMatches(String regex) {
+		return new PatternFilenameFilter(Pattern.compile(regex));
 	}
 
 	/**
@@ -77,23 +77,23 @@ public class IOFunctions {
 	public static class PatternFilenameFilter
 		implements Predicate<File>, FilenameFilter {
 
-		private final Pattern rPattern;
+		private final Pattern pattern;
 
 		/**
 		 * Creates a new FileFilter object.
 		 *
-		 * @param rPattern The file pattern
+		 * @param pattern The file pattern
 		 */
-		private PatternFilenameFilter(Pattern rPattern) {
-			this.rPattern = rPattern;
+		private PatternFilenameFilter(Pattern pattern) {
+			this.pattern = pattern;
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public boolean accept(File rPath, String sName) {
-			return rPattern.matcher(sName).matches();
+		public boolean accept(File path, String name) {
+			return pattern.matcher(name).matches();
 		}
 
 		/**
@@ -101,8 +101,8 @@ public class IOFunctions {
 		 */
 		@Override
 		@SuppressWarnings("boxing")
-		public Boolean evaluate(File rFile) {
-			return accept(rFile.getParentFile(), rFile.getName());
+		public Boolean evaluate(File file) {
+			return accept(file.getParentFile(), file.getName());
 		}
 	}
 }

@@ -32,54 +32,54 @@ public class HttpStatusException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	private final HttpStatusCode eStatusCode;
+	private final HttpStatusCode statusCode;
 
-	private Map<HttpHeaderField, String> rResponseHeaders =
+	private Map<HttpHeaderField, String> responseHeaders =
 		Collections.emptyMap();
 
 	/**
 	 * Creates a new instance with a status code and causing exception.
 	 *
-	 * @param eStatusCode The status code
-	 * @param eCause      The causing exception
+	 * @param statusCode The status code
+	 * @param cause      The causing exception
 	 */
-	public HttpStatusException(HttpStatusCode eStatusCode, Exception eCause) {
-		super(eCause);
+	public HttpStatusException(HttpStatusCode statusCode, Exception cause) {
+		super(cause);
 
-		this.eStatusCode = eStatusCode;
+		this.statusCode = statusCode;
 	}
 
 	/**
 	 * Creates a new instance with a status code and message.
 	 *
-	 * @param eStatusCode      The status code
-	 * @param sMessage         The error message
-	 * @param rResponseHeaders An optional array of headers to be set on the
-	 *                         response
+	 * @param statusCode      The status code
+	 * @param message         The error message
+	 * @param responseHeaders An optional array of headers to be set on the
+	 *                        response
 	 */
 	@SafeVarargs
-	public HttpStatusException(HttpStatusCode eStatusCode, String sMessage,
-		Pair<HttpHeaderField, String>... rResponseHeaders) {
-		super(sMessage);
+	public HttpStatusException(HttpStatusCode statusCode, String message,
+		Pair<HttpHeaderField, String>... responseHeaders) {
+		super(message);
 
-		this.eStatusCode = eStatusCode;
-		this.rResponseHeaders =
-			CollectionUtil.fixedOrderedMapOf(rResponseHeaders);
+		this.statusCode = statusCode;
+		this.responseHeaders =
+			CollectionUtil.fixedOrderedMapOf(responseHeaders);
 	}
 
 	/**
 	 * Creates a new instance with a status code, message, and causing
 	 * exception.
 	 *
-	 * @param eStatusCode The status code
-	 * @param sMessage    The error message
-	 * @param eCause      The causing exception
+	 * @param statusCode The status code
+	 * @param message    The error message
+	 * @param cause      The causing exception
 	 */
-	public HttpStatusException(HttpStatusCode eStatusCode, String sMessage,
-		Exception eCause) {
-		super(sMessage, eCause);
+	public HttpStatusException(HttpStatusCode statusCode, String message,
+		Exception cause) {
+		super(message, cause);
 
-		this.eStatusCode = eStatusCode;
+		this.statusCode = statusCode;
 	}
 
 	/**
@@ -89,7 +89,7 @@ public class HttpStatusException extends RuntimeException {
 	 * @return The response headers map (may be empty but will never be NULL)
 	 */
 	public final Map<HttpHeaderField, String> getResponseHeaders() {
-		return rResponseHeaders;
+		return responseHeaders;
 	}
 
 	/**
@@ -98,7 +98,7 @@ public class HttpStatusException extends RuntimeException {
 	 * @return The status code
 	 */
 	public final HttpStatusCode getStatusCode() {
-		return eStatusCode;
+		return statusCode;
 	}
 
 	/**

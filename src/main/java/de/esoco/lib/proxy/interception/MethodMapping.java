@@ -28,15 +28,15 @@ import java.lang.reflect.Method;
  */
 public class MethodMapping implements Interception {
 
-	private final MethodMappingDefinition rMapping;
+	private final MethodMappingDefinition mapping;
 
 	/**
 	 * Creates a new method mapping instance.
 	 *
-	 * @param rMapping The mapping definition
+	 * @param mapping The mapping definition
 	 */
-	public MethodMapping(MethodMappingDefinition rMapping) {
-		this.rMapping = rMapping;
+	public MethodMapping(MethodMappingDefinition mapping) {
+		this.mapping = mapping;
 	}
 
 	/**
@@ -44,8 +44,8 @@ public class MethodMapping implements Interception {
 	 * java.lang.reflect.Method, java.lang.Object, java.lang.Object[])
 	 */
 	@Override
-	public Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) throws Exception {
-		return rMapping.invoke(rOriginalMethod, rTarget, rArgs);
+	public Object invoke(Object proxy, Method originalMethod, Object target,
+		Object[] args) throws Exception {
+		return mapping.invoke(originalMethod, target, args);
 	}
 }

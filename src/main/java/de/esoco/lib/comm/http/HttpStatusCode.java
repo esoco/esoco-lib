@@ -70,50 +70,50 @@ public enum HttpStatusCode {
 	NOT_EXTENDED(510, "Not Extended"),
 	NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required");
 
-	private final int nStatusCode;
+	private final int statusCode;
 
-	private final String sReasonPhrase;
+	private final String reasonPhrase;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param nCode   The integer status code
-	 * @param sReason The reason phrase describing the status code
+	 * @param code   The integer status code
+	 * @param reason The reason phrase describing the status code
 	 */
-	HttpStatusCode(int nCode, String sReason) {
-		nStatusCode = nCode;
-		sReasonPhrase = sReason;
+	HttpStatusCode(int code, String reason) {
+		statusCode = code;
+		reasonPhrase = reason;
 	}
 
 	/**
 	 * Throws an {@link HttpStatusException} with the code {@link #BAD_REQUEST}
 	 * and an error message.
 	 *
-	 * @param sMessage The error message
+	 * @param message The error message
 	 * @throws HttpStatusException Always throws this exception
 	 */
-	public static void badRequest(String sMessage) throws HttpStatusException {
-		throw new HttpStatusException(HttpStatusCode.BAD_REQUEST, sMessage);
+	public static void badRequest(String message) throws HttpStatusException {
+		throw new HttpStatusException(HttpStatusCode.BAD_REQUEST, message);
 	}
 
 	/**
 	 * Returns the status code instance for a certain integer code value.
 	 *
-	 * @param nStatusCode The integer status code
+	 * @param code The integer status code
 	 * @return The matching status code instance
 	 * @throws IllegalArgumentException If no instance for the given code
 	 *                                  exists
 	 */
-	public static HttpStatusCode valueOf(int nStatusCode) {
-		for (HttpStatusCode eStatusCode : values()) {
-			if (eStatusCode.nStatusCode == nStatusCode) {
-				return eStatusCode;
+	public static HttpStatusCode valueOf(int code) {
+		for (HttpStatusCode statusCode : values()) {
+			if (statusCode.statusCode == code) {
+				return statusCode;
 			}
 		}
 
 		throw new IllegalArgumentException(
 			"No " + HttpStatusCode.class.getSimpleName() +
-				" instance with code " + nStatusCode);
+				" instance with code " + code);
 	}
 
 	/**
@@ -122,7 +122,7 @@ public enum HttpStatusCode {
 	 * @return The integer status code
 	 */
 	public final int getCode() {
-		return nStatusCode;
+		return statusCode;
 	}
 
 	/**
@@ -131,7 +131,7 @@ public enum HttpStatusCode {
 	 * @return The reason phrase string
 	 */
 	public final String getReasonPhrase() {
-		return sReasonPhrase;
+		return reasonPhrase;
 	}
 
 	/**
@@ -142,10 +142,10 @@ public enum HttpStatusCode {
 	 */
 	public final String getStatusLine() {
 
-		String aStatusLine =
-			"HTTP/1.1 " + nStatusCode + ' ' + sReasonPhrase + NetUtil.CRLF;
+		String statusLine =
+			"HTTP/1.1 " + statusCode + ' ' + reasonPhrase + NetUtil.CRLF;
 
-		return aStatusLine;
+		return statusLine;
 	}
 
 	/**
@@ -154,7 +154,7 @@ public enum HttpStatusCode {
 	 * @return TRUE for a client error
 	 */
 	public final boolean isClientError() {
-		return nStatusCode >= 400 && nStatusCode <= 499;
+		return statusCode >= 400 && statusCode <= 499;
 	}
 
 	/**
@@ -163,7 +163,7 @@ public enum HttpStatusCode {
 	 * @return TRUE for a client error
 	 */
 	public final boolean isError() {
-		return nStatusCode >= 400;
+		return statusCode >= 400;
 	}
 
 	/**
@@ -173,7 +173,7 @@ public enum HttpStatusCode {
 	 * @return TRUE for an informational status message
 	 */
 	public final boolean isInformational() {
-		return nStatusCode >= 100 && nStatusCode <= 199;
+		return statusCode >= 100 && statusCode <= 199;
 	}
 
 	/**
@@ -182,7 +182,7 @@ public enum HttpStatusCode {
 	 * @return TRUE for a redirection
 	 */
 	public final boolean isRedirection() {
-		return nStatusCode >= 300 && nStatusCode <= 399;
+		return statusCode >= 300 && statusCode <= 399;
 	}
 
 	/**
@@ -191,7 +191,7 @@ public enum HttpStatusCode {
 	 * @return TRUE for a server error
 	 */
 	public final boolean isServerError() {
-		return nStatusCode >= 500 && nStatusCode <= 599;
+		return statusCode >= 500 && statusCode <= 599;
 	}
 
 	/**
@@ -200,7 +200,7 @@ public enum HttpStatusCode {
 	 * @return TRUE for a successful request
 	 */
 	public final boolean isSuccess() {
-		return nStatusCode >= 200 && nStatusCode <= 299;
+		return statusCode >= 200 && statusCode <= 299;
 	}
 
 	/**
@@ -222,6 +222,6 @@ public enum HttpStatusCode {
 	 */
 	@Override
 	public String toString() {
-		return nStatusCode + " " + sReasonPhrase;
+		return statusCode + " " + reasonPhrase;
 	}
 }

@@ -16,13 +16,14 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Test of CollectionUtil class.
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class CollectionUtilTest {
 
-	private final String[] aTestData =
+	private final String[] testData =
 		new String[] { "null:null", "'STRINGKEY1':\"TESTSTRING1\"",
 			"STRINGKEY2:TESTSTRING2", "STRINGKEY3:TESTSTRING 3",
 			"   STRINGKEY4\t\t: \t TESTSTRING 4 \t ", "'NUMKEY1':12345",
@@ -43,9 +44,9 @@ public class CollectionUtilTest {
 	 */
 	@Test
 	public final void testParseMap() {
-		Map<Object, Object> aMap = CollectionUtil.parseMap(aTestData);
+		Map<Object, Object> map = CollectionUtil.parseMap(testData);
 
-		assertMapContents(aMap);
+		assertMapContents(map);
 	}
 
 	/**
@@ -53,11 +54,11 @@ public class CollectionUtilTest {
 	 */
 	@Test
 	public final void testParseMapEntries() {
-		Map<Object, Object> aMap = new HashMap<Object, Object>();
+		Map<Object, Object> map = new HashMap<Object, Object>();
 
-		CollectionUtil.parseMapEntries(aMap, Object.class, Object.class,
-			aTestData);
-		assertMapContents(aMap);
+		CollectionUtil.parseMapEntries(map, Object.class, Object.class,
+			testData);
+		assertMapContents(map);
 	}
 
 	/**
@@ -65,14 +66,14 @@ public class CollectionUtilTest {
 	 */
 	@Test
 	public final void testParseMapEntry() {
-		Map<Object, Object> aMap = new HashMap<Object, Object>();
+		Map<Object, Object> map = new HashMap<Object, Object>();
 
-		for (int i = 0; i < aTestData.length; i++) {
-			CollectionUtil.addMapEntry(aMap, aTestData[i], Object.class,
+		for (int i = 0; i < testData.length; i++) {
+			CollectionUtil.addMapEntry(map, testData[i], Object.class,
 				Object.class);
 		}
 
-		assertMapContents(aMap);
+		assertMapContents(map);
 	}
 
 	/**
@@ -80,9 +81,9 @@ public class CollectionUtilTest {
 	 */
 	@Test
 	public void testToStringCollection() {
-		List<?> aList = CollectionUtil.listOf("A", "B", "C");
+		List<?> list = CollectionUtil.listOf("A", "B", "C");
 
-		assertEquals("A,B,C", CollectionUtil.toString(aList, ","));
+		assertEquals("A,B,C", CollectionUtil.toString(list, ","));
 	}
 
 	/**
@@ -90,26 +91,26 @@ public class CollectionUtilTest {
 	 */
 	@Test
 	public void testToStringMap() {
-		Map<?, ?> aMap = CollectionUtil.parseMap("A=1,B=2,C=12", ',');
+		Map<?, ?> map = CollectionUtil.parseMap("A=1,B=2,C=12", ',');
 
-		assertEquals("A:1|B:2|C:12", CollectionUtil.toString(aMap, ":", "|"));
+		assertEquals("A:1|B:2|C:12", CollectionUtil.toString(map, ":", "|"));
 	}
 
 	/**
 	 * Checks the map argument to contain the expected test data.
 	 *
-	 * @param aMap The map to check
+	 * @param map The map to check
 	 */
-	private void assertMapContents(Map<Object, Object> aMap) {
-		assertEquals(null, aMap.get(null));
-		assertEquals("TESTSTRING1", aMap.get("STRINGKEY1"));
-		assertEquals("TESTSTRING2", aMap.get("STRINGKEY2"));
-		assertEquals("TESTSTRING 3", aMap.get("STRINGKEY3"));
-		assertEquals("TESTSTRING 4", aMap.get("STRINGKEY4"));
-		assertEquals(Integer.valueOf(12345), aMap.get("NUMKEY1"));
-		assertEquals(Integer.valueOf(-12345), aMap.get("NUMKEY2"));
-		assertEquals("NUMKEY_TESTSTRING", aMap.get(Integer.valueOf(3)));
-		assertEquals(Integer.valueOf(-42), aMap.get(Integer.valueOf(4)));
-		assertEquals(null, aMap.get("NULLTEST"));
+	private void assertMapContents(Map<Object, Object> map) {
+		assertNull(map.get(null));
+		assertEquals("TESTSTRING1", map.get("STRINGKEY1"));
+		assertEquals("TESTSTRING2", map.get("STRINGKEY2"));
+		assertEquals("TESTSTRING 3", map.get("STRINGKEY3"));
+		assertEquals("TESTSTRING 4", map.get("STRINGKEY4"));
+		assertEquals(Integer.valueOf(12345), map.get("NUMKEY1"));
+		assertEquals(Integer.valueOf(-12345), map.get("NUMKEY2"));
+		assertEquals("NUMKEY_TESTSTRING", map.get(Integer.valueOf(3)));
+		assertEquals(Integer.valueOf(-42), map.get(Integer.valueOf(4)));
+		assertNull(map.get("NULLTEST"));
 	}
 }

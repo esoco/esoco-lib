@@ -26,7 +26,7 @@ public interface IntAttribute extends IntValue {
 	/**
 	 * Sets the integer value.
 	 *
-	 * @param nValue The new integer value
+	 * @param value The new integer value
 	 */
-	void setValue(int nValue);
+	void setValue(int value);
 }

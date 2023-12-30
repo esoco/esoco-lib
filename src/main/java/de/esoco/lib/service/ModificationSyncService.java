@@ -89,7 +89,7 @@ public class ModificationSyncService extends RestService
 		RelationTypes.init(ModificationSyncService.class);
 	}
 
-	private final Map<String, Map<String, LockData>> aContextLocks =
+	private final Map<String, Map<String, LockData>> contextLocks =
 		new LinkedHashMap<>();
 
 	/**
@@ -108,17 +108,17 @@ public class ModificationSyncService extends RestService
 	/**
 	 * Runs this service.
 	 *
-	 * @param rArgs The invocation arguments
+	 * @param args The invocation arguments
 	 */
-	public static void main(String[] rArgs) {
-		new ModificationSyncService().run(rArgs);
+	public static void main(String[] args) {
+		new ModificationSyncService().run(args);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean authenticate(Relatable rAuthData) {
+	public boolean authenticate(Relatable authData) {
 		return true;
 	}
 
@@ -130,24 +130,22 @@ public class ModificationSyncService extends RestService
 	 */
 	@Override
 	protected ObjectSpace<Object> buildRestServerSpace() {
-		ObjectSpace<Object> rRootSpace = super.buildRestServerSpace();
+		ObjectSpace<Object> rootSpace = super.buildRestServerSpace();
 
-		ObjectSpace<String> rApiSpace = rRootSpace.get(API);
-		ObjectSpace<Object> aSyncSpace = new RelationSpace<>(true);
+		ObjectSpace<String> apiSpace = rootSpace.get(API);
+		ObjectSpace<Object> syncSpace = new RelationSpace<>(true);
 
-		rApiSpace.set(SYNC, aSyncSpace);
-		rApiSpace.get(STATUS).set(CURRENT_LOCKS, aContextLocks);
+		apiSpace.set(SYNC, syncSpace);
+		apiSpace.get(STATUS).set(CURRENT_LOCKS, contextLocks);
 
-		aSyncSpace.set(NAME, getServiceName() + " Sync API");
+		syncSpace.set(NAME, getServiceName() + " Sync API");
 
-		aSyncSpace.init(CHECK_LOCK).onUpdate(this::checkLock);
-		aSyncSpace.init(REQUEST_LOCK).onUpdate(this::requestLock);
-		aSyncSpace.init(RELEASE_LOCK).onUpdate(this::releaseLock);
-		aSyncSpace
-			.set(CURRENT_LOCKS, aContextLocks)
-			.onUpdate(this::updateLocks);
+		syncSpace.init(CHECK_LOCK).onUpdate(this::checkLock);
+		syncSpace.init(REQUEST_LOCK).onUpdate(this::requestLock);
+		syncSpace.init(RELEASE_LOCK).onUpdate(this::releaseLock);
+		syncSpace.set(CURRENT_LOCKS, contextLocks).onUpdate(this::updateLocks);
 
-		return rRootSpace;
+		return rootSpace;
 	}
 
 	/**
@@ -155,116 +153,116 @@ public class ModificationSyncService extends RestService
 	 */
 	@Override
 	protected Server createRestServer() {
-		Server rRestServer = super.createRestServer();
+		Server restServer = super.createRestServer();
 
-		rRestServer.set(CommunicationRelationTypes.MAX_CONNECTIONS, 20);
+		restServer.set(CommunicationRelationTypes.MAX_CONNECTIONS, 20);
 
-		return rRestServer;
+		return restServer;
 	}
 
 	/**
 	 * Tries to acquire a lock for a certain request.
 	 *
-	 * @param rRequest The lock request
+	 * @param request The lock request
 	 */
-	private void checkLock(JsonObject rRequest) {
-		processSyncRequest(rRequest, this::handleCheckLock);
+	private void checkLock(JsonObject request) {
+		processSyncRequest(request, this::handleCheckLock);
 	}
 
 	/**
 	 * Handles a request to check for a lock.
 	 *
-	 * @param sClientId     The requesting client (ignored)
-	 * @param sContext      The lock context
-	 * @param sTargetId     The target ID
-	 * @param bForceRequest Ignored in this context
+	 * @param clientId     The requesting client (ignored)
+	 * @param context      The lock context
+	 * @param targetId     The target ID
+	 * @param forceRequest Ignored in this context
 	 */
-	private void handleCheckLock(String sClientId, String sContext,
-		String sTargetId, boolean bForceRequest) {
-		boolean bHasLock = aContextLocks.containsKey(sContext) &&
-			aContextLocks.get(sContext).containsKey(sTargetId);
+	private void handleCheckLock(String clientId, String context,
+		String targetId, boolean forceRequest) {
+		boolean hasLock = contextLocks.containsKey(context) &&
+			contextLocks.get(context).containsKey(targetId);
 
 		throw new HttpStatusException(HttpStatusCode.OK,
-			Boolean.toString(bHasLock));
+			Boolean.toString(hasLock));
 	}
 
 	/**
 	 * Handles a request to release an entity lock.
 	 *
-	 * @param sClient       The ID of the requesting client
-	 * @param sContext      The lock context
-	 * @param sTargetId     The target ID
-	 * @param bForceRequest TRUE to force the release even if the lock has been
-	 *                      acquired by a different client
+	 * @param client       The ID of the requesting client
+	 * @param context      The lock context
+	 * @param targetId     The target ID
+	 * @param forceRequest TRUE to force the release even if the lock has been
+	 *                     acquired by a different client
 	 */
-	private void handleReleaseLock(String sClient, String sContext,
-		String sTargetId, boolean bForceRequest) {
-		Map<String, LockData> aLocks = aContextLocks.get(sContext);
-		LockData rCurrentLock = null;
+	private void handleReleaseLock(String client, String context,
+		String targetId, boolean forceRequest) {
+		Map<String, LockData> locks = contextLocks.get(context);
+		LockData currentLock = null;
 
-		if (aLocks != null) {
-			rCurrentLock = aLocks.get(sTargetId);
+		if (locks != null) {
+			currentLock = locks.get(targetId);
 		} else {
-			respond(HttpStatusCode.NOT_FOUND, "Unknown context " + sContext);
+			respond(HttpStatusCode.NOT_FOUND, "Unknown context " + context);
 		}
 
-		if (rCurrentLock != null) {
-			boolean bLockedByClient = rCurrentLock.isHeldBy(sClient);
+		if (currentLock != null) {
+			boolean lockedByClient = currentLock.isHeldBy(client);
 
-			if (bLockedByClient || bForceRequest) {
-				if (bForceRequest && !bLockedByClient) {
+			if (lockedByClient || forceRequest) {
+				if (forceRequest && !lockedByClient) {
 					Log.warnf("Locked by %s, release forced by %s",
-						rCurrentLock.getClientInfo(), sClient);
+						currentLock.getClientInfo(), client);
 				}
 
-				aLocks.remove(sTargetId);
+				locks.remove(targetId);
 
 				if (Log.isLevelEnabled(LogLevel.DEBUG)) {
-					Log.debugf("Current locks: %s", aContextLocks);
+					Log.debugf("Current locks: %s", contextLocks);
 				}
 			} else {
-				respond(HttpStatusCode.CONFLICT, sClient);
+				respond(HttpStatusCode.CONFLICT, client);
 			}
 		} else {
-			respond(HttpStatusCode.NOT_FOUND, sContext + ":" + sTargetId);
+			respond(HttpStatusCode.NOT_FOUND, context + ":" + targetId);
 		}
 	}
 
 	/**
 	 * Handles a request to set a lock.
 	 *
-	 * @param sClient       The ID of the requesting client
-	 * @param sContext      The lock context
-	 * @param sTargetId     The target ID
-	 * @param bForceRequest TRUE to force the lock even if the same lock has
-	 *                      already been acquired by a different client
+	 * @param client       The ID of the requesting client
+	 * @param context      The lock context
+	 * @param targetId     The target ID
+	 * @param forceRequest TRUE to force the lock even if the same lock has
+	 *                     already been acquired by a different client
 	 */
-	private void handleRequestLock(String sClient, String sContext,
-		String sTargetId, boolean bForceRequest) {
-		Map<String, LockData> aLocks = aContextLocks.get(sContext);
+	private void handleRequestLock(String client, String context,
+		String targetId, boolean forceRequest) {
+		Map<String, LockData> locks = contextLocks.get(context);
 
-		if (aLocks == null) {
-			aLocks = new LinkedHashMap<>();
-			aContextLocks.put(sContext, aLocks);
+		if (locks == null) {
+			locks = new LinkedHashMap<>();
+			contextLocks.put(context, locks);
 		}
 
-		LockData rCurrentLock = aLocks.get(sTargetId);
+		LockData currentLock = locks.get(targetId);
 
-		if (rCurrentLock == null || bForceRequest) {
-			LockData aNewLock = new LockData(sClient);
+		if (currentLock == null || forceRequest) {
+			LockData newLock = new LockData(client);
 
-			if (bForceRequest && rCurrentLock != null) {
+			if (forceRequest && currentLock != null) {
 				Log.warnf("Locked by %s, forcing lock to %s",
-					rCurrentLock.getClientInfo(), aNewLock);
+					currentLock.getClientInfo(), newLock);
 			}
 
-			aLocks.put(sTargetId, aNewLock);
+			locks.put(targetId, newLock);
 
-			Log.debug("Current locks: " + aContextLocks);
-		} else if (rCurrentLock.isHeldBy(sClient)) {
+			Log.debug("Current locks: " + contextLocks);
+		} else if (currentLock.isHeldBy(client)) {
 			respond(HttpStatusCode.ALREADY_REPORTED, "");
 		} else {
-			respond(HttpStatusCode.LOCKED, sClient);
+			respond(HttpStatusCode.LOCKED, client);
 		}
 	}
 
@@ -273,65 +271,65 @@ public class ModificationSyncService extends RestService
 	 * handling to methods that implement the {@link SyncRequestHandler}
 	 * interface.
 	 *
-	 * @param rRequest        The sync request
-	 * @param rRequestHandler The request handler
+	 * @param request        The sync request
+	 * @param requestHandler The request handler
 	 */
-	private void processSyncRequest(JsonObject rRequest,
-		SyncRequestHandler rRequestHandler) {
+	private void processSyncRequest(JsonObject request,
+		SyncRequestHandler requestHandler) {
 		try {
-			Option<?> oClientId = rRequest.getProperty(JSON_REQUEST_CLIENT);
-			Option<?> oContext = rRequest.getProperty(JSON_REQUEST_CONTEXT);
-			Option<?> oGlobalId = rRequest.getProperty(JSON_REQUEST_TARGET_ID);
-			Option<?> oForce = rRequest.getProperty(JSON_REQUEST_FORCE_FLAG);
+			Option<?> clientId = request.getProperty(JSON_REQUEST_CLIENT);
+			Option<?> context = request.getProperty(JSON_REQUEST_CONTEXT);
+			Option<?> globalId = request.getProperty(JSON_REQUEST_TARGET_ID);
+			Option<?> force = request.getProperty(JSON_REQUEST_FORCE_FLAG);
 
-			if (!oClientId.is(String.class) || !oContext.is(String.class) ||
-				!oGlobalId.is(String.class) || !oForce.is(Boolean.class)) {
-				respond(HttpStatusCode.BAD_REQUEST, rRequest.toString());
+			if (!clientId.is(String.class) || !context.is(String.class) ||
+				!globalId.is(String.class) || !force.is(Boolean.class)) {
+				respond(HttpStatusCode.BAD_REQUEST, request.toString());
 			}
 
 			// orFail() won't occur as the is(...) tests above ensures
 			// existence
-			rRequestHandler.handleRequest(
-				oClientId.map(Object::toString).orFail(),
-				oContext.map(Object::toString).orFail(),
-				oGlobalId.map(Object::toString).orFail(),
-				oForce.map(Boolean.class::cast).orFail());
+			requestHandler.handleRequest(
+				clientId.map(Object::toString).orFail(),
+				context.map(Object::toString).orFail(),
+				globalId.map(Object::toString).orFail(),
+				force.map(Boolean.class::cast).orFail());
 		} catch (HttpStatusException e) {
 			// just re-throw as this has already been handled
 			throw e;
 		} catch (Exception e) {
-			respond(HttpStatusCode.BAD_REQUEST, rRequest.toString());
+			respond(HttpStatusCode.BAD_REQUEST, request.toString());
 		}
 	}
 
 	/**
 	 * Releases a lock in a certain context.
 	 *
-	 * @param rRequest The lock release request
+	 * @param request The lock release request
 	 */
-	private void releaseLock(JsonObject rRequest) {
-		processSyncRequest(rRequest, this::handleReleaseLock);
+	private void releaseLock(JsonObject request) {
+		processSyncRequest(request, this::handleReleaseLock);
 	}
 
 	/**
 	 * Tries to acquire a lock on a target in a certain context.
 	 *
-	 * @param rRequest The lock request
+	 * @param request The lock request
 	 */
-	private void requestLock(JsonObject rRequest) {
-		processSyncRequest(rRequest, this::handleRequestLock);
+	private void requestLock(JsonObject request) {
+		processSyncRequest(request, this::handleRequestLock);
 	}
 
 	/**
 	 * Signals a failed request by throwing a {@link HttpStatusException}.
 	 *
-	 * @param eStatus  The status code for the failure
-	 * @param sMessage The failure message
+	 * @param status  The status code for the failure
+	 * @param message The failure message
 	 * @throws HttpStatusException Always throws this exception with the given
 	 *                             parameters
 	 */
-	private void respond(HttpStatusCode eStatus, String sMessage) {
-		throw new HttpStatusException(eStatus, sMessage);
+	private void respond(HttpStatusCode status, String message) {
+		throw new HttpStatusException(status, message);
 	}
 
 	/**
@@ -339,9 +337,9 @@ public class ModificationSyncService extends RestService
 	 * {@link #CURRENT_LOCKS}.
 	 * Currently not supported, therefore throws an exception.
 	 *
-	 * @param aNewLocks The new lock mapping
+	 * @param newLocks The new lock mapping
 	 */
-	private void updateLocks(Map<?, ?> aNewLocks) {
+	private void updateLocks(Map<?, ?> newLocks) {
 		respond(HttpStatusCode.METHOD_NOT_ALLOWED,
 			"Setting all locks is not supported");
 	}
@@ -358,13 +356,13 @@ public class ModificationSyncService extends RestService
 		/**
 		 * Handles a synchronization request.
 		 *
-		 * @param sClient       An identifier of the client making the request
-		 * @param sContext      The target context of the request
-		 * @param sTargetId     The unique ID of the request target
-		 * @param bForceRequest TRUE to force the request execution
+		 * @param client       An identifier of the client making the request
+		 * @param context      The target context of the request
+		 * @param targetId     The unique ID of the request target
+		 * @param forceRequest TRUE to force the request execution
 		 */
-		void handleRequest(String sClient, String sContext, String sTargetId,
-			boolean bForceRequest);
+		void handleRequest(String client, String context, String targetId,
+			boolean forceRequest);
 	}
 
 	/**
@@ -374,20 +372,20 @@ public class ModificationSyncService extends RestService
 	 */
 	private static class LockData {
 
-		Date aLockTime = new Date();
+		Date lockTime = new Date();
 
-		String sClientId;
+		String clientId;
 
-		String sClientAddress;
+		String clientAddress;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sClientId The ID received from the client or NULL for none
+		 * @param clientId The ID received from the client or NULL for none
 		 */
-		LockData(String sClientId) {
-			this.sClientId = sClientId;
-			this.sClientAddress = getClientAddress();
+		LockData(String clientId) {
+			this.clientId = clientId;
+			this.clientAddress = getClientAddress();
 		}
 
 		/**
@@ -396,17 +394,17 @@ public class ModificationSyncService extends RestService
 		 * @return The client info
 		 */
 		public String getClientInfo() {
-			return String.format("%s[%s]", sClientId, sClientAddress);
+			return String.format("%s[%s]", clientId, clientAddress);
 		}
 
 		/**
 		 * Checks whether this lock is currently held by the given client .
 		 *
-		 * @param sClient The ID of the client to check against this lock
+		 * @param client The ID of the client to check against this lock
 		 * @return TRUE if the given client currently holds the lock
 		 */
-		public boolean isHeldBy(String sClient) {
-			return sClientId.equals(sClient);
+		public boolean isHeldBy(String client) {
+			return clientId.equals(client);
 		}
 
 		/**
@@ -414,8 +412,8 @@ public class ModificationSyncService extends RestService
 		 */
 		@Override
 		public String toString() {
-			return String.format("%s[%s] (%3$tF %3$tT.%3$tL)", sClientId,
-				sClientAddress, aLockTime);
+			return String.format("%s[%s] (%3$tF %3$tT.%3$tL)", clientId,
+				clientAddress, lockTime);
 		}
 	}
 }

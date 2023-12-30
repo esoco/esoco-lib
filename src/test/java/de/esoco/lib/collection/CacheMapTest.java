@@ -16,12 +16,12 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test of {@link CacheMap}.
@@ -30,20 +30,20 @@ import static org.junit.Assert.assertTrue;
  */
 public class CacheMapTest {
 
-	private final CacheMap<Integer, String> aTestMap =
+	private final CacheMap<Integer, String> testMap =
 		new CacheMap<Integer, String>(5);
 
 	/**
 	 * Test setup.
 	 */
-	@Before
+	@BeforeEach
 	@SuppressWarnings("boxing")
 	public void setUp() {
-		aTestMap.put(1, "Test1");
-		aTestMap.put(2, "Test2");
-		aTestMap.put(3, "Test3");
-		aTestMap.put(4, "Test4");
-		aTestMap.put(5, "Test5");
+		testMap.put(1, "Test1");
+		testMap.put(2, "Test2");
+		testMap.put(3, "Test3");
+		testMap.put(4, "Test4");
+		testMap.put(5, "Test5");
 	}
 
 	/**
@@ -52,8 +52,8 @@ public class CacheMapTest {
 	@SuppressWarnings("boxing")
 	@Test
 	public void testAutoRemove() {
-		aTestMap.put(6, "Test6");
-		assertFalse(aTestMap.containsKey(1));
+		testMap.put(6, "Test6");
+		assertFalse(testMap.containsKey(1));
 		assertOrder(2, 3, 4, 5, 6);
 	}
 
@@ -62,7 +62,7 @@ public class CacheMapTest {
 	 */
 	@Test
 	public void testGetCapacity() {
-		assertEquals(5, aTestMap.getCapacity());
+		assertEquals(5, testMap.getCapacity());
 	}
 
 	/**
@@ -72,9 +72,9 @@ public class CacheMapTest {
 	@Test
 	public void testOrder() {
 		assertOrder(1, 2, 3, 4, 5);
-		aTestMap.get(1);
+		testMap.get(1);
 		assertOrder(2, 3, 4, 5, 1);
-		aTestMap.get(3);
+		testMap.get(3);
 		assertOrder(2, 4, 5, 1, 3);
 	}
 
@@ -84,8 +84,8 @@ public class CacheMapTest {
 	@SuppressWarnings("boxing")
 	@Test
 	public void testPut() {
-		aTestMap.put(6, "Test6");
-		assertFalse(aTestMap.containsKey(1));
+		testMap.put(6, "Test6");
+		assertFalse(testMap.containsKey(1));
 	}
 
 	/**
@@ -93,24 +93,24 @@ public class CacheMapTest {
 	 */
 	@Test
 	public void testRemoveEldest() {
-		assertEquals("Test1", aTestMap.removeEldest().getValue());
-		assertEquals("Test2", aTestMap.removeEldest().getValue());
-		assertEquals("Test3", aTestMap.removeEldest().getValue());
-		assertEquals("Test4", aTestMap.removeEldest().getValue());
-		assertEquals("Test5", aTestMap.removeEldest().getValue());
-		assertTrue(aTestMap.isEmpty());
+		assertEquals("Test1", testMap.removeEldest().getValue());
+		assertEquals("Test2", testMap.removeEldest().getValue());
+		assertEquals("Test3", testMap.removeEldest().getValue());
+		assertEquals("Test4", testMap.removeEldest().getValue());
+		assertEquals("Test5", testMap.removeEldest().getValue());
+		assertTrue(testMap.isEmpty());
 	}
 
 	/**
 	 * Assert a certain order of the map entries.
 	 *
-	 * @param rOrder The keys for the cache order, from oldest to newest
+	 * @param order The keys for the cache order, from oldest to newest
 	 */
-	private void assertOrder(int... rOrder) {
+	private void assertOrder(int... order) {
 		int i = 0;
 
-		for (Integer nKey : aTestMap.keySet()) {
-			assertEquals(Integer.valueOf(rOrder[i++]), nKey);
+		for (Integer key : testMap.keySet()) {
+			assertEquals(Integer.valueOf(order[i++]), key);
 		}
 	}
 }

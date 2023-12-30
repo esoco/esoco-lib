@@ -30,19 +30,20 @@ import java.io.Writer;
  */
 public class LimitedWriter extends FilterWriter {
 
-	private int nRemainingLimit;
+	private int remainingLimit;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedWriter The writer wrapped by this instance
-	 * @param nMax           The maximum number of characters that can be
-	 *                       written to this instance
+	 * @param wrappedWriter The writer wrapped by this instance
+	 * @param max           The maximum number of characters that can be
+	 *                         written
+	 *                      to this instance
 	 */
-	public LimitedWriter(Writer rWrappedWriter, int nMax) {
-		super(rWrappedWriter);
+	public LimitedWriter(Writer wrappedWriter, int max) {
+		super(wrappedWriter);
 
-		nRemainingLimit = nMax;
+		remainingLimit = max;
 	}
 
 	/**
@@ -51,7 +52,7 @@ public class LimitedWriter extends FilterWriter {
 	 * @return The remaining limit
 	 */
 	public int getRemainingLimit() {
-		return nRemainingLimit;
+		return remainingLimit;
 	}
 
 	/**
@@ -61,16 +62,16 @@ public class LimitedWriter extends FilterWriter {
 	@SuppressWarnings("boxing")
 	public String toString() {
 		return String.format("%s(%d, %s)", getClass().getSimpleName(),
-			nRemainingLimit, out);
+			remainingLimit, out);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException {
-		if (nRemainingLimit-- > 0) {
-			super.write(nByte);
+	public void write(int b) throws IOException {
+		if (remainingLimit-- > 0) {
+			super.write(b);
 		} else {
 			throw new StreamLimitException("Output limit reached", false);
 		}

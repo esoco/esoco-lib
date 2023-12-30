@@ -46,14 +46,14 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	/**
 	 * Contains the array data
 	 */
-	private byte[] aData;
+	private byte[] data;
 
 	/**
 	 * The number of bytes stored in the data array
 	 */
-	private int nSize = 0;
+	private int size = 0;
 
-	private int nCapacityIncrement = DEFAULT_CAPACITY;
+	private int capacityIncrement = DEFAULT_CAPACITY;
 
 	/**
 	 * Default constructor, creates an array with an initial capacity of
@@ -67,36 +67,35 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * Constructor that creates an array with the given capacity. The capacity
 	 * increment size will be set to the initial capacity.
 	 *
-	 * @param nCapacity The initial capacity of the array
+	 * @param capacity The initial capacity of the array
 	 * @throws IllegalArgumentException If the capacity is negative
 	 */
-	public ByteArray(int nCapacity) {
-		if (nCapacity < 0) {
-			throw new IllegalArgumentException(
-				"Invalid capacity: " + nCapacity);
+	public ByteArray(int capacity) {
+		if (capacity < 0) {
+			throw new IllegalArgumentException("Invalid capacity: " + capacity);
 		}
 
-		aData = new byte[nCapacity];
-		nCapacityIncrement = nCapacity > 0 ? nCapacity : DEFAULT_CAPACITY;
+		data = new byte[capacity];
+		capacityIncrement = capacity > 0 ? capacity : DEFAULT_CAPACITY;
 	}
 
 	/**
 	 * Creates a new instance from a byte array.
 	 *
-	 * @param rData The data to be copied into this instance
+	 * @param data The data to be copied into this instance
 	 */
-	public ByteArray(byte[] rData) {
-		int l = rData.length;
+	public ByteArray(byte[] data) {
+		int l = data.length;
 
-		aData = new byte[l];
-		System.arraycopy(rData, 0, aData, 0, l);
+		data = new byte[l];
+		System.arraycopy(data, 0, data, 0, l);
 	}
 
 	/**
 	 * Returns an instance containing the bytes from a string of hexadecimal
 	 * digits.
 	 *
-	 * @param sHexValue The hexadecimal string to convert
+	 * @param hexValue The hexadecimal string to convert
 	 * @return The instance
 	 * @throws IllegalArgumentException If the argument string is NULL or
 	 * has an
@@ -105,48 +104,48 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 *                                  cannot be parsed into bytes
 	 * @see TextConvert#toBytes(String)
 	 */
-	public static ByteArray valueOf(String sHexValue) {
-		return new ByteArray(TextConvert.toBytes(sHexValue));
+	public static ByteArray valueOf(String hexValue) {
+		return new ByteArray(TextConvert.toBytes(hexValue));
 	}
 
 	/**
 	 * Adds an byte value to the end of this array.
 	 *
-	 * @param nValue The value to add
+	 * @param value The value to add
 	 */
-	public void add(byte nValue) {
+	public void add(byte value) {
 		checkCapacity(1);
-		aData[nSize++] = nValue;
+		data[size++] = value;
 	}
 
 	/**
 	 * Adds all byte values from an array to the end of this array.
 	 *
-	 * @param rValues The array containing the values to add
+	 * @param values The array containing the values to add
 	 */
-	public void add(byte[] rValues) {
-		add(rValues, 0, rValues.length);
+	public void add(byte[] values) {
+		add(values, 0, values.length);
 	}
 
 	/**
 	 * Adds certain byte values from an array to the end of this array.
 	 *
-	 * @param rValues The array containing the values to add
-	 * @param nOffset The offset from which to copy the bytes
-	 * @param nCount  The number of bytes to copy
+	 * @param values The array containing the values to add
+	 * @param offset The offset from which to copy the bytes
+	 * @param count  The number of bytes to copy
 	 */
-	public void add(byte[] rValues, int nOffset, int nCount) {
-		checkCapacity(nCount);
-		System.arraycopy(rValues, 0, aData, nSize, nCount);
-		nSize += nCount;
+	public void add(byte[] values, int offset, int count) {
+		checkCapacity(count);
+		System.arraycopy(values, 0, data, size, count);
+		size += count;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void appendTo(JsonBuilder rBuilder) {
-		rBuilder.appendString("0x" + this);
+	public void appendTo(JsonBuilder builder) {
+		builder.appendString("0x" + this);
 	}
 
 	/**
@@ -154,23 +153,23 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * afterwards, it's capacity will not be changed.
 	 */
 	public void clear() {
-		nSize = 0;
+		size = 0;
 	}
 
 	/**
 	 * Copies the contents of this array to an simple byte array. The
-	 * destination array must have a length of at least getSize() + nOffset,
+	 * destination array must have a length of at least getSize() + offset,
 	 * otherwise an IndexOutOfBoundsException will be thrown.
 	 *
-	 * @param rTarget The target array to copy the array data into
-	 * @param nOffset The start position in the destination array
+	 * @param target The target array to copy the array data into
+	 * @param offset The start position in the destination array
 	 * @return The target array
 	 * @throws IndexOutOfBoundsException If the destination array is to small
 	 */
-	public byte[] copyTo(byte[] rTarget, int nOffset) {
-		System.arraycopy(aData, 0, rTarget, nOffset, nSize);
+	public byte[] copyTo(byte[] target, int offset) {
+		System.arraycopy(data, 0, target, offset, size);
 
-		return rTarget;
+		return target;
 	}
 
 	/**
@@ -178,12 +177,12 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * the
 	 * capacity it if necessary.
 	 *
-	 * @param nMinCapacity The minimum capacity required by the operation that
-	 *                     invoked this method
+	 * @param minCapacity The minimum capacity required by the operation that
+	 *                    invoked this method
 	 */
-	public void ensureCapacity(int nMinCapacity) {
-		if (nMinCapacity > aData.length) {
-			setCapacity(nMinCapacity);
+	public void ensureCapacity(int minCapacity) {
+		if (minCapacity > data.length) {
+			setCapacity(minCapacity);
 		}
 	}
 
@@ -191,23 +190,23 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean equals(Object rObject) {
-		if (this == rObject) {
+	public boolean equals(Object object) {
+		if (this == object) {
 			return true;
 		}
 
-		if (rObject == null || getClass() != rObject.getClass()) {
+		if (object == null || getClass() != object.getClass()) {
 			return false;
 		}
 
-		ByteArray rOther = (ByteArray) rObject;
+		ByteArray other = (ByteArray) object;
 
-		if (nSize != rOther.nSize) {
+		if (size != other.size) {
 			return false;
 		}
 
-		for (int i = 0; i < nSize; i++) {
-			if (aData[i] != rOther.aData[i]) {
+		for (int i = 0; i < size; i++) {
+			if (data[i] != other.data[i]) {
 				return false;
 			}
 		}
@@ -219,25 +218,25 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public ByteArray fromJson(String sJson) {
-		String sData = Json.parse(sJson, String.class);
+	public ByteArray fromJson(String json) {
+		String parsed = Json.parse(json, String.class);
 
-		if (!sData.startsWith("0x")) {
-			throw new IllegalArgumentException("Missing 0x prefix: " + sData);
-		} else if (sData.length() % 2 == 1) {
+		if (!parsed.startsWith("0x")) {
+			throw new IllegalArgumentException("Missing 0x prefix: " + data);
+		} else if (parsed.length() % 2 == 1) {
 			throw new IllegalArgumentException(
-				"Invalid byte array data: " + sData);
+				"Invalid byte array data: " + parsed);
 		} else {
-			sData = sData.substring(2);
+			parsed = parsed.substring(2);
 
-			int nChars = sData.length();
+			int chars = parsed.length();
 
 			clear();
-			ensureCapacity(nChars / 2);
+			ensureCapacity(chars / 2);
 
-			for (int i = 0; i < nChars; i += 2) {
-				aData[nSize++] =
-					(byte) Short.parseShort(sData.substring(i, i + 2), 16);
+			for (int i = 0; i < chars; i += 2) {
+				data[size++] =
+					(byte) Short.parseShort(parsed.substring(i, i + 2), 16);
 			}
 		}
 
@@ -247,14 +246,14 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	/**
 	 * Returns the byte value at a particular position in the array.
 	 *
-	 * @param nIndex The position in the array
+	 * @param index The position in the array
 	 * @return The byte value at the given position
 	 * @throws ArrayIndexOutOfBoundsException If the index value is invalid
 	 */
-	public byte get(int nIndex) {
-		checkIndex(nIndex);
+	public byte get(int index) {
+		checkIndex(index);
 
-		return aData[nIndex];
+		return data[index];
 	}
 
 	/**
@@ -264,7 +263,7 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @return The current capacity of the array
 	 */
 	public int getCapacity() {
-		return aData.length;
+		return data.length;
 	}
 
 	/**
@@ -274,7 +273,7 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @return The capacity increment
 	 */
 	public int getCapacityIncrement() {
-		return nCapacityIncrement;
+		return capacityIncrement;
 	}
 
 	/**
@@ -284,7 +283,7 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @return The number of byte values in the array
 	 */
 	public int getSize() {
-		return nSize;
+		return size;
 	}
 
 	/**
@@ -292,29 +291,29 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 */
 	@Override
 	public int hashCode() {
-		int nHash = nSize;
+		int hash = size;
 
-		for (int i = 0; i < nSize; i++) {
-			nHash = 31 * nHash + aData[i];
+		for (int i = 0; i < size; i++) {
+			hash = 31 * hash + data[i];
 		}
 
-		return nHash;
+		return hash;
 	}
 
 	/**
 	 * Searches for a specific value and returns the position of it's first
 	 * occurence in the array from a certain position.
 	 *
-	 * @param nValue The value to search for
-	 * @param nPos   The position to start at
+	 * @param value The value to search for
+	 * @param pos   The position to start at
 	 * @return The first position of the value in the array or -1 if not found
 	 */
-	public int indexOf(byte nValue, int nPos) {
-		while ((nPos < nSize) && (nValue != aData[nPos])) {
-			nPos++;
+	public int indexOf(byte value, int pos) {
+		while ((pos < size) && (value != data[pos])) {
+			pos++;
 		}
 
-		return ((nPos < nSize) ? nPos : (-1));
+		return ((pos < size) ? pos : (-1));
 	}
 
 	/**
@@ -322,17 +321,16 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * at and behind this position will be shifted one position to the end of
 	 * the array. If the array capacity is exceeded the array will be resized.
 	 *
-	 * @param nValue The value to add
-	 * @param nIndex The index of the position where the value shall be
-	 *               inserted
+	 * @param value The value to add
+	 * @param index The index of the position where the value shall be inserted
 	 * @throws ArrayIndexOutOfBoundsException If the index value is invalid
 	 */
-	public void insert(byte nValue, int nIndex) {
-		checkIndex(nIndex);
+	public void insert(byte value, int index) {
+		checkIndex(index);
 		checkCapacity(1);
-		System.arraycopy(aData, nIndex, aData, nIndex + 1, nSize - nIndex);
-		aData[nIndex] = nValue;
-		nSize++;
+		System.arraycopy(data, index, data, index + 1, size - index);
+		data[index] = value;
+		size++;
 	}
 
 	/**
@@ -342,31 +340,31 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * will be shifted one position to the end of the array. If the current
 	 * array capacity is not sufficient the array will be resized.
 	 *
-	 * <p>If the parameter nStart is greater than 0, the values at the array
-	 * positions before nStart will be ignored by the insertion. This allows to
+	 * <p>If the parameter start is greater than 0, the values at the array
+	 * positions before start will be ignored by the insertion. This allows to
 	 * keep a set of unordered values at the beginning of the array.</p>
 	 *
-	 * @param nValue The value to insert into the array
-	 * @param nStart The position to start comparing values
+	 * @param value The value to insert into the array
+	 * @param start The position to start comparing values
 	 * @return The position at which the new value has been inserted
 	 */
-	public int insertAscending(byte nValue, int nStart) {
-		int nPos = nStart;
+	public int insertAscending(byte value, int start) {
+		int pos = start;
 
 		checkCapacity(1);
 
-		while ((nPos < nSize) && (nValue >= aData[nPos])) {
-			nPos++;
+		while ((pos < size) && (value >= data[pos])) {
+			pos++;
 		}
 
-		for (int i = nSize; i > nPos; i--) {
-			aData[i] = aData[i - 1];
+		for (int i = size; i > pos; i--) {
+			data[i] = data[i - 1];
 		}
 
-		aData[nPos] = nValue;
-		nSize++;
+		data[pos] = value;
+		size++;
 
-		return nPos;
+		return pos;
 	}
 
 	/**
@@ -375,7 +373,7 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @return TRUE if empty
 	 */
 	public boolean isEmpty() {
-		return nSize == 0;
+		return size == 0;
 	}
 
 	/**
@@ -384,30 +382,30 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @return The byte value stored at the end of the array
 	 */
 	public byte last() {
-		return aData[nSize - 1];
+		return data[size - 1];
 	}
 
 	/**
 	 * Converts this instance into a new array defined by the given predicate
 	 * and mapping function.
 	 *
-	 * @param pInclude A predicate that returns TRUE if a value should be
-	 *                 included in the new array
-	 * @param fMap     The mapping function
+	 * @param include A predicate that returns TRUE if a value should be
+	 *                included in the new array
+	 * @param map     The mapping function
 	 * @return The new array
 	 */
-	public ByteArray map(Predicate<Byte> pInclude, Function<Byte, Byte> fMap) {
-		ByteArray aResult = new ByteArray(nSize);
+	public ByteArray map(Predicate<Byte> include, Function<Byte, Byte> map) {
+		ByteArray result = new ByteArray(size);
 
-		for (int i = 0; i < nSize; i++) {
-			byte nValue = aData[i];
+		for (int i = 0; i < size; i++) {
+			byte value = data[i];
 
-			if (pInclude.test(nValue)) {
-				aResult.add(fMap.apply(nValue));
+			if (include.test(value)) {
+				result.add(map.apply(value));
 			}
 		}
 
-		return aResult;
+		return result;
 	}
 
 	/**
@@ -417,8 +415,8 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @throws ArrayIndexOutOfBoundsException If the array is empty
 	 */
 	public byte pop() {
-		if (nSize > 0) {
-			return aData[--nSize];
+		if (size > 0) {
+			return data[--size];
 		} else {
 			throw new ArrayIndexOutOfBoundsException(
 				"ByteArray.pop(): array is empty");
@@ -429,10 +427,10 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * Adds an byte value to the end of the array (stack version, calls <code>
 	 * add()</code>).
 	 *
-	 * @param nValue The value to add
+	 * @param value The value to add
 	 */
-	public void push(byte nValue) {
-		add(nValue);
+	public void push(byte value) {
+		add(value);
 	}
 
 	/**
@@ -440,13 +438,13 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * behind that index will be shifted one position to the beginning of the
 	 * array.
 	 *
-	 * @param nIndex The position at which a value shall be removed
+	 * @param index The position at which a value shall be removed
 	 * @throws ArrayIndexOutOfBoundsException If the index value is invalid
 	 */
-	public void remove(int nIndex) {
-		checkIndex(nIndex);
-		nSize--;
-		System.arraycopy(aData, nIndex + 1, aData, nIndex, nSize - nIndex);
+	public void remove(int index) {
+		checkIndex(index);
+		size--;
+		System.arraycopy(data, index + 1, data, index, size - index);
 	}
 
 	/**
@@ -454,35 +452,35 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * been
 	 * replaced with another.
 	 *
-	 * @param nValue       The value to replace
-	 * @param nReplacement The replacement value
+	 * @param value       The value to replace
+	 * @param replacement The replacement value
 	 * @return The new array
 	 */
-	public ByteArray replaceAll(byte nValue, byte nReplacement) {
+	public ByteArray replaceAll(byte value, byte replacement) {
 		return map(Predicates.alwaysTrue(),
-			b -> b == nValue ? nReplacement : nValue);
+			b -> b == value ? replacement : value);
 	}
 
 	/**
 	 * Sets a new byte value at an arbitrary position of the array.
 	 *
-	 * @param nValue The new value to set
-	 * @param nIndex The index of the position where the value shall be set
+	 * @param value The new value to set
+	 * @param index The index of the position where the value shall be set
 	 * @throws ArrayIndexOutOfBoundsException If the index value is invalid
 	 */
-	public void set(byte nValue, int nIndex) {
-		checkIndex(nIndex);
-		aData[nIndex] = nValue;
+	public void set(byte value, int index) {
+		checkIndex(index);
+		data[index] = value;
 	}
 
 	/**
 	 * Sets the amount by which the array capacity will be incremented when the
 	 * size exceeds the current capacity.
 	 *
-	 * @param nIncrement The capacity increment
+	 * @param increment The capacity increment
 	 */
-	public void setCapacityIncrement(int nIncrement) {
-		nCapacityIncrement = nIncrement;
+	public void setCapacityIncrement(int increment) {
+		capacityIncrement = increment;
 	}
 
 	/**
@@ -491,11 +489,11 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * value 0 will be added to the end of the array. If the new size extends
 	 * the current array capacity the capacity will be increased accordingly.
 	 *
-	 * @param nNewSize The new number of byte values in the array
+	 * @param newSize The new number of byte values in the array
 	 */
-	public void setSize(int nNewSize) {
-		ensureCapacity(nNewSize);
-		nSize = nNewSize;
+	public void setSize(int newSize) {
+		ensureCapacity(newSize);
+		size = newSize;
 	}
 
 	/**
@@ -515,7 +513,7 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * @return A new byte array containing all elements of this array
 	 */
 	public byte[] toByteArray() {
-		return copyTo(new byte[nSize], 0);
+		return copyTo(new byte[size], 0);
 	}
 
 	/**
@@ -529,18 +527,18 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 */
 	@Override
 	public String toString() {
-		return TextConvert.hexString(aData, 0, nSize, "");
+		return TextConvert.hexString(data, 0, size, "");
 	}
 
 	/**
 	 * Converts the bytes of this instance into a string with the given
 	 * charset.
 	 *
-	 * @param rCharset The charset
+	 * @param charset The charset
 	 * @return The resulting string
 	 */
-	public String toText(Charset rCharset) {
-		return new String(aData, rCharset);
+	public String toText(Charset charset) {
+		return new String(data, charset);
 	}
 
 	/**
@@ -556,40 +554,37 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * Shrinks the array capacity to it's current size.
 	 */
 	public void trimToSize() {
-		if (nSize < aData.length) {
-			setCapacity(nSize);
+		if (size < data.length) {
+			setCapacity(size);
 		}
 	}
 
 	/**
 	 * Lets the array capacity grow for at least a certain size increment.
 	 *
-	 * @param nIncrement The minimum increment for which the capacity shall
-	 *                   grow
+	 * @param increment The minimum increment for which the capacity shall grow
 	 */
-	protected final void checkCapacity(int nIncrement) {
-		int nNewSize = nSize + nIncrement;
+	protected final void checkCapacity(int increment) {
+		int newSize = size + increment;
 
-		if (nNewSize > aData.length) {
-			nNewSize =
-				((nNewSize / nCapacityIncrement) + 1) * nCapacityIncrement;
+		if (newSize > data.length) {
+			newSize = ((newSize / capacityIncrement) + 1) * capacityIncrement;
 
-			setCapacity(nNewSize);
+			setCapacity(newSize);
 		}
 	}
 
 	/**
 	 * Checks if a certain index position is valid for the current array size.
 	 *
-	 * @param nIndex The index value to check
+	 * @param index The index value to check
 	 * @throws ArrayIndexOutOfBoundsException If the given index value is not
 	 *                                        valid for the current array size
 	 */
-	protected final void checkIndex(int nIndex)
+	protected final void checkIndex(int index)
 		throws ArrayIndexOutOfBoundsException {
-		if ((nIndex < 0) || (nIndex >= nSize)) {
-			throw new ArrayIndexOutOfBoundsException(
-				"Illegal index: " + nIndex);
+		if ((index < 0) || (index >= size)) {
+			throw new ArrayIndexOutOfBoundsException("Illegal index: " + index);
 		}
 	}
 
@@ -597,12 +592,12 @@ public class ByteArray implements JsonSerializable<ByteArray> {
 	 * Resizes the array to a certain capacity. The new capacity must always be
 	 * greater or equal to the current array size.
 	 *
-	 * @param nNewCapacity The new array capacity
+	 * @param newCapacity The new array capacity
 	 */
-	protected final void setCapacity(int nNewCapacity) {
-		byte[] aNewData = new byte[nNewCapacity];
+	protected final void setCapacity(int newCapacity) {
+		byte[] newData = new byte[newCapacity];
 
-		System.arraycopy(aData, 0, aNewData, 0, nSize);
-		aData = aNewData;
+		System.arraycopy(data, 0, newData, 0, size);
+		data = newData;
 	}
 }

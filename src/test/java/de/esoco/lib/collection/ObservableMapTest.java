@@ -18,8 +18,8 @@ package de.esoco.lib.collection;
 
 import de.esoco.lib.event.ElementEvent.EventType;
 import de.esoco.lib.event.EventHandler;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,8 +27,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test of observable collection functionality.
@@ -38,50 +39,50 @@ import static org.junit.Assert.assertTrue;
 public class ObservableMapTest
 	implements EventHandler<MapEvent<String, String>> {
 
-	EventType rExpectedEventType;
+	EventType expectedEventType;
 
-	String sTestKey;
+	String testKey;
 
-	String sTestValue;
+	String testValue;
 
-	private ObservableMap<String, String> aObservableMap;
+	private ObservableMap<String, String> observableMap;
 
 	/**
 	 * Handles collection events.
 	 *
-	 * @param rEvent The event
+	 * @param event The event
 	 */
 	@Override
-	public void handleEvent(MapEvent<String, String> rEvent) {
-		EventType rType = rEvent.getType();
+	public void handleEvent(MapEvent<String, String> event) {
+		EventType type = event.getType();
 
-		assertEquals(rExpectedEventType, rType);
+		assertEquals(expectedEventType, type);
 
-		switch (rEvent.getType()) {
+		switch (event.getType()) {
 			case ADD:
 			case REMOVE:
 			case REMOVE_ALL:
 			case UPDATE:
-				sTestKey = rEvent.getElement();
-				sTestValue = rEvent.getUpdateValue();
+				testKey = event.getElement();
+				testValue = event.getUpdateValue();
 
 				break;
 
 			default:
-				assertTrue("Unknown event type: " + rType, false);
+				fail("Unknown event type: " + type);
 		}
 	}
 
 	/**
 	 * Test setup.
 	 */
-	@Before
+	@BeforeEach
 	public void setup() {
 		// use a linked map to make entry order predictable
-		aObservableMap = new ObservableMap<String, String>(
+		observableMap = new ObservableMap<String, String>(
 			new LinkedHashMap<String, String>());
 
-		aObservableMap.addListener(this);
+		observableMap.addListener(this);
 	}
 
 	/**
@@ -91,9 +92,9 @@ public class ObservableMapTest
 	public void testClear() {
 		initMap(EventType.REMOVE_ALL);
 
-		aObservableMap.clear();
+		observableMap.clear();
 		assertTestValues(null, null);
-		assertTrue(aObservableMap.isEmpty());
+		assertTrue(observableMap.isEmpty());
 	}
 
 	/**
@@ -103,14 +104,14 @@ public class ObservableMapTest
 	public void testEntryIteratorRemove() {
 		initMap(EventType.REMOVE);
 
-		Iterator<Entry<String, String>> rIterator =
-			aObservableMap.entrySet().iterator();
+		Iterator<Entry<String, String>> iterator =
+			observableMap.entrySet().iterator();
 
 		int i = 1;
 
-		while (rIterator.hasNext()) {
-			rIterator.next();
-			rIterator.remove();
+		while (iterator.hasNext()) {
+			iterator.next();
+			iterator.remove();
 			assertTestValues("K" + i, "V" + i);
 			i++;
 		}
@@ -123,13 +124,13 @@ public class ObservableMapTest
 	public void testEntryUpdate() {
 		initMap(EventType.UPDATE);
 
-		Iterator<Entry<String, String>> rIterator =
-			aObservableMap.entrySet().iterator();
+		Iterator<Entry<String, String>> iterator =
+			observableMap.entrySet().iterator();
 
 		int i = 1;
 
-		while (rIterator.hasNext()) {
-			rIterator.next().setValue("U" + i);
+		while (iterator.hasNext()) {
+			iterator.next().setValue("U" + i);
 			assertTestValues("K" + i, "U" + i);
 			i++;
 		}
@@ -142,13 +143,13 @@ public class ObservableMapTest
 	public void testKeyIteratorRemove() {
 		initMap(EventType.REMOVE);
 
-		Iterator<String> rIterator = aObservableMap.keySet().iterator();
+		Iterator<String> iterator = observableMap.keySet().iterator();
 
 		int i = 1;
 
-		while (rIterator.hasNext()) {
-			rIterator.next();
-			rIterator.remove();
+		while (iterator.hasNext()) {
+			iterator.next();
+			iterator.remove();
 			assertTestValues("K" + i, "V" + i);
 			i++;
 		}
@@ -161,12 +162,12 @@ public class ObservableMapTest
 	public void testPut() {
 		initMap(EventType.ADD);
 
-		Map<String, String> aPutMap = new HashMap<String, String>();
+		Map<String, String> putMap = new HashMap<String, String>();
 
-		aPutMap.put("K4", "V4");
-		aPutMap.put("K5", "V5");
+		putMap.put("K4", "V4");
+		putMap.put("K5", "V5");
 
-		aObservableMap.putAll(aPutMap);
+		observableMap.putAll(putMap);
 		assertTestValues("K5", "V5");
 	}
 
@@ -177,14 +178,14 @@ public class ObservableMapTest
 	public void testRemove() {
 		initMap(EventType.REMOVE);
 
-		aObservableMap.remove("K1");
+		observableMap.remove("K1");
 		assertTestValues("K1", "V1");
-		aObservableMap.remove("K3");
+		observableMap.remove("K3");
 		assertTestValues("K3", "V3");
-		aObservableMap.remove("K2");
+		observableMap.remove("K2");
 		assertTestValues("K2", "V2");
 
-		assertTrue(aObservableMap.isEmpty());
+		assertTrue(observableMap.isEmpty());
 	}
 
 	/**
@@ -194,11 +195,11 @@ public class ObservableMapTest
 	public void testUpdate() {
 		initMap(EventType.UPDATE);
 
-		aObservableMap.put("K1", "V1A");
+		observableMap.put("K1", "V1A");
 		assertTestValues("K1", "V1A");
-		aObservableMap.put("K2", "V2A");
+		observableMap.put("K2", "V2A");
 		assertTestValues("K2", "V2A");
-		aObservableMap.put("K3", "V3A");
+		observableMap.put("K3", "V3A");
 		assertTestValues("K3", "V3A");
 	}
 
@@ -209,13 +210,13 @@ public class ObservableMapTest
 	public void testValueIteratorRemove() {
 		initMap(EventType.REMOVE);
 
-		Iterator<String> rIterator = aObservableMap.values().iterator();
+		Iterator<String> iterator = observableMap.values().iterator();
 
 		int i = 1;
 
-		while (rIterator.hasNext()) {
-			rIterator.next();
-			rIterator.remove();
+		while (iterator.hasNext()) {
+			iterator.next();
+			iterator.remove();
 			assertTestValues("K" + i, "V" + i);
 			i++;
 		}
@@ -224,30 +225,30 @@ public class ObservableMapTest
 	/**
 	 * Asserts the equality of the test values with the arguments.
 	 *
-	 * @param sKey   The expected test key
-	 * @param sValue The expected test value
+	 * @param key   The expected test key
+	 * @param value The expected test value
 	 */
-	void assertTestValues(String sKey, String sValue) {
-		assertEquals(sKey, sTestKey);
-		assertEquals(sValue, sTestValue);
+	void assertTestValues(String key, String value) {
+		assertEquals(key, testKey);
+		assertEquals(value, testValue);
 	}
 
 	/**
 	 * Initializes the test map.
 	 *
-	 * @param rEventType The expected event type for subsequent changes
+	 * @param eventType The expected event type for subsequent changes
 	 */
-	void initMap(EventType rEventType) {
-		assertTrue(aObservableMap.isEmpty());
+	void initMap(EventType eventType) {
+		assertTrue(observableMap.isEmpty());
 
-		rExpectedEventType = EventType.ADD;
-		aObservableMap.put("K1", "V1");
+		expectedEventType = EventType.ADD;
+		observableMap.put("K1", "V1");
 		assertTestValues("K1", "V1");
-		aObservableMap.put("K2", "V2");
+		observableMap.put("K2", "V2");
 		assertTestValues("K2", "V2");
-		aObservableMap.put("K3", "V3");
+		observableMap.put("K3", "V3");
 		assertTestValues("K3", "V3");
 
-		rExpectedEventType = rEventType;
+		expectedEventType = eventType;
 	}
 }

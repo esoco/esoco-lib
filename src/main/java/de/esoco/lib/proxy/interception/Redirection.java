@@ -30,17 +30,17 @@ import java.lang.reflect.Method;
  */
 public class Redirection extends Delegation {
 
-	private final Object rRedirectionTarget;
+	private final Object redirectionTarget;
 
 	/**
 	 * Creates a redirection that uses a 1:1 method mapping to invoke the
 	 * methods of a different target object.
 	 *
-	 * @param rTarget The target object to be invoked instead of the proxy's
-	 *                original target
+	 * @param target The target object to be invoked instead of the proxy's
+	 *               original target
 	 */
-	public Redirection(Object rTarget) {
-		rRedirectionTarget = rTarget;
+	public Redirection(Object target) {
+		redirectionTarget = target;
 	}
 
 	/**
@@ -48,14 +48,14 @@ public class Redirection extends Delegation {
 	 * invocations of
 	 * a different target object.
 	 *
-	 * @param rTarget  The target object to be invoked instead of the proxy's
-	 *                 original target
-	 * @param rMapping The mapping definition
+	 * @param target  The target object to be invoked instead of the proxy's
+	 *                original target
+	 * @param mapping The mapping definition
 	 */
-	public Redirection(Object rTarget, MethodMappingDefinition rMapping) {
-		super(rMapping);
+	public Redirection(Object target, MethodMappingDefinition mapping) {
+		super(mapping);
 
-		rRedirectionTarget = rTarget;
+		redirectionTarget = target;
 	}
 
 	/**
@@ -65,9 +65,8 @@ public class Redirection extends Delegation {
 	 * @see Delegation#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) throws Exception {
-		return super.invoke(rProxy, rOriginalMethod, rRedirectionTarget,
-			rArgs);
+	public Object invoke(Object proxy, Method originalMethod, Object target,
+		Object[] args) throws Exception {
+		return super.invoke(proxy, originalMethod, redirectionTarget, args);
 	}
 }

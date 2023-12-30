@@ -37,19 +37,19 @@ public class ObservableCollection<E> extends
 	/**
 	 * Creates a new instance that observes a certain collection.
 	 *
-	 * @param rObservedCollection The collection to be observed
+	 * @param observedCollection The collection to be observed
 	 */
-	public ObservableCollection(Collection<E> rObservedCollection) {
-		super(rObservedCollection);
+	public ObservableCollection(Collection<E> observedCollection) {
+		super(observedCollection);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected CollectionEvent<E, Collection<E>> createEvent(EventType rType,
-		E rElement, E rUpdateValue, int nIndex) {
-		return new CollectionEvent<E, Collection<E>>(rType, this, rElement,
-			rUpdateValue);
+	protected CollectionEvent<E, Collection<E>> createEvent(EventType type,
+		E element, E updateValue, int index) {
+		return new CollectionEvent<E, Collection<E>>(type, this, element,
+			updateValue);
 	}
 }

@@ -31,7 +31,7 @@ import de.esoco.lib.manage.RunCheck;
  */
 public abstract class CheckableRunner implements Runnable, RunCheck {
 
-	private boolean bRunning = false;
+	private boolean running = false;
 
 	/**
 	 * Allows to check if the task is still running. This method will return
@@ -41,7 +41,7 @@ public abstract class CheckableRunner implements Runnable, RunCheck {
 	 */
 	@Override
 	public final boolean isRunning() {
-		return bRunning;
+		return running;
 	}
 
 	/**
@@ -51,12 +51,12 @@ public abstract class CheckableRunner implements Runnable, RunCheck {
 	 */
 	@Override
 	public final void run() {
-		bRunning = true;
+		running = true;
 
 		try {
 			execute();
 		} finally {
-			bRunning = false;
+			running = false;
 			Log.trace("Stopped: " + this + "[" + Thread.currentThread() + "]");
 		}
 	}

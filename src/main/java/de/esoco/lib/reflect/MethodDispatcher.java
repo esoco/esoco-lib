@@ -56,31 +56,31 @@ import java.lang.reflect.Modifier;
  */
 public class MethodDispatcher<T> {
 
-	private final Object rTarget;
+	private final Object target;
 
-	private final Method rMethod;
+	private final Method method;
 
-	private boolean bUseArgs = true;
+	private boolean useArgs = true;
 
 	/**
 	 * Creates a new method dispatcher for a method without parameters.
 	 *
-	 * @param rTarget The target on which the method shall be invoked
-	 * @param sMethod The name of the method to invoke
+	 * @param target The target on which the method shall be invoked
+	 * @param method The name of the method to invoke
 	 */
-	public MethodDispatcher(Object rTarget, String sMethod) {
-		this(rTarget, sMethod, (Class[]) null);
+	public MethodDispatcher(Object target, String method) {
+		this(target, method, (Class[]) null);
 	}
 
 	/**
 	 * Creates a new method dispatcher for a certain method.
 	 *
-	 * @param rTarget The target on which the method shall be invoked
-	 * @param rMethod The method to invoke
+	 * @param target The target on which the method shall be invoked
+	 * @param method The method to invoke
 	 */
-	public MethodDispatcher(Object rTarget, Method rMethod) {
-		this.rTarget = rTarget;
-		this.rMethod = rMethod;
+	public MethodDispatcher(Object target, Method method) {
+		this.target = target;
+		this.method = method;
 	}
 
 	/**
@@ -96,16 +96,15 @@ public class MethodDispatcher<T> {
 	 * environments that have limited accessibility (like applets) should only
 	 * use public methods to dispatch to.</p>
 	 *
-	 * @param rTarget     The target on which the method shall be invoked
-	 * @param sMethod     The name of the method to invoke
-	 * @param rParamTypes An array containing the method parameter types;
-	 *                       may be
-	 *                    empty or NULL for no-parameter methods
+	 * @param target     The target on which the method shall be invoked
+	 * @param method     The name of the method to invoke
+	 * @param paramTypes An array containing the method parameter types; may be
+	 *                   empty or NULL for no-parameter methods
 	 * @throws IllegalArgumentException If no matching method could be found
 	 */
-	public MethodDispatcher(Object rTarget, String sMethod,
-		Class<?>... rParamTypes) {
-		this(rTarget, sMethod, false, rParamTypes);
+	public MethodDispatcher(Object target, String method,
+		Class<?>... paramTypes) {
+		this(target, method, false, paramTypes);
 	}
 
 	/**
@@ -114,13 +113,13 @@ public class MethodDispatcher<T> {
 	 * dispatch methods is invoked. It will first look for a method with the
 	 * given name and parameter types that would allow it to be invoked with
 	 * the
-	 * given parameter types. If such is not found but the bNoParamsOptional
+	 * given parameter types. If such is not found but the noParamsOptional
 	 * parameter is TRUE it will look for a method with no parameters. If that
 	 * also doesn't exist an IllegalArgumentException will be thrown.
 	 *
 	 * <p>This constructor is non-public because it is intended to be used
 	 * internally or by subclasses. Subclasses may allow to optionally use a
-	 * non-parameter variant of the method by setting the bNoParamsOptional
+	 * non-parameter variant of the method by setting the noParamsOptional
 	 * parameter to TRUE. In such a case the {@link #dispatch(Object[])} method
 	 * will ignore any arguments and invoke the no-argument method.</p>
 	 *
@@ -130,22 +129,21 @@ public class MethodDispatcher<T> {
 	 * environments that have limited accessibility (like applets) should only
 	 * use public methods to dispatch to.</p>
 	 *
-	 * @param rTarget           The target on which the method shall be invoked
-	 * @param sMethod           The name of the method to invoke
-	 * @param bNoParamsOptional If TRUE a method with no parameters will be
-	 *                          tried if no method with matching parameter
-	 *                          types
-	 *                          could be found
-	 * @param rParamTypes       The method parameter types; may either be empty
-	 *                          or NULL for no-parameter methods
+	 * @param target           The target on which the method shall be invoked
+	 * @param method           The name of the method to invoke
+	 * @param noParamsOptional If TRUE a method with no parameters will be
+	 *                            tried
+	 *                         if no method with matching parameter types could
+	 *                         be found
+	 * @param paramTypes       The method parameter types; may either be empty
+	 *                         or NULL for no-parameter methods
 	 * @throws IllegalArgumentException If no matching method could be found
 	 */
-	protected MethodDispatcher(Object rTarget, String sMethod,
-		boolean bNoParamsOptional, Class<?>... rParamTypes) {
-		this.rTarget = rTarget;
-		this.rMethod = getMethod(rTarget.getClass(), sMethod,
-			bNoParamsOptional,
-			rParamTypes);
+	protected MethodDispatcher(Object target, String method,
+		boolean noParamsOptional, Class<?>... paramTypes) {
+		this.target = target;
+		this.method =
+			getMethod(target.getClass(), method, noParamsOptional, paramTypes);
 	}
 
 	/**
@@ -161,52 +159,52 @@ public class MethodDispatcher<T> {
 	 * Dispatches a call to the actual method this dispatcher is registered
 	 * for.
 	 *
-	 * @param rArgs The argument values to be used for the method call
+	 * @param args The argument values to be used for the method call
 	 * @return The value returned by the invoked method (NULL for void methods)
 	 */
 	@SuppressWarnings("unchecked")
-	public T dispatch(Object... rArgs) {
-		return (T) ReflectUtil.invoke(rTarget, rMethod,
-			bUseArgs ? rArgs : null);
+	public T dispatch(Object... args) {
+		return (T) ReflectUtil.invoke(target, method, useArgs ? args : null);
 	}
 
 	/**
 	 * Gets a certain method from a class. This method first looks for a method
 	 * with the given name and parameters of the given types. If such is not
-	 * found but the argument bNoParamsOptional is TRUE it will look for a
-	 * method with no parameters. If that also doesn't exist an
+	 * found but the argument noParamsOptional is TRUE it will look for a
+	 * method
+	 * with no parameters. If that also doesn't exist an
 	 * IllegalArgumentException will be thrown.
 	 *
 	 * <p>This method will also search for non-public methods and tries to set
 	 * them as accessible for the purpose of dispatching.</p>
 	 *
-	 * @param rClass            The class to search
-	 * @param sMethod           The name of the method
-	 * @param bNoParamsOptional If TRUE a method with no parameters will be
-	 *                          tried if no method with matching parameter
-	 *                          types
-	 *                          could be found
-	 * @param rParamTypes       An array containing the method parameter types;
-	 *                          may be empty or NULL for no-parameter methods
+	 * @param type             The class to search
+	 * @param method           The name of the method
+	 * @param noParamsOptional If TRUE a method with no parameters will be
+	 *                            tried
+	 *                         if no method with matching parameter types could
+	 *                         be found
+	 * @param paramTypes       An array containing the method parameter types;
+	 *                         may be empty or NULL for no-parameter methods
 	 * @return The method according to the arguments
 	 * @throws IllegalArgumentException If no matching method could be found
 	 */
-	private Method getMethod(Class<?> rClass, String sMethod,
-		boolean bNoParamsOptional, Class<?>... rParamTypes) {
-		boolean bHasParams = (rParamTypes != null) && (rParamTypes.length > 0);
-		Method m = ReflectUtil.findMethod(rClass, sMethod, rParamTypes);
+	private Method getMethod(Class<?> type, String method,
+		boolean noParamsOptional, Class<?>... paramTypes) {
+		boolean hasParams = (paramTypes != null) && (paramTypes.length > 0);
+		Method m = ReflectUtil.findMethod(type, method, paramTypes);
 
-		if (m == null && bNoParamsOptional && bHasParams) {
-			bUseArgs = false;
+		if (m == null && noParamsOptional && hasParams) {
+			useArgs = false;
 
 			// if not found search a variant without argument
-			m = ReflectUtil.findMethod(rClass, sMethod, (Class[]) null);
+			m = ReflectUtil.findMethod(type, method, (Class[]) null);
 		}
 
 		if (m == null) {
 			throw new IllegalArgumentException(
 				"INIT: no dispatch method or wrong event handler class: " +
-					sMethod);
+					method);
 		}
 
 		if (!Modifier.isPublic(m.getModifiers())) {

@@ -66,15 +66,15 @@ public abstract class Application extends RelatedObject {
 
 	private static final int CLEANUP_SLEEP_TIME = 100;
 
-	private final AtomicBoolean aShutdownRequest = new AtomicBoolean(false);
+	private final AtomicBoolean shutdownRequest = new AtomicBoolean(false);
 
-	private CommandLine aCommandLine;
+	private CommandLine commandLine;
 
-	private String sAppName = null;
+	private String appName = null;
 
-	private List<Object> aCleanupResources = null;
+	private List<Object> cleanupResources = null;
 
-	private Thread aMainThread;
+	private Thread mainThread;
 
 	/**
 	 * Default constructor.
@@ -88,37 +88,37 @@ public abstract class Application extends RelatedObject {
 	 * @return The command line
 	 */
 	public final CommandLine getCommandLine() {
-		return aCommandLine;
+		return commandLine;
 	}
 
 	/**
 	 * Registers a resource that implements the {@link Stoppable} interface to
 	 * be managed by this application.
 	 *
-	 * @param rResource The {@link Stoppable} resource
+	 * @param resource The {@link Stoppable} resource
 	 */
-	public void manageResource(Stoppable rResource) {
-		addManagedResource(rResource);
+	public void manageResource(Stoppable resource) {
+		addManagedResource(resource);
 	}
 
 	/**
 	 * Registers a resource that implements the {@link Closeable} interface to
 	 * be managed by this application.
 	 *
-	 * @param rResource The {@link Closeable} resource
+	 * @param resource The {@link Closeable} resource
 	 */
-	public void manageResource(Closeable rResource) {
-		addManagedResource(rResource);
+	public void manageResource(Closeable resource) {
+		addManagedResource(resource);
 	}
 
 	/**
 	 * Registers a resource that implements the {@link Disposable} interface to
 	 * be managed by this application.
 	 *
-	 * @param rResource The {@link Disposable} resource
+	 * @param resource The {@link Disposable} resource
 	 */
-	public void manageResource(Disposable rResource) {
-		addManagedResource(rResource);
+	public void manageResource(Disposable resource) {
+		addManagedResource(resource);
 	}
 
 	/**
@@ -126,40 +126,40 @@ public abstract class Application extends RelatedObject {
 	 * default
 	 * steps necessary to initialize and run the application.
 	 *
-	 * @param rArgs The command line arguments of the application
+	 * @param args The command line arguments of the application
 	 */
-	public final void run(String[] rArgs) {
-		if (sAppName == null) {
+	public final void run(String[] args) {
+		if (appName == null) {
 			try {
-				aCommandLine = processArguments(rArgs);
+				commandLine = processArguments(args);
 
-				if (aCommandLine.hasOption("h")) {
-					printHelp(aCommandLine.getOption("h"));
-				} else if (aCommandLine.hasOption("-help")) {
-					printHelp(aCommandLine.getOption("-help"));
+				if (commandLine.hasOption("h")) {
+					printHelp(commandLine.getOption("h"));
+				} else if (commandLine.hasOption("-help")) {
+					printHelp(commandLine.getOption("-help"));
 				} else {
-					String sAppName = getClass().getSimpleName();
+					String appName = getClass().getSimpleName();
 
-					Log.debugf("%s initializing...", sAppName);
-					initialize(aCommandLine);
-					Log.debugf("%s configuring...", sAppName);
-					configure(aCommandLine);
-					Log.debugf("%s starting...", sAppName);
+					Log.debugf("%s initializing...", appName);
+					initialize(commandLine);
+					Log.debugf("%s configuring...", appName);
+					configure(commandLine);
+					Log.debugf("%s starting...", appName);
 					startApp();
 
-					aMainThread = Thread.currentThread();
+					mainThread = Thread.currentThread();
 
-					Thread aShutdownHook = new Thread(this::requestShutdown);
+					Thread shutdownHook = new Thread(this::requestShutdown);
 
-					Runtime.getRuntime().addShutdownHook(aShutdownHook);
+					Runtime.getRuntime().addShutdownHook(shutdownHook);
 
 					try {
 						runApp();
 					} finally {
-						if (!aShutdownRequest.get()) {
+						if (!shutdownRequest.get()) {
 							Runtime
 								.getRuntime()
-								.removeShutdownHook(aShutdownHook);
+								.removeShutdownHook(shutdownHook);
 						}
 					}
 
@@ -197,22 +197,20 @@ public abstract class Application extends RelatedObject {
 	 * be released first and vice versa. This allows to register resources that
 	 * have (one-way) dependencies on each other.</p>
 	 *
-	 * @param rResource The resource, implementing some management interfaces
+	 * @param resource The resource, implementing some management interfaces
 	 */
-	protected void addManagedResource(Object rResource) {
-		if (!(rResource instanceof Stoppable ||
-			rResource instanceof Closeable ||
-			rResource instanceof Disposable)) {
+	protected void addManagedResource(Object resource) {
+		if (!(resource instanceof Stoppable || resource instanceof Closeable ||
+			resource instanceof Disposable)) {
 			throw new IllegalArgumentException(
-				"No supported management interface implemented on " +
-					rResource);
+				"No supported management interface implemented on " + resource);
 		}
 
-		if (aCleanupResources == null) {
-			aCleanupResources = new ArrayList<Object>();
+		if (cleanupResources == null) {
+			cleanupResources = new ArrayList<Object>();
 		}
 
-		aCleanupResources.add(rResource);
+		cleanupResources.add(resource);
 	}
 
 	/**
@@ -232,35 +230,35 @@ public abstract class Application extends RelatedObject {
 	 */
 	protected void cleanup() throws Exception {
 		// free resources in reverse order of registration
-		if (aCleanupResources != null) {
-			int nRemainingWaitTime = CLEANUP_TOTAL_WAIT_TIME;
+		if (cleanupResources != null) {
+			int remainingWaitTime = CLEANUP_TOTAL_WAIT_TIME;
 
-			for (int i = aCleanupResources.size() - 1; i >= 0; i--) {
-				Object rResource = aCleanupResources.get(i);
+			for (int i = cleanupResources.size() - 1; i >= 0; i--) {
+				Object resource = cleanupResources.get(i);
 
-				if (rResource instanceof Stoppable) {
-					Log.debug("Stopping " + rResource);
-					((Stoppable) rResource).stop();
+				if (resource instanceof Stoppable) {
+					Log.debug("Stopping " + resource);
+					((Stoppable) resource).stop();
 				}
 
-				if (rResource instanceof Closeable) {
-					Log.debug("Closing " + rResource);
-					((Closeable) rResource).close();
+				if (resource instanceof Closeable) {
+					Log.debug("Closing " + resource);
+					((Closeable) resource).close();
 				}
 
-				if (rResource instanceof Disposable) {
-					Log.debug("Disposing " + rResource);
-					((Disposable) rResource).dispose();
+				if (resource instanceof Disposable) {
+					Log.debug("Disposing " + resource);
+					((Disposable) resource).dispose();
 				}
 
-				if (rResource instanceof RunCheck) {
-					int nWaitTime =
-						nRemainingWaitTime > CLEANUP_RESOURCE_WAIT_TIME ?
+				if (resource instanceof RunCheck) {
+					int waitTime =
+						remainingWaitTime > CLEANUP_RESOURCE_WAIT_TIME ?
 						CLEANUP_RESOURCE_WAIT_TIME :
-						nRemainingWaitTime;
+						remainingWaitTime;
 
-					nRemainingWaitTime -=
-						waitForResource((RunCheck) rResource, nWaitTime,
+					remainingWaitTime -=
+						waitForResource((RunCheck) resource, waitTime,
 							CLEANUP_SLEEP_TIME);
 				}
 			}
@@ -273,10 +271,10 @@ public abstract class Application extends RelatedObject {
 	 * Subclasses should always invoke super as the first step in their
 	 * implementation.
 	 *
-	 * @param rCommandLine The parsed command line of the application
+	 * @param commandLine The parsed command line of the application
 	 * @throws Exception Subclasses may throw exceptions to signal errors
 	 */
-	protected void configure(CommandLine rCommandLine) throws Exception {
+	protected void configure(CommandLine commandLine) throws Exception {
 	}
 
 	/**
@@ -330,26 +328,26 @@ public abstract class Application extends RelatedObject {
 	 */
 	protected String getNameOfAppBinary() {
 		try {
-			String sAppPath = getClass()
+			String appPath = getClass()
 				.getProtectionDomain()
 				.getCodeSource()
 				.getLocation()
 				.toURI()
 				.getPath();
 
-			sAppName = sAppPath.substring(sAppPath.lastIndexOf('/') + 1);
+			appName = appPath.substring(appPath.lastIndexOf('/') + 1);
 
-			int nIndex = sAppName.indexOf('.');
+			int index = appName.indexOf('.');
 
-			if (nIndex > 0) {
-				sAppName = sAppName.substring(0, nIndex);
+			if (index > 0) {
+				appName = appName.substring(0, index);
 			}
 
-			if (sAppName.length() == 0) {
-				sAppName = getClass().getSimpleName();
+			if (appName.length() == 0) {
+				appName = getClass().getSimpleName();
 			}
 
-			return sAppName;
+			return appName;
 		} catch (URISyntaxException e) {
 			throw new IllegalStateException(e);
 		}
@@ -372,10 +370,10 @@ public abstract class Application extends RelatedObject {
 	 * method. Subclasses should always invoke super as the first step in their
 	 * implementation.
 	 *
-	 * @param rCommandLine The parsed command line of the application
+	 * @param commandLine The parsed command line of the application
 	 * @throws Exception Subclasses may throw exceptions to signal errors
 	 */
-	protected void initialize(CommandLine rCommandLine) throws Exception {
+	protected void initialize(CommandLine commandLine) throws Exception {
 	}
 
 	/**
@@ -386,47 +384,44 @@ public abstract class Application extends RelatedObject {
 	 * @return TRUE if a shutdown has been requested
 	 */
 	protected boolean isShutdownRequested() {
-		return aShutdownRequest.get();
+		return shutdownRequest.get();
 	}
 
 	/**
 	 * Prints help for this application or for a single command.
 	 *
-	 * @param rCommand The optional command
+	 * @param command The optional command
 	 */
-	protected void printHelp(Object rCommand) {
-		Map<String, String> aOptions =
+	protected void printHelp(Object command) {
+		Map<String, String> options =
 			new LinkedHashMap<>(getCommandLineOptions());
 
-		String sHelpInfo = "Display this help or help for a single option";
+		String helpInfo = "Display this help or help for a single option";
 
-		aOptions.put("h", sHelpInfo);
-		aOptions.put("-help", sHelpInfo);
-		aOptions.put("-args",
+		options.put("h", helpInfo);
+		options.put("-help", helpInfo);
+		options.put("-args",
 			"The name and path of a properties file to read the arguments " +
 				"from");
 
-		if (rCommand instanceof String) {
-			String sCommand = rCommand.toString();
+		if (command instanceof String) {
+			String cmd = command.toString();
 
-			System.out.printf("Option -%s: %s\n", sCommand,
-				aOptions.get(sCommand));
+			System.out.printf("Option -%s: %s\n", command, options.get(cmd));
 		} else {
-			int nMaxCommandLength = 0;
+			int maxCommandLength = 0;
 
 			printUsage(System.out);
 
-			for (String sCommand : aOptions.keySet()) {
-				nMaxCommandLength =
-					Math.max(sCommand.length(), nMaxCommandLength);
+			for (String cmd : options.keySet()) {
+				maxCommandLength = Math.max(cmd.length(), maxCommandLength);
 			}
 
-			for (Entry<String, String> rCommandHelp : aOptions.entrySet()) {
-				String sCommand = TextConvert.padRight(rCommandHelp.getKey(),
-					nMaxCommandLength + 2, ' ');
+			for (Entry<String, String> commandHelp : options.entrySet()) {
+				String cmd = TextConvert.padRight(commandHelp.getKey(),
+					maxCommandLength + 2, ' ');
 
-				System.out.printf("\t-%s%s\n", sCommand,
-					rCommandHelp.getValue());
+				System.out.printf("\t-%s%s\n", cmd, commandHelp.getValue());
 			}
 		}
 	}
@@ -435,15 +430,15 @@ public abstract class Application extends RelatedObject {
 	 * Prints information about how to use this application. Should be
 	 * overridden by subclasses that need complex arguments to work.
 	 *
-	 * @param rOutput The output stream
+	 * @param output The output stream
 	 */
-	protected void printUsage(PrintStream rOutput) {
-		String sDescription = getAppDescription();
+	protected void printUsage(PrintStream output) {
+		String description = getAppDescription();
 
-		rOutput.printf("Usage: %s [options...]\n", getNameOfAppBinary());
+		output.printf("Usage: %s [options...]\n", getNameOfAppBinary());
 
-		if (sDescription != null) {
-			rOutput.println(sDescription);
+		if (description != null) {
+			output.println(description);
 		}
 	}
 
@@ -451,12 +446,12 @@ public abstract class Application extends RelatedObject {
 	 * Processes the application's command line arguments and returns them in a
 	 * command line object.
 	 *
-	 * @param rArgs The application arguments
+	 * @param args The application arguments
 	 * @return A command line instance containing the parsed arguments
 	 * @throws Exception Subclasses may throw exceptions to signal errors
 	 */
-	protected CommandLine processArguments(String[] rArgs) throws Exception {
-		return new CommandLine(rArgs, getCommandLineOptions());
+	protected CommandLine processArguments(String[] args) throws Exception {
+		return new CommandLine(args, getCommandLineOptions());
 	}
 
 	/**
@@ -464,11 +459,11 @@ public abstract class Application extends RelatedObject {
 	 * {@link #addManagedResource(Object)} without performing the regular
 	 * resource cleanup that is done by the {@link #cleanup()} method.
 	 *
-	 * @param rResource rOld The resource object to be remove
+	 * @param resource rOld The resource object to be remove
 	 */
-	protected void removeManagedResource(Object rResource) {
-		if (aCleanupResources != null) {
-			aCleanupResources.remove(rResource);
+	protected void removeManagedResource(Object resource) {
+		if (cleanupResources != null) {
+			cleanupResources.remove(resource);
 		}
 	}
 
@@ -478,15 +473,15 @@ public abstract class Application extends RelatedObject {
 	 */
 	protected void requestShutdown() {
 		System.out.print("\nShutdown request received, terminating...\n");
-		aShutdownRequest.set(true);
+		shutdownRequest.set(true);
 
 		// wake up main thread if it is currently inactive
-		aMainThread.interrupt();
+		mainThread.interrupt();
 
 		try {
 			// wait for main thread to stop (else app would terminate
 			// immediately)
-			aMainThread.join();
+			mainThread.join();
 		} catch (InterruptedException e) {
 			// just terminate
 		}
@@ -535,13 +530,13 @@ public abstract class Application extends RelatedObject {
 	 * @throws Exception Subclasses may throw exceptions to signal errors
 	 */
 	protected void stopApp() throws Exception {
-		String sAppName = getClass().getSimpleName();
+		String appName = getClass().getSimpleName();
 
-		Log.debugf("%s cleanup...", sAppName);
+		Log.debugf("%s cleanup...", appName);
 		cleanup();
-		Log.debugf("%s terminating...", sAppName);
+		Log.debugf("%s terminating...", appName);
 		terminate();
-		Log.debugf("%s stopped", sAppName);
+		Log.debugf("%s stopped", appName);
 	}
 
 	/**
@@ -564,26 +559,26 @@ public abstract class Application extends RelatedObject {
 	 * resource to stop execution. The resource must implement the RunCheck
 	 * interface to be processed by this method.
 	 *
-	 * @param rResource    The resource to wait for
-	 * @param nMaxWaitTime The maximum time to wait for this resource
-	 * @param nSleepTime   The time to wait between checks of the resource
+	 * @param resource    The resource to wait for
+	 * @param maxWaitTime The maximum time to wait for this resource
+	 * @param sleepTime   The time to wait between checks of the resource
 	 * @return The time the method has actually waited for the given resource
 	 */
-	protected int waitForResource(RunCheck rResource, int nMaxWaitTime,
-		int nSleepTime) {
-		int nWaitTime = 0;
+	protected int waitForResource(RunCheck resource, int maxWaitTime,
+		int sleepTime) {
+		int waitTime = 0;
 
-		Log.debug("Waiting for " + rResource);
+		Log.debug("Waiting for " + resource);
 
-		while (nWaitTime < nMaxWaitTime && rResource.isRunning()) {
+		while (waitTime < maxWaitTime && resource.isRunning()) {
 			try {
-				Thread.sleep(nSleepTime);
-				nWaitTime += nSleepTime;
+				Thread.sleep(sleepTime);
+				waitTime += sleepTime;
 			} catch (InterruptedException e) {
 				// if interrupted (should not occur) just try again
 			}
 		}
 
-		return nWaitTime;
+		return waitTime;
 	}
 }

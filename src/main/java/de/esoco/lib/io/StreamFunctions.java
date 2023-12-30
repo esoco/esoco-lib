@@ -49,15 +49,15 @@ public class StreamFunctions {
 	 * {@link StreamUtil#find(Reader, String, int, boolean,
 	 * de.esoco.lib.io.StreamUtil.ReadHandler)}.
 	 *
-	 * @param rDefaultToken The token to search
-	 * @param nMax          The maximum number of characters to read
+	 * @param defaultToken The token to search
+	 * @param max          The maximum number of characters to read
 	 * @return A new binary predicate instance
 	 */
 	public static BinaryPredicate<InputStream, byte[]> find(
-		final byte[] rDefaultToken, final int nMax) {
+		final byte[] defaultToken, final int max) {
 		return ThrowingBinaryPredicate.of(
 			(stream, token) -> StreamUtil.find(stream,
-				Option.of(token).orUse(rDefaultToken), nMax, null));
+				Option.of(token).orUse(defaultToken), max, null));
 	}
 
 	/**
@@ -65,18 +65,16 @@ public class StreamFunctions {
 	 * {@link StreamUtil#find(Reader, String, int, boolean,
 	 * de.esoco.lib.io.StreamUtil.ReadHandler)}.
 	 *
-	 * @param sDefaultToken The token to search
-	 * @param nMax          The maximum number of characters to read
-	 * @param bIgnoreCase   TRUE if the case of the token should be ignored
+	 * @param defaultToken The token to search
+	 * @param max          The maximum number of characters to read
+	 * @param ignoreCase   TRUE if the case of the token should be ignored
 	 * @return A new binary predicate instance
 	 */
 	public static BinaryPredicate<Reader, String> find(
-		final String sDefaultToken, final int nMax,
-		final boolean bIgnoreCase) {
+		final String defaultToken, final int max, final boolean ignoreCase) {
 		return ThrowingBinaryPredicate.of(
 			(stream, token) -> StreamUtil.find(stream,
-				Option.of(token).orUse(sDefaultToken), nMax, bIgnoreCase,
-				null));
+				Option.of(token).orUse(defaultToken), max, ignoreCase, null));
 	}
 
 	/**
@@ -84,14 +82,14 @@ public class StreamFunctions {
 	 * input stream by invoking
 	 * {@link StreamUtil#readAll(InputStream, int, int)}.
 	 *
-	 * @param nBufferSize The buffer size to use
-	 * @param nMaxLength  The maximum length to read
+	 * @param bufferSize The buffer size to use
+	 * @param maxLength  The maximum length to read
 	 * @return A new function instance
 	 */
 	public static java.util.function.Function<InputStream, byte[]> readAll(
-		int nBufferSize, int nMaxLength) {
+		int bufferSize, int maxLength) {
 		return ThrowingFunction.of(
-			rInput -> StreamUtil.readAll(rInput, nBufferSize, nMaxLength));
+			input -> StreamUtil.readAll(input, bufferSize, maxLength));
 	}
 
 	/**
@@ -100,27 +98,24 @@ public class StreamFunctions {
 	 * returns either the string found or NULL if the given token didn't occur
 	 * in the data that has been read up to the maximum..
 	 *
-	 * @param sDefaultToken sToken The token to search
-	 * @param nMax          The maximum number of characters to read
-	 * @param bIgnoreCase   TRUE if the case of the token should be ignored
+	 * @param defaultToken sToken The token to search
+	 * @param max          The maximum number of characters to read
+	 * @param ignoreCase   TRUE if the case of the token should be ignored
 	 * @return A new binary function instance
 	 */
 	public static BiFunction<Reader, String, String> readUntil(
-		final String sDefaultToken, final int nMax,
-		final boolean bIgnoreCase) {
-		return ThrowingBinaryFunction.of((reader, token) -> {
-			Writer aOutput = new StringWriter();
-			String sToken = Option.of(token).orUse(sDefaultToken);
-			String sResult = null;
+		final String defaultToken, final int max, final boolean ignoreCase) {
+		return ThrowingBinaryFunction.of((reader, t) -> {
+			Writer output = new StringWriter();
+			String token = Option.of(t).orUse(defaultToken);
+			String result = null;
 
-			if (StreamUtil.readUntil(reader, aOutput, sToken, nMax,
-				bIgnoreCase)) {
-				sResult = aOutput.toString();
-				sResult =
-					sResult.substring(0, sResult.length() - sToken.length());
+			if (StreamUtil.readUntil(reader, output, token, max, ignoreCase)) {
+				result = output.toString();
+				result = result.substring(0, result.length() - token.length());
 			}
 
-			return sResult;
+			return result;
 		});
 	}
 }

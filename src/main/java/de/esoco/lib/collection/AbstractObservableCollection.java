@@ -48,39 +48,39 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 
 	private static final long serialVersionUID = 1L;
 
-	private final C rObservedCollection;
+	private final C observedCollection;
 
-	private List<EventHandler<? super E>> aListeners;
+	private List<EventHandler<? super E>> listeners;
 
 	/**
 	 * Creates a new instance that observes a certain collection instance.
 	 *
-	 * @param rObservedCollection The collection to be observed
+	 * @param observedCollection The collection to be observed
 	 */
-	public AbstractObservableCollection(C rObservedCollection) {
-		this.rObservedCollection = rObservedCollection;
+	public AbstractObservableCollection(C observedCollection) {
+		this.observedCollection = observedCollection;
 	}
 
 	/**
 	 * @see Collection#add(Object)
 	 */
 	@Override
-	public boolean add(T rElement) {
-		notifyListeners(EventType.ADD, rElement, null, -1);
+	public boolean add(T element) {
+		notifyListeners(EventType.ADD, element, null, -1);
 
-		return rObservedCollection.add(rElement);
+		return observedCollection.add(element);
 	}
 
 	/**
 	 * @see EventSource#addListener(EventHandler)
 	 */
 	@Override
-	public void addListener(EventHandler<? super E> rListener) {
-		if (aListeners == null) {
-			aListeners = new ArrayList<EventHandler<? super E>>(1);
+	public void addListener(EventHandler<? super E> listener) {
+		if (listeners == null) {
+			listeners = new ArrayList<EventHandler<? super E>>(1);
 		}
 
-		aListeners.add(rListener);
+		listeners.add(listener);
 	}
 
 	/**
@@ -89,7 +89,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	@Override
 	public void clear() {
 		notifyListeners(EventType.REMOVE_ALL, null, null, -1);
-		rObservedCollection.clear();
+		observedCollection.clear();
 	}
 
 	/**
@@ -111,7 +111,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	 * @return TRUE if at least one listener has been registered
 	 */
 	public boolean hasListeners() {
-		return aListeners != null;
+		return listeners != null;
 	}
 
 	/**
@@ -120,18 +120,18 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	@Override
 	public Iterator<T> iterator() {
 		return new ObservableCollectionIterator<Iterator<T>>(
-			rObservedCollection.iterator());
+			observedCollection.iterator());
 	}
 
 	/**
 	 * @see EventSource#removeListener(EventHandler)
 	 */
 	@Override
-	public void removeListener(EventHandler<? super E> rListener) {
-		aListeners.remove(rListener);
+	public void removeListener(EventHandler<? super E> listener) {
+		listeners.remove(listener);
 
-		if (aListeners.size() == 0) {
-			aListeners = null;
+		if (listeners.size() == 0) {
+			listeners = null;
 		}
 	}
 
@@ -140,7 +140,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	 */
 	@Override
 	public int size() {
-		return rObservedCollection.size();
+		return observedCollection.size();
 	}
 
 	/**
@@ -152,14 +152,14 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	 * for
 	 * more details.
 	 *
-	 * @param rType        The type of event
-	 * @param rElement     The element affected by the event
-	 * @param rUpdateValue The new element value in case of an update event
-	 * @param nIndex       The position index for random access collections
+	 * @param type        The type of event
+	 * @param element     The element affected by the event
+	 * @param updateValue The new element value in case of an update event
+	 * @param index       The position index for random access collections
 	 * @return A new event object
 	 */
-	protected abstract E createEvent(EventType rType, T rElement,
-		T rUpdateValue, int nIndex);
+	protected abstract E createEvent(EventType type, T element, T updateValue,
+		int index);
 
 	/**
 	 * Method for subclasses to access the observed collection.
@@ -167,7 +167,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	 * @return The observed collection
 	 */
 	protected final C getObservedCollection() {
-		return rObservedCollection;
+		return observedCollection;
 	}
 
 	/**
@@ -185,18 +185,18 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	 * (e.g. as the last element) or override these methods to determine the
 	 * appropriate index by themselves.</p>
 	 *
-	 * @param rType        The type of event
-	 * @param rElement     The element affected by the event
-	 * @param rUpdateValue The new element value in case of an update event
-	 * @param nIndex       The position index for random access collections
+	 * @param type        The type of event
+	 * @param element     The element affected by the event
+	 * @param updateValue The new element value in case of an update event
+	 * @param index       The position index for random access collections
 	 */
-	protected void notifyListeners(EventType rType, T rElement, T rUpdateValue,
-		int nIndex) {
+	protected void notifyListeners(EventType type, T element, T updateValue,
+		int index) {
 		if (hasListeners()) {
-			E rEvent = createEvent(rType, rElement, rUpdateValue, nIndex);
+			E event = createEvent(type, element, updateValue, index);
 
-			for (EventHandler<? super E> rListener : aListeners) {
-				rListener.handleEvent(rEvent);
+			for (EventHandler<? super E> listener : listeners) {
+				listener.handleEvent(event);
 			}
 		}
 	}
@@ -210,18 +210,18 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 	class ObservableCollectionIterator<I extends Iterator<T>>
 		implements Iterator<T> {
 
-		private final I rIterator;
+		private final I iterator;
 
-		private T rCurrent;
+		private T current;
 
 		/**
 		 * Creates a new instance that wraps an iterator of the observed
 		 * collection.
 		 *
-		 * @param rIterator The iterator to wrap
+		 * @param iterator The iterator to wrap
 		 */
-		ObservableCollectionIterator(I rIterator) {
-			this.rIterator = rIterator;
+		ObservableCollectionIterator(I iterator) {
+			this.iterator = iterator;
 		}
 
 		/**
@@ -229,7 +229,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 		 */
 		@Override
 		public boolean hasNext() {
-			return rIterator.hasNext();
+			return iterator.hasNext();
 		}
 
 		/**
@@ -237,9 +237,9 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 		 */
 		@Override
 		public T next() {
-			setCurrentElement(rIterator.next());
+			setCurrentElement(iterator.next());
 
-			return rCurrent;
+			return current;
 		}
 
 		/**
@@ -247,9 +247,9 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 		 */
 		@Override
 		public void remove() {
-			notifyListeners(EventType.REMOVE, rCurrent, null, -1);
+			notifyListeners(EventType.REMOVE, current, null, -1);
 			setCurrentElement(null);
-			rIterator.remove();
+			iterator.remove();
 		}
 
 		/**
@@ -258,7 +258,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 		 * @return The current element (NULL if iterator hasn't been used yet)
 		 */
 		final T getCurrentElement() {
-			return rCurrent;
+			return current;
 		}
 
 		/**
@@ -267,7 +267,7 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 		 * @return The iterator
 		 */
 		final I getIterator() {
-			return rIterator;
+			return iterator;
 		}
 
 		/**
@@ -277,12 +277,11 @@ public abstract class AbstractObservableCollection<T, C extends Collection<T>
 		 * iterator must invoke this method to update the current element
 		 * accordingly.
 		 *
-		 * @param rElement The new current element or NULL if no current
-		 *                       element
-		 *                 exists (e.g. after it has been removed)
+		 * @param element The new current element or NULL if no current element
+		 *                exists (e.g. after it has been removed)
 		 */
-		void setCurrentElement(T rElement) {
-			rCurrent = rElement;
+		void setCurrentElement(T element) {
+			current = element;
 		}
 	}
 }

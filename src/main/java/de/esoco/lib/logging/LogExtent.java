@@ -37,10 +37,10 @@ public enum LogExtent {
 	 * This is
 	 * the case if the other extent is lower or equal than this extent.
 	 *
-	 * @param eExtent The other log extent to check against
+	 * @param extent The other log extent to check against
 	 * @return TRUE if this extent includes the other extent
 	 */
-	public boolean logs(LogExtent eExtent) {
-		return eExtent.ordinal() <= ordinal();
+	public boolean logs(LogExtent extent) {
+		return extent.ordinal() <= ordinal();
 	}
 }

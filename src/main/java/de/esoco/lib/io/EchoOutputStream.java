@@ -28,19 +28,19 @@ import java.io.OutputStream;
  */
 public class EchoOutputStream extends FilterOutputStream {
 
-	private final OutputStream rEchoStream;
+	private final OutputStream echoStream;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The wrapped output stream
-	 * @param rEchoStream    The stream to echo the output to
+	 * @param wrappedStream The wrapped output stream
+	 * @param echoStream    The stream to echo the output to
 	 */
-	public EchoOutputStream(OutputStream rWrappedStream,
-		OutputStream rEchoStream) {
-		super(rWrappedStream);
+	public EchoOutputStream(OutputStream wrappedStream,
+		OutputStream echoStream) {
+		super(wrappedStream);
 
-		this.rEchoStream = rEchoStream;
+		this.echoStream = echoStream;
 	}
 
 	/**
@@ -49,16 +49,15 @@ public class EchoOutputStream extends FilterOutputStream {
 	@Override
 	public void flush() throws IOException {
 		super.flush();
-		rEchoStream.flush();
+		echoStream.flush();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException {
-		super.write(nByte);
-
-		rEchoStream.write(nByte);
+	public void write(int b) throws IOException {
+		super.write(b);
+		echoStream.write(b);
 	}
 }

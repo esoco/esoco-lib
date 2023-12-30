@@ -26,18 +26,18 @@ import org.obrel.type.StandardTypes;
  */
 public class ClassTemplate<T> extends Template<T> {
 
-	private final Class<? extends T> rClass;
+	private final Class<? extends T> type;
 
 	/**
 	 * Creates a new instance for a certain type class.
 	 *
-	 * @param rClass       The class of the template's class
-	 * @param sDescription The template description
+	 * @param type        The class of the template's class
+	 * @param description The template description
 	 */
-	public ClassTemplate(Class<? extends T> rClass, String sDescription) {
-		this.rClass = rClass;
+	public ClassTemplate(Class<? extends T> type, String description) {
+		this.type = type;
 
-		set(StandardTypes.DESCRIPTION, sDescription);
+		set(StandardTypes.DESCRIPTION, description);
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class ClassTemplate<T> extends Template<T> {
 	@Override
 	protected T create() {
 		try {
-			return rClass.newInstance();
+			return type.newInstance();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

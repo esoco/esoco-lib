@@ -46,9 +46,9 @@ import java.util.Set;
  * public static final MyEnum ENUM2 = new MyEnum("ENUM2");
  *
  * // private because only used for internal constant creation
- * private MyEnum(String sName)
+ * private MyEnum(String name)
  * {
- * super(sName);
+ * super(name);
  * }
  * }
  * </pre>
@@ -79,9 +79,9 @@ import java.util.Set;
  * }
  * };
  *
- * public ExampleEnum(String sName)
+ * public ExampleEnum(String name)
  * {
- * super(sName);
+ * super(name);
  * }
  *
  * public abstract void enumSpecificMethod();
@@ -141,14 +141,13 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	/**
 	 * Contains the value maps associated with the enum (base) classes
 	 */
-	private static final Map<String, Map<String, GenericEnum<?>>>
-		aEnumRegistry =
+	private static final Map<String, Map<String, GenericEnum<?>>> enumRegistry =
 		new LinkedHashMap<String, Map<String, GenericEnum<?>>>();
 
 	/**
 	 * The name of the enum instance. @serial
 	 */
-	private final String sName;
+	private final String name;
 
 	/**
 	 * Default constructor that creates a new enum instance with a certain
@@ -163,26 +162,26 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * instances.
 	 * </p>
 	 *
-	 * @param sName The unique name of the new instance
+	 * @param name The unique name of the new instance
 	 * @see #getEnumBaseClass()
 	 */
-	protected GenericEnum(String sName) {
+	protected GenericEnum(String name) {
 		assert getEnumBaseClass().isAssignableFrom(getClass()) :
 			"Wrong enum class hierarchy: " + getClass() +
 				" is not a subclass of " + getEnumBaseClass();
 
-		Map<String, GenericEnum<?>> rEnums =
+		Map<String, GenericEnum<?>> enums =
 			getValueMap(getEnumBaseClass(), true);
 
-		assert rEnums.get(sName) == null :
-			"Duplicate enum value: " + sName + " in class " +
+		assert enums.get(name) == null :
+			"Duplicate enum value: " + name + " in class " +
 				getClass().getName() + ((getEnumBaseClass() != getClass()) ?
 				                        (" (Base: " +
 					                        getEnumBaseClass().getName() +
 					                        ")") :
 				                        "");
-		this.sName = sName;
-		rEnums.put(sName, this);
+		this.name = name;
+		enums.put(name, this);
 
 		assert checkEnumStructure();
 	}
@@ -203,11 +202,11 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * so that it can be used in an assert statement and therefore will only be
 	 * evaluated if assertions are enabled (i.e., during development time).</p>
 	 *
-	 * @param rDeclaringClass The class to check the GenericEnum fields of
+	 * @param declaringClass The class to check the GenericEnum fields of
 	 * @return Always TRUE (assertions in case of an structure error)
 	 */
-	public static boolean assertEnumInstances(Class<?> rDeclaringClass) {
-		checkEnumInstances(rDeclaringClass);
+	public static boolean assertEnumInstances(Class<?> declaringClass) {
+		checkEnumInstances(declaringClass);
 
 		return true;
 	}
@@ -217,52 +216,52 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * It returns the last field that is still NULL (during initialization), a
 	 * value that is needed by the {@link #checkEnumStructure()} method.
 	 *
-	 * @param rDeclaringClass The class to check the GenericEnum fields of
+	 * @param declaringClass The class to check the GenericEnum fields of
 	 * @return The last field that is null or NULL for none
 	 */
-	private static Field checkEnumInstances(Class<?> rDeclaringClass) {
-		Field[] fields = rDeclaringClass.getDeclaredFields();
-		Field rNullField = null;
-		int nNullCnt = 0;
+	private static Field checkEnumInstances(Class<?> declaringClass) {
+		Field[] fields = declaringClass.getDeclaredFields();
+		Field nullField = null;
+		int nullCnt = 0;
 
-		for (Field rField : fields) {
+		for (Field field : fields) {
 			// getFields returns only public fields; intentionally, these must
 			// all be static, else the following code will fail
 			// is field an enum instance?
-			if (GenericEnum.class.isAssignableFrom(rField.getType())) {
-				String sName = rField.getName();
-				int nModifier = rField.getModifiers();
-				Object rValue = null;
+			if (GenericEnum.class.isAssignableFrom(field.getType())) {
+				String name = field.getName();
+				int modifier = field.getModifiers();
+				Object value = null;
 
-				assert Modifier.isFinal(nModifier) &&
-					Modifier.isStatic(nModifier) :
-					"Enum instance not final static: " + sName;
+				assert
+					Modifier.isFinal(modifier) && Modifier.isStatic(modifier) :
+					"Enum instance not final static: " + name;
 
 				try {
-					rValue = rField.get(null);
+					value = field.get(null);
 				} catch (Exception e) {
 					// if field is not accessible log warning and continue
-					Log.debug("Could not assert enum value " + sName, e);
+					Log.debug("Could not assert enum value " + name, e);
 
 					continue;
 				}
 
-				if (rValue != null) {
-					GenericEnum<?> rEnum = (GenericEnum<?>) rValue;
+				if (value != null) {
+					GenericEnum<?> genericEnum = (GenericEnum<?>) value;
 
 					// check if enum string and instance names match
-					assert rEnum.sName.equals(sName) :
-						"Name mismatch of GenericEnum " + sName +
-							" (wrong name: " + rEnum + ")";
+					assert genericEnum.name.equals(name) :
+						"Name mismatch of GenericEnum " + name +
+							" (wrong name: " + genericEnum + ")";
 				} else {
 					// if value not created yet return at end if last value
-					nNullCnt++;
-					rNullField = rField;
+					nullCnt++;
+					nullField = field;
 				}
 			}
 		}
 
-		return (nNullCnt == 1 ? rNullField : null);
+		return (nullCnt == 1 ? nullField : null);
 	}
 
 	/**
@@ -271,55 +270,55 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * of an enum hierarchy the superclass that defines the hierarchy will be
 	 * searched.
 	 *
-	 * @param rEnumClass The class to return the value map for
+	 * @param enumClass The class to return the value map for
 	 * @return The associated value map
 	 * @throws IllegalArgumentException If the argument class is invalid
 	 */
-	private static Map<String, GenericEnum<?>> getValueMap(
-		Class<?> rEnumClass) {
+	private static Map<String, GenericEnum<?>> getValueMap(Class<?> enumClass) {
 		// check if a superclass implements the getEnumBaseClass() method;
 		// if so, use this class as the key into the map of value maps
-		Class<?> rBase = rEnumClass;
+		Class<?> base = enumClass;
 
-		while (rBase != GenericEnum.class) {
+		while (base != GenericEnum.class) {
 			try { // use getDeclaredMethod to provide access to protected
 				// methods
-				rBase.getDeclaredMethod("getEnumBaseClass");
+				base.getDeclaredMethod("getEnumBaseClass");
 
 				break; // no exception => method exists => base class found
 			} catch (NoSuchMethodException e) {
-				rBase = rBase.getSuperclass();
+				base = base.getSuperclass();
 			}
 		}
 
-		if (rBase != GenericEnum.class) {
-			rEnumClass = rBase;
+		if (base != GenericEnum.class) {
+			enumClass = base;
 		}
 
-		return getValueMap(rEnumClass, false);
+		return getValueMap(enumClass, false);
 	}
 
 	/**
 	 * Internal method to return (and optionally create) the map containing the
 	 * distinct values of a particular enum base class.
 	 *
-	 * @param rEnumBaseClass The enum base class to return the value map of
-	 * @param bCreate        TRUE to create a new if none exists; FALSE to
-	 *                       return NULL in such cases
+	 * @param enumBaseClass The enum base class to return the value map of
+	 * @param create        TRUE to create a new if none exists; FALSE to
+	 *                         return
+	 *                      NULL in such cases
 	 * @return A Map containing the values for the given enum base class
 	 */
 	private static Map<String, GenericEnum<?>> getValueMap(
-		Class<?> rEnumBaseClass, boolean bCreate) {
-		String sID = rEnumBaseClass.getName();
+		Class<?> enumBaseClass, boolean create) {
+		String iD = enumBaseClass.getName();
 
-		Map<String, GenericEnum<?>> aValueMap = aEnumRegistry.get(sID);
+		Map<String, GenericEnum<?>> valueMap = enumRegistry.get(iD);
 
-		if (aValueMap == null && bCreate) {
-			aValueMap = new LinkedHashMap<String, GenericEnum<?>>();
-			aEnumRegistry.put(sID, aValueMap);
+		if (valueMap == null && create) {
+			valueMap = new LinkedHashMap<String, GenericEnum<?>>();
+			enumRegistry.put(iD, valueMap);
 		}
 
-		return aValueMap;
+		return valueMap;
 	}
 
 	/**
@@ -328,18 +327,18 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * if it is a base class for other Enums) Collection.EMPTY_SET will be
 	 * returned.
 	 *
-	 * @param rEnumClass The GenericEnum subclass of which the values shall be
-	 *                   returned
+	 * @param enumClass The GenericEnum subclass of which the values shall be
+	 *                  returned
 	 * @return An unmodifiable collection containing the GenericEnum values
 	 * @throws IllegalArgumentException If the argument is not an GenericEnum
 	 *                                  subclass
 	 */
 	public static Collection<GenericEnum<?>> getValues(
-		Class<? extends GenericEnum<?>> rEnumClass) {
-		Map<String, GenericEnum<?>> rValueMap = getValueMap(rEnumClass);
+		Class<? extends GenericEnum<?>> enumClass) {
+		Map<String, GenericEnum<?>> valueMap = getValueMap(enumClass);
 
-		if (rValueMap != null) {
-			return Collections.unmodifiableCollection(rValueMap.values());
+		if (valueMap != null) {
+			return Collections.unmodifiableCollection(valueMap.values());
 		} else {
 			return Collections.emptyList();
 		}
@@ -347,36 +346,36 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 
 	/**
 	 * Convenience method for subclasses to create an unmodifiable list of
-	 * enumerated values. The same as CollectionUtil.fixedListOf(rValues).
+	 * enumerated values. The same as CollectionUtil.fixedListOf(values).
 	 * Intended to be used by subclasses to create static lists of instances.
 	 *
-	 * @param rValues The enumerated values to put into the list
+	 * @param values The enumerated values to put into the list
 	 * @return A new and unmodifiable list containing the values
 	 */
 	@SafeVarargs
-	protected static <T extends GenericEnum<T>> List<T> listOf(T... rValues) {
-		return CollectionUtil.fixedListOf(rValues);
+	protected static <T extends GenericEnum<T>> List<T> listOf(T... values) {
+		return CollectionUtil.fixedListOf(values);
 	}
 
 	/**
 	 * Convenience method for subclasses to create an unmodifiable set of
-	 * enumerated values. The same as CollectionUtil.fixedSetOf(rValues).
+	 * enumerated values. The same as CollectionUtil.fixedSetOf(values).
 	 * Intended to be used by subclasses to create static groups of instances.
 	 *
-	 * @param rValues The enumerated values to put into the set
+	 * @param values The enumerated values to put into the set
 	 * @return A new and unmodifiable set containing the values
 	 */
 	@SafeVarargs
-	protected static <T extends GenericEnum<T>> Set<T> setOf(T... rValues) {
-		return CollectionUtil.fixedSetOf(rValues);
+	protected static <T extends GenericEnum<T>> Set<T> setOf(T... values) {
+		return CollectionUtil.fixedSetOf(values);
 	}
 
 	/**
 	 * Returns the enum instance for a certain name. Can be used by subclasses
 	 * to provide a type-specific valueOf(String) method.
 	 *
-	 * @param rEnumClass The generic enum subclass to return the value of
-	 * @param sName      The name of the instance to return
+	 * @param enumClass The generic enum subclass to return the value of
+	 * @param name      The name of the instance to return
 	 * @return The matching enum instance
 	 * @throws IllegalArgumentException If the argument is not an GenericEnum
 	 *                                  subclass or if the given name does not
@@ -384,20 +383,20 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 *                                  class
 	 */
 	public static GenericEnum<?> valueOf(
-		Class<? extends GenericEnum<?>> rEnumClass, String sName) {
-		Map<String, GenericEnum<?>> rValueMap = getValueMap(rEnumClass);
-		GenericEnum<?> rEnum = null;
+		Class<? extends GenericEnum<?>> enumClass, String name) {
+		Map<String, GenericEnum<?>> valueMap = getValueMap(enumClass);
+		GenericEnum<?> genericEnum = null;
 
-		if (rValueMap != null) {
-			rEnum = rValueMap.get(sName);
+		if (valueMap != null) {
+			genericEnum = valueMap.get(name);
 		}
 
-		if (rEnum == null) {
+		if (genericEnum == null) {
 			throw new IllegalArgumentException(
-				sName + " is not a valid instance name of " + rEnumClass);
+				name + " is not a valid instance name of " + enumClass);
 		}
 
-		return rEnum;
+		return genericEnum;
 	}
 
 	/**
@@ -407,8 +406,8 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * @see Object#equals(java.lang.Object)
 	 */
 	@Override
-	public final boolean equals(Object rOther) {
-		return super.equals(rOther);
+	public final boolean equals(Object other) {
+		return super.equals(other);
 	}
 
 	/**
@@ -428,16 +427,16 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * instance's class. The enum values are returned according to the order in
 	 * which they have been created.
 	 *
-	 * @param bWrap If FALSE NULL will be returned as the next instance of the
-	 *              last value, else the first enum value will be returned
+	 * @param wrap If FALSE NULL will be returned as the next instance of the
+	 *             last value, else the first enum value will be returned
 	 * @return The next enum instance
 	 */
 	@SuppressWarnings("unchecked")
-	public E next(boolean bWrap) {
-		Class<? extends GenericEnum<?>> rBaseClass = getEnumBaseClass();
+	public E next(boolean wrap) {
+		Class<? extends GenericEnum<?>> baseClass = getEnumBaseClass();
 
-		return (E) CollectionUtil.next(getValueMap(rBaseClass, false).values(),
-			this, bWrap);
+		return (E) CollectionUtil.next(getValueMap(baseClass, false).values(),
+			this, wrap);
 	}
 
 	/**
@@ -445,17 +444,17 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * this instance's class. The enum values are returned according to the
 	 * order in which they have been created.
 	 *
-	 * @param bWrap If FALSE NULL will be returned as the previous instance of
-	 *              the first value, else the last enum value will be returned
+	 * @param wrap If FALSE NULL will be returned as the previous instance of
+	 *             the first value, else the last enum value will be returned
 	 * @return The next enum instance
 	 */
 	@SuppressWarnings("unchecked")
-	public E previous(boolean bWrap) {
+	public E previous(boolean wrap) {
 		Class<? extends GenericEnum<?>> c = getEnumBaseClass();
 
 		return (E) CollectionUtil.previous(getValueMap(c, false).values(),
 			this,
-			bWrap);
+			wrap);
 	}
 
 	/**
@@ -465,7 +464,7 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 */
 	@Override
 	public String toString() {
-		return sName;
+		return name;
 	}
 
 	/**
@@ -513,7 +512,7 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * @throws ObjectStreamException If accessing the object stream fails
 	 */
 	protected final Object readResolve() throws ObjectStreamException {
-		return getValueMap(getEnumBaseClass(), true).get(sName);
+		return getValueMap(getEnumBaseClass(), true).get(name);
 	}
 
 	/**
@@ -529,13 +528,13 @@ public abstract class GenericEnum<E extends GenericEnum<E>>
 	 * @return Always TRUE (assertions in case of an structure error)
 	 */
 	private boolean checkEnumStructure() {
-		Field rNullField = checkEnumInstances(getClass());
+		Field nullField = checkEnumInstances(getClass());
 
 		// if only one uninitialized field left and it's name differs from the
 		// currently initialized instance this is an inconsistency
-		assert (rNullField == null) || rNullField.getName().equals(sName) :
-			"Name mismatch of instance " + rNullField.getName() +
-				" (wrong name: " + sName + ")";
+		assert (nullField == null) || nullField.getName().equals(name) :
+			"Name mismatch of instance " + nullField.getName() +
+				" (wrong name: " + name + ")";
 
 		return true;
 	}

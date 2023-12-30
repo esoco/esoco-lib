@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class ListEvent<E> extends CollectionEvent<E, List<E>> {
 
-	private final int nIndex;
+	private final int index;
 
 	/**
 	 * Creates a new instance.
@@ -34,10 +34,10 @@ public class ListEvent<E> extends CollectionEvent<E, List<E>> {
 	 * @see CollectionEvent#CollectionEvent(de.esoco.lib.event.ElementEvent.EventType,
 	 * java.util.Collection, Object, Object)
 	 */
-	public ListEvent(EventType rType, List<E> rSource, E rElement,
-		E rUpdateValue, int nIndex) {
-		super(rType, rSource, rElement, rUpdateValue);
-		this.nIndex = nIndex;
+	public ListEvent(EventType type, List<E> source, E element, E updateValue,
+		int index) {
+		super(type, source, element, updateValue);
+		this.index = index;
 	}
 
 	/**
@@ -48,6 +48,6 @@ public class ListEvent<E> extends CollectionEvent<E, List<E>> {
 	 * @return The index of the affected list position
 	 */
 	public final int getIndex() {
-		return nIndex;
+		return index;
 	}
 }

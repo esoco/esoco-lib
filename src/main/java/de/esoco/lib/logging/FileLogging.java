@@ -27,17 +27,17 @@ import java.io.FileWriter;
  */
 public class FileLogging extends StreamLogging {
 
-	private final String sFileName;
+	private final String fileName;
 
 	/**
 	 * Creates a new instance that logs to a certain file.
 	 *
-	 * @param sFileName The name of the log file
+	 * @param fileName The name of the log file
 	 */
-	public FileLogging(String sFileName) {
-		super(ThrowingSupplier.of(() -> new FileWriter(sFileName, true)));
+	public FileLogging(String fileName) {
+		super(ThrowingSupplier.of(() -> new FileWriter(fileName, true)));
 
-		this.sFileName = sFileName;
+		this.fileName = fileName;
 	}
 
 	/**
@@ -45,6 +45,6 @@ public class FileLogging extends StreamLogging {
 	 */
 	@Override
 	protected String getLogInitMessage() {
-		return "Starting logging to file " + sFileName;
+		return "Starting logging to file " + fileName;
 	}
 }

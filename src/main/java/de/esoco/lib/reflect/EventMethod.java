@@ -51,22 +51,22 @@ public class EventMethod<E extends Event<?>> extends MethodDispatcher<Object>
 	 * built for environments that have limited accessibility (like applets)
 	 * should only use public methods as event listeners.</p>
 	 *
-	 * @param rTarget     The target on which the method shall be invoked
-	 * @param sMethod     The name of the method to invoke
-	 * @param rEventClass The class of the event to dispatch
+	 * @param target     The target on which the method shall be invoked
+	 * @param method     The name of the method to invoke
+	 * @param eventClass The class of the event to dispatch
 	 * @throws IllegalArgumentException If no matching method could be found
 	 */
-	public EventMethod(Object rTarget, String sMethod, Class<E> rEventClass) {
-		super(rTarget, sMethod, true, rEventClass);
+	public EventMethod(Object target, String method, Class<E> eventClass) {
+		super(target, method, true, eventClass);
 	}
 
 	/**
 	 * Dispatches the event to the actual listener method.
 	 *
-	 * @param rEvent The event to dispatch
+	 * @param event The event to dispatch
 	 */
 	@Override
-	public final void handleEvent(E rEvent) {
-		dispatch(rEvent);
+	public final void handleEvent(E event) {
+		dispatch(event);
 	}
 }

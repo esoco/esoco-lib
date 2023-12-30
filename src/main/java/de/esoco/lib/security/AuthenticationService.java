@@ -45,8 +45,8 @@ public interface AuthenticationService {
 	 * authentication
 	 * token.</p>
 	 *
-	 * @param rAuthData The relatable object containing the authentication data
+	 * @param authData The relatable object containing the authentication data
 	 * @return TRUE if the authentication was successful, FALSE if not
 	 */
-	boolean authenticate(Relatable rAuthData);
+	boolean authenticate(Relatable authData);
 }

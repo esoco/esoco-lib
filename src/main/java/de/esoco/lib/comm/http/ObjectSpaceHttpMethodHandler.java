@@ -29,46 +29,46 @@ import org.obrel.space.SynchronizedObjectSpace;
  */
 public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler {
 
-	private final ObjectSpace<? super String> rObjectSpace;
+	private final ObjectSpace<? super String> objectSpace;
 
-	private final String sDefaultPath;
+	private final String defaultPath;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rObjectSpace The object space to get response data from
-	 * @param sDefaultPath The default path to lookup for the GET method if the
-	 *                     request path is empty
+	 * @param objectSpace The object space to get response data from
+	 * @param defaultPath The default path to lookup for the GET method if the
+	 *                    request path is empty
 	 */
-	public ObjectSpaceHttpMethodHandler(
-		ObjectSpace<? super String> rObjectSpace, String sDefaultPath) {
-		this.rObjectSpace = new SynchronizedObjectSpace<>(rObjectSpace);
-		this.sDefaultPath = sDefaultPath;
+	public ObjectSpaceHttpMethodHandler(ObjectSpace<? super String> objectSpace,
+		String defaultPath) {
+		this.objectSpace = new SynchronizedObjectSpace<>(objectSpace);
+		this.defaultPath = defaultPath;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public HttpResponse doGet(HttpRequest rRequest) throws HttpStatusException {
-		String sPath = rRequest.getPath();
+	public HttpResponse doGet(HttpRequest request) throws HttpStatusException {
+		String path = request.getPath();
 
-		if (sPath.isEmpty() || sPath.equals("/")) {
-			sPath = sDefaultPath;
+		if (path.isEmpty() || path.equals("/")) {
+			path = defaultPath;
 		}
 
 		try {
-			Object rData = rObjectSpace.get(sPath);
+			Object data = objectSpace.get(path);
 
-			if (rData == null) {
+			if (data == null) {
 				// jump into catch below
 				throw new IllegalArgumentException();
 			}
 
-			return new HttpResponse(rData.toString());
+			return new HttpResponse(data.toString());
 		} catch (RuntimeException e) {
 			throw new HttpStatusException(HttpStatusCode.NOT_FOUND,
-				"No data at " + sPath);
+				"No data at " + path);
 		}
 	}
 
@@ -76,48 +76,47 @@ public class ObjectSpaceHttpMethodHandler implements HttpRequestMethodHandler {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public HttpResponse doPost(HttpRequest rRequest)
-		throws HttpStatusException {
-		return update(rRequest);
+	public HttpResponse doPost(HttpRequest request) throws HttpStatusException {
+		return update(request);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public HttpResponse doPut(HttpRequest rRequest) throws HttpStatusException {
-		return update(rRequest);
+	public HttpResponse doPut(HttpRequest request) throws HttpStatusException {
+		return update(request);
 	}
 
 	/**
 	 * Performs an update due to a POST or PUT request.
 	 *
-	 * @param rRequest The update request
+	 * @param request The update request
 	 * @return The response
 	 * @throws HttpStatusException If the update is not allowed
 	 */
-	private HttpResponse update(HttpRequest rRequest)
+	private HttpResponse update(HttpRequest request)
 		throws HttpStatusException {
-		String sPath = rRequest.getPath();
-		String sData = null;
+		String path = request.getPath();
+		String data = null;
 
 		try {
-			sData = rRequest.getBody();
+			data = request.getBody();
 
-			rObjectSpace.put(sPath, sData);
+			objectSpace.put(path, data);
 
 			return new HttpResponse("");
 		} catch (HttpStatusException e) {
 			throw e;
 		} catch (Exception e) {
-			Log.errorf(e, "ObjectSpace update failed: %s - %s", sPath, sData);
+			Log.errorf(e, "ObjectSpace update failed: %s - %s", path, data);
 
-			if (sData == null) {
+			if (data == null) {
 				throw new HttpStatusException(HttpStatusCode.BAD_REQUEST,
 					"Could not access request data: " + e.getMessage());
 			} else {
 				throw new HttpStatusException(HttpStatusCode.NOT_ACCEPTABLE,
-					"Invalid data '" + sData + "': " + e.getMessage());
+					"Invalid data '" + data + "': " + e.getMessage());
 			}
 		}
 	}

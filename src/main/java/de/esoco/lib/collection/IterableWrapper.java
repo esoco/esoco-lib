@@ -26,17 +26,17 @@ import java.util.Iterator;
  */
 public class IterableWrapper<T> implements Iterable<T> {
 
-	private final Iterable<T> rIterable;
+	private final Iterable<T> iterable;
 
 	/**
 	 * Wraps a certain iterable instance. This allows to return an Iterable
 	 * instance for an arbitrary collection without returning the collection
 	 * itself. The original iterable object cannot be accessed externally.
 	 *
-	 * @param rIterable The iterable instance to wrap
+	 * @param iterable The iterable instance to wrap
 	 */
-	public IterableWrapper(Iterable<T> rIterable) {
-		this.rIterable = rIterable;
+	public IterableWrapper(Iterable<T> iterable) {
+		this.iterable = iterable;
 	}
 
 	/**
@@ -46,6 +46,6 @@ public class IterableWrapper<T> implements Iterable<T> {
 	 */
 	@Override
 	public Iterator<T> iterator() {
-		return rIterable.iterator();
+		return iterable.iterator();
 	}
 }

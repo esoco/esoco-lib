@@ -49,14 +49,14 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 	 * synchronization request. This should only be used by management code for
 	 * the handling of invalid locks.
 	 *
-	 * @param sClient   A unique identifier of the client making the request
-	 * @param sContext  The name of the synchronization context
-	 * @param sTargetId The unique ID of the target to synchronize
+	 * @param client   A unique identifier of the client making the request
+	 * @param context  The name of the synchronization context
+	 * @param targetId The unique ID of the target to synchronize
 	 * @return The data record for use with {@link SyncRequest}
 	 */
-	public static SyncData forceSyncRequest(String sClient, String sContext,
-		String sTargetId) {
-		return new SyncData(sClient, sContext, sTargetId, true);
+	public static SyncData forceSyncRequest(String client, String context,
+		String targetId) {
+		return new SyncData(client, context, targetId, true);
 	}
 
 	/**
@@ -94,14 +94,14 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 	 * Static helper method that creates the data record for a synchronization
 	 * request.
 	 *
-	 * @param sClient   A unique identifier of the client making the request
-	 * @param sContext  The name of the synchronization context
-	 * @param sTargetId The unique ID of the target to synchronize
+	 * @param client   A unique identifier of the client making the request
+	 * @param context  The name of the synchronization context
+	 * @param targetId The unique ID of the target to synchronize
 	 * @return The data record for use with {@link SyncRequest}
 	 */
-	public static SyncData syncRequest(String sClient, String sContext,
-		String sTargetId) {
-		return new SyncData(sClient, sContext, sTargetId, false);
+	public static SyncData syncRequest(String client, String context,
+		String targetId) {
+		return new SyncData(client, context, targetId, false);
 	}
 
 	/**
@@ -112,30 +112,30 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 	 */
 	public static class SyncData {
 
-		private final String sClient;
+		private final String client;
 
-		private final String sContext;
+		private final String context;
 
-		private final String sTargetId;
+		private final String targetId;
 
-		private final boolean bForceRequest;
+		private final boolean forceRequest;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sClient       A unique identifier of the client making the
-		 *                      request
-		 * @param sContext      The synchronization context
-		 * @param sTargetId     The unique ID of the target
-		 * @param bForceRequest TRUE to force the request execution even if the
-		 *                      requirements are not met
+		 * @param client       A unique identifier of the client making the
+		 *                     request
+		 * @param context      The synchronization context
+		 * @param targetId     The unique ID of the target
+		 * @param forceRequest TRUE to force the request execution even if the
+		 *                     requirements are not met
 		 */
-		public SyncData(String sClient, String sContext, String sTargetId,
-			boolean bForceRequest) {
-			this.sClient = sClient;
-			this.sContext = sContext;
-			this.sTargetId = sTargetId;
-			this.bForceRequest = bForceRequest;
+		public SyncData(String client, String context, String targetId,
+			boolean forceRequest) {
+			this.client = client;
+			this.context = context;
+			this.targetId = targetId;
+			this.forceRequest = forceRequest;
 		}
 
 		/**
@@ -145,17 +145,17 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 		 * @return The JSON request
 		 */
 		public String toJson() {
-			Map<String, Object> aRequestData = new LinkedHashMap<>(3);
+			Map<String, Object> requestData = new LinkedHashMap<>(3);
 
-			aRequestData.put(JSON_REQUEST_CLIENT, sClient);
-			aRequestData.put(JSON_REQUEST_CONTEXT, sContext);
-			aRequestData.put(JSON_REQUEST_TARGET_ID, sTargetId);
+			requestData.put(JSON_REQUEST_CLIENT, client);
+			requestData.put(JSON_REQUEST_CONTEXT, context);
+			requestData.put(JSON_REQUEST_TARGET_ID, targetId);
 
-			if (bForceRequest) {
-				aRequestData.put(JSON_REQUEST_FORCE_FLAG, Boolean.TRUE);
+			if (forceRequest) {
+				requestData.put(JSON_REQUEST_FORCE_FLAG, Boolean.TRUE);
 			}
 
-			return new JsonBuilder().appendObject(aRequestData).toString();
+			return new JsonBuilder().appendObject(requestData).toString();
 		}
 	}
 
@@ -170,11 +170,11 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param eMethod     The request method
-		 * @param sRequestUrl sMethodName The name of the request method
+		 * @param method     The request method
+		 * @param requestUrl sMethodName The name of the request method
 		 */
-		SyncRequest(HttpRequestMethod eMethod, String sRequestUrl) {
-			super(sRequestUrl, null, eMethod, "/api/sync/" + sRequestUrl,
+		SyncRequest(HttpRequestMethod method, String requestUrl) {
+			super(requestUrl, null, method, "/api/sync/" + requestUrl,
 				data -> data != null ? data.toJson() : "", identity());
 		}
 
@@ -182,9 +182,9 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected String handleHttpError(HttpURLConnection rUrlConnection,
-			Exception eHttpException, HttpStatusCode eStatusCode) {
-			return eStatusCode.toString();
+		protected String handleHttpError(HttpURLConnection urlConnection,
+			Exception httpException, HttpStatusCode statusCode) {
+			return statusCode.toString();
 		}
 	}
 }

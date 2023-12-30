@@ -31,9 +31,9 @@ import java.lang.reflect.Method;
  */
 public class MethodMappingHandler {
 
-	private MethodMappingDefinition rMapping = null;
+	private MethodMappingDefinition mapping = null;
 
-	private String sTargetMethod = null;
+	private String targetMethod = null;
 
 	/**
 	 * Creates a new default MethodMappingHandler object that maps to a method
@@ -46,20 +46,20 @@ public class MethodMappingHandler {
 	 * Internal constructor to create a new MethodMappingHandler object that
 	 * maps to a method with another name.
 	 *
-	 * @param sTargetMethod The target method to be invoked (may be NULL)
+	 * @param targetMethod The target method to be invoked (may be NULL)
 	 */
-	public MethodMappingHandler(String sTargetMethod) {
-		this.sTargetMethod = sTargetMethod;
+	public MethodMappingHandler(String targetMethod) {
+		this.targetMethod = targetMethod;
 	}
 
 	/**
 	 * Internal constructor for a child handler of a certain mapping
 	 * definition.
 	 *
-	 * @param rMapping The parent mapping definition
+	 * @param mapping The parent mapping definition
 	 */
-	public MethodMappingHandler(MethodMappingDefinition rMapping) {
-		setMappingDefinition(rMapping);
+	public MethodMappingHandler(MethodMappingDefinition mapping) {
+		setMappingDefinition(mapping);
 	}
 
 	/**
@@ -69,7 +69,7 @@ public class MethodMappingHandler {
 	 */
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + "[" + sTargetMethod + "]";
+		return getClass().getSimpleName() + "[" + targetMethod + "]";
 	}
 
 	/**
@@ -87,9 +87,9 @@ public class MethodMappingHandler {
 	 * <p>The implementation can signal errors by throwing any kind of
 	 * exception.</p>
 	 *
-	 * @param rOriginalMethod The unmapped method that has been invoked
-	 * @param rTarget         The target object of the invocation
-	 * @param rArgs           The arguments of the method call
+	 * @param originalMethod The unmapped method that has been invoked
+	 * @param target         The target object of the invocation
+	 * @param args           The arguments of the method call
 	 * @return The return value of the method call; this must match the return
 	 * type of the method (NULL for void methods)
 	 * @throws Exception Any exception may be thrown if either the method
@@ -100,23 +100,18 @@ public class MethodMappingHandler {
 	 * @see #mapArguments(Method, Object, Method, Object[])
 	 * @see #mapReturnValue(Method, Object, Method, Object)
 	 */
-	protected Object invoke(Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) throws Exception {
+	protected Object invoke(Method originalMethod, Object target,
+		Object[] args)
+		throws Exception {
 		try {
-			rTarget = mapTarget(rOriginalMethod, rTarget, rArgs);
+			target = mapTarget(originalMethod, target, args);
 
-			Method rTargetMethod =
-				mapMethod(rOriginalMethod, sTargetMethod, rTarget);
-
-			rArgs =
-				mapArguments(rOriginalMethod, rTarget, rTargetMethod, rArgs);
-
-			Object rValue = invokeMethod(rTarget, rTargetMethod, rArgs);
-
-			return mapReturnValue(rOriginalMethod, rTarget, rTargetMethod,
-				rValue);
-		} catch (InvocationTargetException eITE) {
-			Throwable t = eITE.getTargetException();
+			Method method = mapMethod(originalMethod, targetMethod, target);
+			args = mapArguments(originalMethod, target, method, args);
+			Object value = invokeMethod(target, method, args);
+			return mapReturnValue(originalMethod, target, method, value);
+		} catch (InvocationTargetException iTE) {
+			Throwable t = iTE.getTargetException();
 
 			if (t instanceof Exception) {
 				throw (Exception) t;
@@ -133,15 +128,15 @@ public class MethodMappingHandler {
 	 * then be mapped with mapReturnValue() before it is returned to the
 	 * caller.
 	 *
-	 * @param rTarget       The target object to invoke the method on
-	 * @param rTargetMethod The method to be invoked
-	 * @param rArgs         The arguments of the method call
+	 * @param target       The target object to invoke the method on
+	 * @param targetMethod The method to be invoked
+	 * @param args         The arguments of the method call
 	 * @return The result of the method call
 	 * @throws Exception Any exception may be caused by the invocation
 	 */
-	protected Object invokeMethod(Object rTarget, Method rTargetMethod,
-		Object[] rArgs) throws Exception {
-		return rTargetMethod.invoke(rTarget, rArgs);
+	protected Object invokeMethod(Object target, Method targetMethod,
+		Object[] args) throws Exception {
+		return targetMethod.invoke(target, args);
 	}
 
 	/**
@@ -151,25 +146,25 @@ public class MethodMappingHandler {
 	 * If so, it converts the datatype with it, else it returns the orginal
 	 * datatype.
 	 *
-	 * @param rOriginalMethod The original method from wich the types shall be
-	 *                        mapped
-	 * @param rArgTypes       The original argument types
-	 * @param rTarget         The target object that will be invoked
+	 * @param originalMethod The original method from wich the types shall be
+	 *                       mapped
+	 * @param argTypes       The original argument types
+	 * @param target         The target object that will be invoked
 	 * @return An array of Class instances containing the (optionally mapped)
 	 * argument types
 	 */
-	protected Class<?>[] mapArgumentTypes(Method rOriginalMethod,
-		Class<?>[] rArgTypes, Object rTarget) {
-		for (int i = 0; i < rArgTypes.length; i++) {
+	protected Class<?>[] mapArgumentTypes(Method originalMethod,
+		Class<?>[] argTypes, Object target) {
+		for (int i = 0; i < argTypes.length; i++) {
 			MethodDatatypeMapper mapper =
-				rMapping.getDatatypeMapper(rOriginalMethod, rArgTypes[i]);
+				mapping.getDatatypeMapper(originalMethod, argTypes[i]);
 
 			if (mapper != null) {
-				rArgTypes[i] = mapper.mapType(rOriginalMethod, rArgTypes[i]);
+				argTypes[i] = mapper.mapType(originalMethod, argTypes[i]);
 			}
 		}
 
-		return rArgTypes;
+		return argTypes;
 	}
 
 	/**
@@ -188,34 +183,34 @@ public class MethodMappingHandler {
 	 * datatype converter is defined in the mapping. If so, it converts the
 	 * value with it, else it returns the orginal return value.</p>
 	 *
-	 * @param rOriginalMethod The unmapped method that has been invoked
-	 * @param rTarget         The target object to be invoked
-	 * @param rTargetMethod   The target method that will be invoked
-	 * @param rArgs           The arguments of the method call
+	 * @param originalMethod The unmapped method that has been invoked
+	 * @param target         The target object to be invoked
+	 * @param targetMethod   The target method that will be invoked
+	 * @param args           The arguments of the method call
 	 * @return An Object array with the (optionally mapped) arguments for the
 	 * method call
 	 * @see #invoke(Method, Object, Object[])
 	 */
-	protected Object[] mapArguments(Method rOriginalMethod, Object rTarget,
-		Method rTargetMethod, Object[] rArgs) {
-		if (rArgs != null) {
-			for (int i = 0; i < rArgs.length; i++) {
-				Object rValue = rArgs[i];
+	protected Object[] mapArguments(Method originalMethod, Object target,
+		Method targetMethod, Object[] args) {
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				Object value = args[i];
 
-				if (rValue != null) {
-					MethodDatatypeMapper rMapper =
-						rMapping.getDatatypeMapper(rOriginalMethod,
-							rValue.getClass());
+				if (value != null) {
+					MethodDatatypeMapper mapper =
+						mapping.getDatatypeMapper(originalMethod,
+							value.getClass());
 
-					if (rMapper != null) {
-						rArgs[i] =
-							rMapper.mapValue(rTarget, rOriginalMethod, rValue);
+					if (mapper != null) {
+						args[i] =
+							mapper.mapValue(target, originalMethod, value);
 					}
 				}
 			}
 		}
 
-		return rArgs;
+		return args;
 	}
 
 	/**
@@ -230,11 +225,11 @@ public class MethodMappingHandler {
 	 * mapArguments()</code> that is invoked by the proxy implementation after
 	 * mapMethod() has returned.</p>
 	 *
-	 * @param rOriginalMethod The unmapped method that has been invoked
-	 * @param sMethod         The name of the target method or NULL if the name
-	 *                        shall be determined from the original method
-	 * @param rTarget         Target object on which the original method should
-	 *                        be mapped
+	 * @param originalMethod The unmapped method that has been invoked
+	 * @param method         The name of the target method or NULL if the name
+	 *                       shall be determined from the original method
+	 * @param target         Target object on which the original method should
+	 *                       be mapped
 	 * @return The mapped method instance
 	 * @throws NoSuchMethodException If no method that matches the mapping
 	 * could
@@ -242,16 +237,18 @@ public class MethodMappingHandler {
 	 * @see #invoke(Method, Object, Object[])
 	 * @see #mapArguments(Method, Object, Method, Object[])
 	 */
-	protected Method mapMethod(Method rOriginalMethod, String sMethod,
-		Object rTarget) throws NoSuchMethodException {
-		if (sMethod == null) {
-			sMethod = rOriginalMethod.getName();
+	protected Method mapMethod(Method originalMethod, String method,
+		Object target) throws NoSuchMethodException {
+		if (method == null) {
+			method = originalMethod.getName();
 		}
 
-		Class<?>[] rParamTypes = mapArgumentTypes(rOriginalMethod,
-			rOriginalMethod.getParameterTypes(), rTarget);
+		Class<?>[] paramTypes =
+			mapArgumentTypes(originalMethod,
+				originalMethod.getParameterTypes(),
+				target);
 
-		return rTarget.getClass().getMethod(sMethod, rParamTypes);
+		return target.getClass().getMethod(method, paramTypes);
 	}
 
 	/**
@@ -264,47 +261,47 @@ public class MethodMappingHandler {
 	 * either IllegalArgument or UnsupportedOperation) to signal that an error
 	 * occurred during the mapping.</p>
 	 *
-	 * @param rOriginalMethod The unmapped method that has been invoked
-	 * @param rTarget         The target object
-	 * @param rTargetMethod   The mapped method that returned the value
-	 * @param rValue          The value returned by the target method
+	 * @param originalMethod The unmapped method that has been invoked
+	 * @param target         The target object
+	 * @param targetMethod   The mapped method that returned the value
+	 * @param value          The value returned by the target method
 	 * @return The (optionally mapped) return value
 	 * @see #mapMethod(Method, String, Object)
 	 */
-	protected Object mapReturnValue(Method rOriginalMethod, Object rTarget,
-		Method rTargetMethod, Object rValue) {
-		if (rValue != null) {
+	protected Object mapReturnValue(Method originalMethod, Object target,
+		Method targetMethod, Object value) {
+		if (value != null) {
 			MethodDatatypeMapper mapper =
-				rMapping.getDatatypeMapper(rOriginalMethod, rValue.getClass());
+				mapping.getDatatypeMapper(originalMethod, value.getClass());
 
 			if (mapper != null) {
-				rValue = mapper.mapValue(rTarget, rOriginalMethod, rValue);
+				value = mapper.mapValue(target, originalMethod, value);
 			}
 		}
 
-		return rValue;
+		return value;
 	}
 
 	/**
 	 * Allows subclasses to map the target object of the invocation. This
 	 * default implementation simply returns the original target object.
 	 *
-	 * @param rOriginalMethod The unmapped method that has been invoked
-	 * @param rTarget         The target object of the invocation
-	 * @param rArgs           The arguments of the method call
+	 * @param originalMethod The unmapped method that has been invoked
+	 * @param target         The target object of the invocation
+	 * @param args           The arguments of the method call
 	 * @return The mapped target object
 	 */
-	protected Object mapTarget(Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) {
-		return rTarget;
+	protected Object mapTarget(Method originalMethod, Object target,
+		Object[] args) {
+		return target;
 	}
 
 	/**
 	 * Sets the parent mapping definition that this mapping handler belongs to.
 	 *
-	 * @param rMapping The parent mapping definition
+	 * @param mapping The parent mapping definition
 	 */
-	void setMappingDefinition(MethodMappingDefinition rMapping) {
-		this.rMapping = rMapping;
+	void setMappingDefinition(MethodMappingDefinition mapping) {
+		this.mapping = mapping;
 	}
 }

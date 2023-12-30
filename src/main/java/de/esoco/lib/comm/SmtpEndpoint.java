@@ -88,29 +88,28 @@ public class SmtpEndpoint extends SocketEndpoint {
 	/**
 	 * Factory method to create an instance of {@link SmtpRequest}.
 	 *
-	 * @param rDefaultEmail The default email to send
+	 * @param defaultEmail The default email to send
 	 * @return The new request instance
 	 */
-	public static SmtpRequest sendMail(Email rDefaultEmail) {
-		return new SmtpRequest(rDefaultEmail);
+	public static SmtpRequest sendMail(Email defaultEmail) {
+		return new SmtpRequest(defaultEmail);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void initConnection(Connection rConnection) throws IOException {
-		super.initConnection(rConnection);
+	protected void initConnection(Connection connection) throws IOException {
+		super.initConnection(connection);
 
-		Socket rSocket = getSocket(rConnection);
+		Socket socket = getSocket(connection);
 
-		DataOutputStream aDataOut =
-			new DataOutputStream(rSocket.getOutputStream());
-		DataInputStream aDataIn =
-			new DataInputStream(rSocket.getInputStream());
+		DataOutputStream dataOut =
+			new DataOutputStream(socket.getOutputStream());
+		DataInputStream dataIn = new DataInputStream(socket.getInputStream());
 
-		rConnection.set(SMTP_OUTPUT_STREAM, aDataOut);
-		rConnection.set(SMTP_INPUT_STREAM, aDataIn);
+		connection.set(SMTP_OUTPUT_STREAM, dataOut);
+		connection.set(SMTP_INPUT_STREAM, dataIn);
 	}
 
 	/**
@@ -123,52 +122,51 @@ public class SmtpEndpoint extends SocketEndpoint {
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rDefaultEmail The default email to send
+		 * @param defaultEmail The default email to send
 		 */
-		protected SmtpRequest(Email rDefaultEmail) {
-			super(SmtpRequest.class.getSimpleName(), rDefaultEmail);
+		protected SmtpRequest(Email defaultEmail) {
+			super(SmtpRequest.class.getSimpleName(), defaultEmail);
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected Void sendRequest(Connection rConnection,
-			OutputStream rOutput,
-			InputStream rInput, Email rEmail) throws Exception {
-			SmtpProtocolHandler aSmtpHandler =
-				new SmtpProtocolHandler("localhost", rOutput, rInput);
+		protected Void sendRequest(Connection connection, OutputStream output,
+			InputStream input, Email email) throws Exception {
+			SmtpProtocolHandler smtpHandler =
+				new SmtpProtocolHandler("localhost", output, input);
 
-			String sFrom = rEmail.get(Email.SENDER_ADDRESS);
-			String sTo = rEmail.get(Email.RECIPIENT_ADDRESS);
+			String from = email.get(Email.SENDER_ADDRESS);
+			String to = email.get(Email.RECIPIENT_ADDRESS);
 
-			if (sFrom == null || sTo == null) {
-				String sQuery = rConnection.getUri().getQuery();
-				String[] aQueryElements = sQuery.split("&");
-				Map<String, String> aParams = new HashMap<>();
+			if (from == null || to == null) {
+				String query = connection.getUri().getQuery();
+				String[] queryElements = query.split("&");
+				Map<String, String> params = new HashMap<>();
 
-				for (String sElement : aQueryElements) {
-					String[] aParam = sElement.split("=");
+				for (String element : queryElements) {
+					String[] param = element.split("=");
 
-					if (aParam.length == 2) {
-						aParams.put(aParam[0].toLowerCase(), aParam[1]);
+					if (param.length == 2) {
+						params.put(param[0].toLowerCase(), param[1]);
 					}
 				}
 
-				sFrom = sFrom == null ? aParams.get("from") : sFrom;
-				sTo = sTo == null ? aParams.get("to") : sTo;
+				from = from == null ? params.get("from") : from;
+				to = to == null ? params.get("to") : to;
 
-				Objects.requireNonNull(sFrom, "Missing sender address");
-				Objects.requireNonNull(sTo, "Missing recipient address");
+				Objects.requireNonNull(from, "Missing sender address");
+				Objects.requireNonNull(to, "Missing recipient address");
 
-				rEmail.set(Email.SENDER_ADDRESS, sFrom);
-				rEmail.set(Email.RECIPIENT_ADDRESS, sTo);
+				email.set(Email.SENDER_ADDRESS, from);
+				email.set(Email.RECIPIENT_ADDRESS, to);
 			}
 
-			aSmtpHandler.connect(rConnection.get(USER_NAME),
-				rConnection.get(PASSWORD));
-			aSmtpHandler.send(rEmail);
-			aSmtpHandler.disconnect();
+			smtpHandler.connect(connection.get(USER_NAME),
+				connection.get(PASSWORD));
+			smtpHandler.send(email);
+			smtpHandler.disconnect();
 
 			return null;
 		}

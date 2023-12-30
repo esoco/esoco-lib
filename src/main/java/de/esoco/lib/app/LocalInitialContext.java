@@ -32,8 +32,7 @@ import java.util.Map;
  */
 public class LocalInitialContext extends InitialContext {
 
-	private static final Map<String, Object> aContextRegistry =
-		new HashMap<>();
+	private static final Map<String, Object> contextRegistry = new HashMap<>();
 
 	/**
 	 * Creates a new instance.
@@ -45,13 +44,13 @@ public class LocalInitialContext extends InitialContext {
 	 * Registers this class with the {@link NamingManager} as the default
 	 * initial context for JNDI lookups.
 	 *
-	 * @param rContextFactory The factory for local initial contexts
+	 * @param contextFactory The factory for local initial contexts
 	 */
 	public static void registerLocalContext(
-		InitialContextFactory rContextFactory) {
+		InitialContextFactory contextFactory) {
 		try {
 			NamingManager.setInitialContextFactoryBuilder(
-				env -> rContextFactory);
+				env -> contextFactory);
 		} catch (NamingException e) {
 			throw new IllegalStateException(e);
 		}
@@ -61,23 +60,23 @@ public class LocalInitialContext extends InitialContext {
 	 * Registers an object under a certain JDNI name in the global registry for
 	 * the local context.
 	 *
-	 * @param sName   The name to register the object under
-	 * @param rObject The resource object
+	 * @param name   The name to register the object under
+	 * @param object The resource object
 	 */
-	public static void registerResource(String sName, Object rObject) {
-		aContextRegistry.put(sName, rObject);
+	public static void registerResource(String name, Object object) {
+		contextRegistry.put(name, object);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Object lookup(String sName) throws NamingException {
-		if (aContextRegistry.containsKey(sName)) {
-			return aContextRegistry.get(sName);
+	public Object lookup(String name) throws NamingException {
+		if (contextRegistry.containsKey(name)) {
+			return contextRegistry.get(name);
 		}
 
-		throw new NamingException("Unable to find object " + sName);
+		throw new NamingException("Unable to find object " + name);
 	}
 
 	/**

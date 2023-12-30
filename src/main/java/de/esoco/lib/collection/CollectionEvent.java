@@ -34,13 +34,13 @@ public class CollectionEvent<E, C extends Collection<E>>
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rType        The event type
-	 * @param rSource      The collection that is the source of this event
-	 * @param rElement     The collection element affected by this event
-	 * @param rUpdateValue The new element value in case of update events
+	 * @param type        The event type
+	 * @param source      The collection that is the source of this event
+	 * @param element     The collection element affected by this event
+	 * @param updateValue The new element value in case of update events
 	 */
-	public CollectionEvent(EventType rType, C rSource, E rElement,
-		E rUpdateValue) {
-		super(rType, rSource, rElement, rUpdateValue);
+	public CollectionEvent(EventType type, C source, E element,
+		E updateValue) {
+		super(type, source, element, updateValue);
 	}
 }

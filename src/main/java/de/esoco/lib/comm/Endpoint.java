@@ -92,19 +92,19 @@ public abstract class Endpoint extends RelatedObject
 		newType(PRIVATE);
 
 	private static final Map<String, Class<? extends Endpoint>>
-		aEndpointRegistry = new HashMap<>();
-
-	/**
-	 * A relatable object that provides global configuration data for all
-	 * endpoints. Must be initialized by invoking
-	 * {@link #setGlobalConfiguration(Relatable)}.
-	 */
-	private static ProvidesConfiguration rGlobalConfig = new Params();
+		endpointRegistry = new HashMap<>();
 
 	/**
 	 * The default parameters for all endpoint instances.
 	 */
-	private static Relatable aDefaultParams = new Params();
+	private static final Relatable defaultParams = new Params();
+
+	/**
+	 * A relatable object that provides global configuration data for all
+	 * endpoints. Must be initialized by invoking
+	 * {@link #setGlobalConfiguration(ProvidesConfiguration)}.
+	 */
+	private static ProvidesConfiguration globalConfig = new Params();
 
 	static {
 		RelationTypes.init(Endpoint.class);
@@ -125,70 +125,68 @@ public abstract class Endpoint extends RelatedObject
 	 * endpoint address URI to the {@link CommunicationRelationTypes#USER_NAME}
 	 * and {@link CommunicationRelationTypes#PASSWORD} relations.
 	 *
-	 * @param sEndpointUri The URI to create the endpoint for
+	 * @param endpointUri The URI to create the endpoint for
 	 * @return The endpoint for the given URI
 	 */
-	public static Endpoint at(String sEndpointUri) {
-		URI aUri = createUri(sEndpointUri);
-		String sScheme = aUri.getScheme().toUpperCase();
-		Boolean bEncrypted = Boolean.valueOf(sScheme.endsWith("S"));
-		Endpoint aEndpoint;
+	public static Endpoint at(String endpointUri) {
+		URI uri = createUri(endpointUri);
+		String scheme = uri.getScheme().toUpperCase();
+		Boolean encrypted = scheme.endsWith("S");
+		Endpoint endpoint;
 
-		Class<? extends Endpoint> aEndpointClass =
-			aEndpointRegistry.get(sScheme);
+		Class<? extends Endpoint> endpointClass = endpointRegistry.get(scheme);
 
-		if (aEndpointClass == null) {
-			aEndpointClass = getDefaultEndpoint(sScheme);
+		if (endpointClass == null) {
+			endpointClass = getDefaultEndpoint(scheme);
 		}
 
-		if (aEndpointClass != null) {
+		if (endpointClass != null) {
 			try {
-				aEndpoint = aEndpointClass.newInstance();
-				aEndpoint.set(ENDPOINT_SCHEME, sScheme);
-				aEndpoint.set(USER_NAME,
-					getUserInfoField(aUri, UserInfoField.USERNAME));
-				aEndpoint.set(PASSWORD,
-					getUserInfoField(aUri, UserInfoField.PASSWORD));
+				endpoint = endpointClass.newInstance();
+				endpoint.set(ENDPOINT_SCHEME, scheme);
+				endpoint.set(USER_NAME,
+					getUserInfoField(uri, UserInfoField.USERNAME));
+				endpoint.set(PASSWORD,
+					getUserInfoField(uri, UserInfoField.PASSWORD));
 
-				String sUserInfo = aUri.getUserInfo();
+				String userInfo = uri.getUserInfo();
 
-				if (sUserInfo != null) {
+				if (userInfo != null) {
 					// remove authentication data from URI string after storing
 					// user and password to prevent it from leaking when the
 					// endpoint address is accessed
-					sEndpointUri = sEndpointUri.replaceAll(sUserInfo + "@",
-						"");
+					endpointUri = endpointUri.replaceAll(userInfo + "@", "");
 				}
 
-				aEndpoint.set(ENDPOINT_ADDRESS, sEndpointUri);
+				endpoint.set(ENDPOINT_ADDRESS, endpointUri);
 
-				if (!aEndpoint.hasRelation(ENCRYPTION)) {
-					aEndpoint.set(ENCRYPTION, bEncrypted);
+				if (!endpoint.hasRelation(ENCRYPTION)) {
+					endpoint.set(ENCRYPTION, encrypted);
 				}
 
-				aEndpoint.init();
+				endpoint.init();
 			} catch (Exception e) {
 				throw new CommunicationException(
-					"Could not create endpoint for scheme " + sScheme, e);
+					"Could not create endpoint for scheme " + scheme, e);
 			}
 		} else {
 			throw new CommunicationException(
-				"No endpoint registered for scheme " + sScheme);
+				"No endpoint registered for scheme " + scheme);
 		}
 
-		return aEndpoint;
+		return endpoint;
 	}
 
 	/**
 	 * Converts a string into a URI and converts any occurring exception into a
 	 * runtime {@link CommunicationException}.
 	 *
-	 * @param sUri The URI string
+	 * @param uri The URI string
 	 * @return The {@link URI} object
 	 */
-	private static URI createUri(String sUri) {
+	private static URI createUri(String uri) {
 		try {
-			return new URI(sUri);
+			return new URI(uri);
 		} catch (URISyntaxException e) {
 			throw new CommunicationException(e);
 		}
@@ -197,51 +195,52 @@ public abstract class Endpoint extends RelatedObject
 	/**
 	 * Returns a configuration value from the global endpoint configuration.
 	 *
-	 * @param rConfigType   The configuration relation type
-	 * @param rDefaultValue The default value to return if no configuration
-	 *                      value is available
+	 * @param configType   The configuration relation type
+	 * @param defaultValue The default value to return if no configuration
+	 *                        value
+	 *                     is available
 	 * @return The configuration value or the default if no config available
 	 */
-	protected static <T> T getConfigValue(RelationType<T> rConfigType,
-		T rDefaultValue) {
-		return rGlobalConfig.getConfigValue(rConfigType, rDefaultValue);
+	protected static <T> T getConfigValue(RelationType<T> configType,
+		T defaultValue) {
+		return globalConfig.getConfigValue(configType, defaultValue);
 	}
 
 	/**
 	 * Tries to lookup an endpoint implementation based on an URL scheme and if
 	 * found registers it for plain and encrypted protocol variants.
 	 *
-	 * @param sScheme The scheme to lookup an endpoint class for
+	 * @param scheme The scheme to lookup an endpoint class for
 	 * @return The class of the endpoint implementation
 	 * @throws CommunicationException If no endpoint implementation for the
 	 *                                given scheme could be found
 	 */
 	@SuppressWarnings("unchecked")
-	private static Class<? extends Endpoint> getDefaultEndpoint(String sScheme)
+	private static Class<? extends Endpoint> getDefaultEndpoint(String scheme)
 		throws CommunicationException {
-		Class<? extends Endpoint> aEndpointClass;
+		Class<? extends Endpoint> endpointClass;
 
 		try {
-			String sPrefix = sScheme.toUpperCase().replaceAll("-", "_");
-			String sPackage = Endpoint.class.getPackage().getName();
+			String prefix = scheme.toUpperCase().replaceAll("-", "_");
+			String pkg = Endpoint.class.getPackage().getName();
 
-			if (sPrefix.endsWith("S")) {
-				sPrefix = sPrefix.substring(0, sPrefix.length() - 1);
+			if (prefix.endsWith("S")) {
+				prefix = prefix.substring(0, prefix.length() - 1);
 			}
 
-			String sDefaultName = TextConvert.capitalizedIdentifier(sPrefix) +
+			String defaultName = TextConvert.capitalizedIdentifier(prefix) +
 				Endpoint.class.getSimpleName();
 
-			aEndpointClass = (Class<? extends Endpoint>) Class.forName(
-				sPackage + "." + sDefaultName);
+			endpointClass = (Class<? extends Endpoint>) Class.forName(
+				pkg + "." + defaultName);
 
-			registerEndpointType(aEndpointClass, sPrefix, sPrefix + "s");
+			registerEndpointType(endpointClass, prefix, prefix + "s");
 		} catch (ClassNotFoundException e) {
 			throw new CommunicationException(
-				"No endpoint for scheme " + sScheme);
+				"No endpoint for scheme " + scheme);
 		}
 
-		return aEndpointClass;
+		return endpointClass;
 	}
 
 	/**
@@ -253,7 +252,7 @@ public abstract class Endpoint extends RelatedObject
 	 * instances
 	 */
 	public static final Relatable getDefaultParams() {
-		return aDefaultParams;
+		return defaultParams;
 	}
 
 	/**
@@ -265,32 +264,32 @@ public abstract class Endpoint extends RelatedObject
 	 * @return The global endpoint configuration
 	 */
 	public static ProvidesConfiguration getGlobalConfiguration() {
-		return rGlobalConfig;
+		return globalConfig;
 	}
 
 	/**
 	 * Returns a field from the user info part of a URI.
 	 *
-	 * @param rUri   The URI
-	 * @param eField bPassword TRUE to return the password field, FALSE to
-	 *               return the user name field
+	 * @param uri       The URI
+	 * @param infoField bPassword TRUE to return the password field, FALSE to
+	 *                  return the username field
 	 * @return The user info field (NULL for none)
 	 */
-	private static String getUserInfoField(URI rUri, UserInfoField eField) {
-		String sUserInfo = rUri.getUserInfo();
-		String sField = null;
+	private static String getUserInfoField(URI uri, UserInfoField infoField) {
+		String userInfo = uri.getUserInfo();
+		String field = null;
 
-		if (sUserInfo != null) {
-			int nIndex = sUserInfo.indexOf(':');
+		if (userInfo != null) {
+			int index = userInfo.indexOf(':');
 
-			if (nIndex >= 0) {
-				sField = eField == UserInfoField.PASSWORD ?
-				         sUserInfo.substring(nIndex + 1) :
-				         sUserInfo.substring(0, nIndex);
+			if (index >= 0) {
+				field = infoField == UserInfoField.PASSWORD ?
+				        userInfo.substring(index + 1) :
+				        userInfo.substring(0, index);
 			}
 		}
 
-		return sField;
+		return field;
 	}
 
 	/**
@@ -298,19 +297,19 @@ public abstract class Endpoint extends RelatedObject
 	 * schemes typically are SSL/TLS-encrypted variants of the base scheme or
 	 * vice versa.
 	 *
-	 * @param rEndpointClass     The endpoint type to register
-	 * @param sPrimaryScheme     The primary URI scheme to associate the type
-	 *                           with
-	 * @param sAdditionalSchemes Optional additional URI schemes
+	 * @param endpointClass     The endpoint type to register
+	 * @param primaryScheme     The primary URI scheme to associate the type
+	 *                          with
+	 * @param additionalSchemes Optional additional URI schemes
 	 */
 	public static void registerEndpointType(
-		Class<? extends Endpoint> rEndpointClass, String sPrimaryScheme,
-		String... sAdditionalSchemes) {
-		RelationTypes.init(rEndpointClass);
-		aEndpointRegistry.put(sPrimaryScheme.toUpperCase(), rEndpointClass);
+		Class<? extends Endpoint> endpointClass, String primaryScheme,
+		String... additionalSchemes) {
+		RelationTypes.init(endpointClass);
+		endpointRegistry.put(primaryScheme.toUpperCase(), endpointClass);
 
-		for (String sScheme : sAdditionalSchemes) {
-			aEndpointRegistry.put(sScheme.toUpperCase(), rEndpointClass);
+		for (String scheme : additionalSchemes) {
+			endpointRegistry.put(scheme.toUpperCase(), endpointClass);
 		}
 	}
 
@@ -319,13 +318,13 @@ public abstract class Endpoint extends RelatedObject
 	 * parameters will only be used if they are not overridden by any
 	 * endpoint-specific parameters.
 	 *
-	 * @param rDefaultParams A relatable containing the default parameters for
-	 *                       all endpoint instances (must not be NULL)
+	 * @param defaultParams A relatable containing the default parameters for
+	 *                      all endpoint instances (must not be NULL)
 	 */
-	public static final void setDefaultParams(Relatable rDefaultParams) {
-		Objects.nonNull(rDefaultParams);
+	public static final void setDefaultParams(Relatable defaultParams) {
+		Objects.nonNull(defaultParams);
 
-		aDefaultParams = rDefaultParams;
+		defaultParams = defaultParams;
 	}
 
 	/**
@@ -336,18 +335,18 @@ public abstract class Endpoint extends RelatedObject
 	 * values will cause an exception. To clear the configuration an empty
 	 * relatable should be set.
 	 *
-	 * @param rConfiguration The global configuration object (must not be NULL)
+	 * @param configuration The global configuration object (must not be NULL)
 	 */
 	public static void setGlobalConfiguration(
-		ProvidesConfiguration rConfiguration) {
-		Objects.nonNull(rConfiguration);
+		ProvidesConfiguration configuration) {
+		Objects.nonNull(configuration);
 
-		rGlobalConfig = rConfiguration;
+		globalConfig = configuration;
 
-		LogExtent eLogExtent = rGlobalConfig.getConfigValue(Log.LOG_EXTENT,
-			aDefaultParams.get(Log.LOG_EXTENT));
+		LogExtent logExtent = globalConfig.getConfigValue(Log.LOG_EXTENT,
+			defaultParams.get(Log.LOG_EXTENT));
 
-		aDefaultParams.set(Log.LOG_EXTENT, eLogExtent);
+		defaultParams.set(Log.LOG_EXTENT, logExtent);
 	}
 
 	/**
@@ -366,21 +365,21 @@ public abstract class Endpoint extends RelatedObject
 	 * standard
 	 * {@link Function} method {@link #evaluate(Relatable)}.
 	 *
-	 * @param rParams Optional connection parameters or NULL for none
+	 * @param params Optional connection parameters or NULL for none
 	 * @return The new connection
 	 */
-	public Connection connect(Relatable rParams) {
-		Connection aConnection = new Connection(this);
+	public Connection connect(Relatable params) {
+		Connection connection = new Connection(this);
 
-		ObjectRelations.copyRelations(aDefaultParams, aConnection, true);
-		ObjectRelations.copyRelations(this, aConnection, true);
+		ObjectRelations.copyRelations(defaultParams, connection, true);
+		ObjectRelations.copyRelations(this, connection, true);
 
-		if (rParams != null) {
-			ObjectRelations.copyRelations(rParams, aConnection, true);
+		if (params != null) {
+			ObjectRelations.copyRelations(params, connection, true);
 		}
 
 		try {
-			initConnection(aConnection);
+			initConnection(connection);
 		} catch (Exception e) {
 			if (e instanceof CommunicationException) {
 				throw (CommunicationException) e;
@@ -389,15 +388,15 @@ public abstract class Endpoint extends RelatedObject
 			}
 		}
 
-		return aConnection;
+		return connection;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Connection evaluate(Relatable rParams) {
-		return connect(rParams);
+	public Connection evaluate(Relatable params) {
+		return connect(params);
 	}
 
 	/**
@@ -406,8 +405,8 @@ public abstract class Endpoint extends RelatedObject
 	 * @see Function#then(Function)
 	 */
 	public <I, O> EndpointFunction<I, O> then(
-		CommunicationMethod<I, O> fMethod) {
-		return new EndpointFunction<>(this, fMethod);
+		CommunicationMethod<I, O> method) {
+		return new EndpointFunction<>(this, method);
 	}
 
 	/**
@@ -415,10 +414,10 @@ public abstract class Endpoint extends RelatedObject
 	 * connection. Any exception thrown by this method will be converted into a
 	 * {@link CommunicationException}.
 	 *
-	 * @param rConnection The connection to close
+	 * @param connection The connection to close
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected abstract void closeConnection(Connection rConnection)
+	protected abstract void closeConnection(Connection connection)
 		throws Exception;
 
 	/**
@@ -433,9 +432,9 @@ public abstract class Endpoint extends RelatedObject
 	 * the given connection. Any exception thrown by this method will be
 	 * converted into a {@link CommunicationException}.
 	 *
-	 * @param rConnection The connection to initialize
+	 * @param connection The connection to initialize
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	protected abstract void initConnection(Connection rConnection)
+	protected abstract void initConnection(Connection connection)
 		throws Exception;
 }

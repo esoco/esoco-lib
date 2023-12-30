@@ -35,17 +35,17 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V> {
 
 	private static final long serialVersionUID = 1L;
 
-	private int nCapacity;
+	private int capacity;
 
 	/**
 	 * Creates a new instance with a certain capacity that will not be
 	 * exceeded.
 	 *
-	 * @param nCapacity The capacity of this cache map
+	 * @param capacity The capacity of this cache map
 	 */
-	public CacheMap(int nCapacity) {
-		super(nCapacity, 0.75f, true);
-		this.nCapacity = nCapacity;
+	public CacheMap(int capacity) {
+		super(capacity, 0.75f, true);
+		this.capacity = capacity;
 	}
 
 	/**
@@ -56,7 +56,7 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V> {
 	 * @return The capacity
 	 */
 	public int getCapacity() {
-		return nCapacity;
+		return capacity;
 	}
 
 	/**
@@ -65,29 +65,29 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V> {
 	 * @return The removed entry or NULL if this map is empty
 	 */
 	public Entry<K, V> removeEldest() {
-		Iterator<Entry<K, V>> aIterator = entrySet().iterator();
-		Entry<K, V> rEldest = null;
+		Iterator<Entry<K, V>> iterator = entrySet().iterator();
+		Entry<K, V> eldest = null;
 
-		if (aIterator.hasNext()) {
-			rEldest = aIterator.next();
-			aIterator.remove();
+		if (iterator.hasNext()) {
+			eldest = iterator.next();
+			iterator.remove();
 		}
 
-		return rEldest;
+		return eldest;
 	}
 
 	/**
 	 * Sets the capacity of this instance. If the capacity is decreased below
 	 * the current size of this instance the oldest entries will be removed.
 	 *
-	 * @param nNewCapacity The new capacity
+	 * @param newCapacity The new capacity
 	 */
-	public void setCapacity(int nNewCapacity) {
-		while (size() > nNewCapacity) {
+	public void setCapacity(int newCapacity) {
+		while (size() > newCapacity) {
 			removeEldest();
 		}
 
-		nCapacity = nNewCapacity;
+		capacity = newCapacity;
 	}
 
 	/**
@@ -96,7 +96,7 @@ public class CacheMap<K, V> extends LinkedHashMap<K, V> {
 	 * @see LinkedHashMap#removeEldestEntry(java.util.Map.Entry)
 	 */
 	@Override
-	protected boolean removeEldestEntry(Entry<K, V> rEldest) {
-		return size() > nCapacity;
+	protected boolean removeEldestEntry(Entry<K, V> eldest) {
+		return size() > capacity;
 	}
 }

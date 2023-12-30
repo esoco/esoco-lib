@@ -16,73 +16,71 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.collection;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test suite for the IntArray class.
  *
  * @author eso
  */
-public class IntArrayTest extends TestCase {
+class IntArrayTest {
 
-	IntArray aTestArray;
-
-	/**
-	 * Default constructor.
-	 */
-	public IntArrayTest() {
-	}
+	IntArray testArray;
 
 	/**
 	 * Set up data for all tests.
 	 */
-	@Override
+	@BeforeEach
 	public void setUp() {
-		aTestArray = new IntArray(10);
+		testArray = new IntArray(10);
 
 		for (int i = 0; i < 10; i++) {
-			aTestArray.push(i);
+			testArray.push(i);
 		}
 	}
 
 	/**
 	 * Test array access.
 	 */
+	@Test
 	public void testArrayAccess() {
-		assertEquals(5, aTestArray.get(5));
+		assertEquals(5, testArray.get(5));
 
-		aTestArray.push(123);
+		testArray.push(123);
 
-		assertEquals(11, aTestArray.getSize());
-		assertEquals(123, aTestArray.pop());
-		assertEquals(10, aTestArray.getSize());
-		assertEquals(20, aTestArray.getCapacity());
+		assertEquals(11, testArray.getSize());
+		assertEquals(123, testArray.pop());
+		assertEquals(10, testArray.getSize());
+		assertEquals(20, testArray.getCapacity());
 
-		aTestArray.set(45, 9);
-		assertEquals(45, aTestArray.get(9));
+		testArray.set(45, 9);
+		assertEquals(45, testArray.get(9));
 
-		aTestArray.insert(122, 2);
-		assertEquals(11, aTestArray.getSize());
-		assertEquals(122, aTestArray.get(2));
-		assertEquals(2, aTestArray.get(3));
+		testArray.insert(122, 2);
+		assertEquals(11, testArray.getSize());
+		assertEquals(122, testArray.get(2));
+		assertEquals(2, testArray.get(3));
 
-		aTestArray.remove(2);
-		assertEquals(2, aTestArray.get(2));
-		assertEquals(10, aTestArray.getSize());
+		testArray.remove(2);
+		assertEquals(2, testArray.get(2));
+		assertEquals(10, testArray.getSize());
 
-		aTestArray.insertAscending(5, 0);
-		assertEquals(5, aTestArray.get(6));
-		assertEquals(11, aTestArray.getSize());
+		testArray.insertAscending(5, 0);
+		assertEquals(5, testArray.get(6));
+		assertEquals(11, testArray.getSize());
 
-		aTestArray.insertAscending(1, 8);
-		assertEquals(1, aTestArray.get(8));
+		testArray.insertAscending(1, 8);
+		assertEquals(1, testArray.get(8));
 
-		aTestArray.setSize(20);
-		assertEquals(20, aTestArray.getSize());
-		assertEquals(0, aTestArray.get(19));
-		assertEquals(20, aTestArray.getCapacity());
+		testArray.setSize(20);
+		assertEquals(20, testArray.getSize());
+		assertEquals(0, testArray.get(19));
+		assertEquals(20, testArray.getCapacity());
 
-		aTestArray.add(42);
-		assertEquals(30, aTestArray.getCapacity());
+		testArray.add(42);
+		assertEquals(30, testArray.getCapacity());
 	}
 }

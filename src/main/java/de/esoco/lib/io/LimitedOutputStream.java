@@ -30,19 +30,19 @@ import java.io.OutputStream;
  */
 public class LimitedOutputStream extends FilterOutputStream {
 
-	private int nRemainingLimit;
+	private int remainingLimit;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedStream The stream wrapped by this instance
-	 * @param nMaxBytes      The maximum number of bytes that can be written to
-	 *                       this instance
+	 * @param wrappedStream The stream wrapped by this instance
+	 * @param maxBytes      The maximum number of bytes that can be written to
+	 *                      this instance
 	 */
-	public LimitedOutputStream(OutputStream rWrappedStream, int nMaxBytes) {
-		super(rWrappedStream);
+	public LimitedOutputStream(OutputStream wrappedStream, int maxBytes) {
+		super(wrappedStream);
 
-		nRemainingLimit = nMaxBytes;
+		remainingLimit = maxBytes;
 	}
 
 	/**
@@ -51,7 +51,7 @@ public class LimitedOutputStream extends FilterOutputStream {
 	 * @return The remaining limit
 	 */
 	public int getRemainingLimit() {
-		return nRemainingLimit;
+		return remainingLimit;
 	}
 
 	/**
@@ -61,16 +61,16 @@ public class LimitedOutputStream extends FilterOutputStream {
 	@SuppressWarnings("boxing")
 	public String toString() {
 		return String.format("%s(%d, %s)", getClass().getSimpleName(),
-			nRemainingLimit, out);
+			remainingLimit, out);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException {
-		if (nRemainingLimit-- > 0) {
-			super.write(nByte);
+	public void write(int b) throws IOException {
+		if (remainingLimit-- > 0) {
+			super.write(b);
 		} else {
 			throw new StreamLimitException("Output limit reached", false);
 		}

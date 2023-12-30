@@ -87,37 +87,37 @@ public abstract class LogAspect<T> extends RelatedObject {
 		RelationTypes.init(LogAspect.class);
 	}
 
-	private boolean bLoggingInitialized = false;
+	private boolean loggingInitialized = false;
 
-	private int nErrorCount;
+	private int errorCount;
 
-	private Lock aQueueAccessLock;
+	private Lock queueAccessLock;
 
-	private Queue<T> aLogQueue;
+	private Queue<T> logQueue;
 
-	private Action<LogRecord> fLogFunction;
+	private Action<LogRecord> logFunction;
 
 	/**
 	 * Initializes the logging of this aspect. Multiple invocations of this
 	 * method will be ignored.
 	 */
 	public final synchronized void initLogging() {
-		if (!bLoggingInitialized) {
-			nErrorCount = 0;
-			aQueueAccessLock = new ReentrantLock();
-			aLogQueue = new ConcurrentLinkedQueue<T>();
-			fLogFunction = this::processLogRecord;
+		if (!loggingInitialized) {
+			errorCount = 0;
+			queueAccessLock = new ReentrantLock();
+			logQueue = new ConcurrentLinkedQueue<T>();
+			logFunction = this::processLogRecord;
 
 			init();
 
-			String sInitMessage = getLogInitMessage();
+			String initMessage = getLogInitMessage();
 
-			if (sInitMessage == null) {
-				Log.info(sInitMessage);
+			if (initMessage == null) {
+				Log.info(initMessage);
 			}
 
-			Log.addDefaultLogHandler(fLogFunction);
-			bLoggingInitialized = true;
+			Log.addDefaultLogHandler(logFunction);
+			loggingInitialized = true;
 		}
 	}
 
@@ -126,11 +126,11 @@ public abstract class LogAspect<T> extends RelatedObject {
 	 * will be ignored.
 	 */
 	public final synchronized void shutdownLogging() {
-		if (bLoggingInitialized) {
-			Log.removeDefaultLogHandler(fLogFunction);
+		if (loggingInitialized) {
+			Log.removeDefaultLogHandler(logFunction);
 			shutdown();
 			Log.infof("Log aspect %s has been shut down", this);
-			bLoggingInitialized = false;
+			loggingInitialized = false;
 		}
 	}
 
@@ -148,10 +148,10 @@ public abstract class LogAspect<T> extends RelatedObject {
 	 * Must be implemented by subclasses to create an implementation-specific
 	 * log data object from a {@link LogRecord} instance.
 	 *
-	 * @param rLogRecord The log record to convert
+	 * @param logRecord The log record to convert
 	 * @return The implementation log object
 	 */
-	protected abstract T createLogObject(LogRecord rLogRecord);
+	protected abstract T createLogObject(LogRecord logRecord);
 
 	/**
 	 * Returns a message that will be logged as info message after
@@ -189,10 +189,10 @@ public abstract class LogAspect<T> extends RelatedObject {
 	 * still
 	 * perform any cleanup of acquired resources if necessary.</p>
 	 *
-	 * @param rLogObjects The log objects to process
+	 * @param logObjects The log objects to process
 	 * @throws Exception If the processing fails
 	 */
-	protected abstract void processLogObjects(Collection<T> rLogObjects)
+	protected abstract void processLogObjects(Collection<T> logObjects)
 		throws Exception;
 
 	/**
@@ -210,16 +210,16 @@ public abstract class LogAspect<T> extends RelatedObject {
 	@SuppressWarnings("boxing")
 	private void processLogQueue() {
 		try {
-			if (!aLogQueue.isEmpty()) {
-				processLogObjects(aLogQueue);
+			if (!logQueue.isEmpty()) {
+				processLogObjects(logQueue);
 			}
 
-			aLogQueue.clear();
+			logQueue.clear();
 		} catch (Exception e) {
-			if (++nErrorCount >= get(MAX_LOGGING_ERRORS)) {
+			if (++errorCount >= get(MAX_LOGGING_ERRORS)) {
 				shutdownLogging();
 				Log.fatalf(e, "Log aspect %s failed, stopped after %d errors",
-					this.getClass().getSimpleName(), nErrorCount);
+					this.getClass().getSimpleName(), errorCount);
 			}
 		}
 	}
@@ -227,30 +227,30 @@ public abstract class LogAspect<T> extends RelatedObject {
 	/**
 	 * Stores a new log entry based on a log record.
 	 *
-	 * @param rLogRecord The log record
+	 * @param logRecord The log record
 	 * @return Always NULL, return value exists only to comply with function
 	 * signature
 	 */
-	private Object processLogRecord(LogRecord rLogRecord) {
-		if (rLogRecord.getLevel().compareTo(get(MIN_LOG_LEVEL)) >= 0) {
-			T aLogObject = createLogObject(rLogRecord);
+	private Object processLogRecord(LogRecord logRecord) {
+		if (logRecord.getLevel().compareTo(get(MIN_LOG_LEVEL)) >= 0) {
+			T logObject = createLogObject(logRecord);
 
-			if (aLogObject != null) {
-				aLogQueue.add(aLogObject);
+			if (logObject != null) {
+				logQueue.add(logObject);
 
 				// only send queue if processing is not currently in
 				// progress to
 				// prevent opening multiple target connections
-				if (aQueueAccessLock.tryLock()) {
+				if (queueAccessLock.tryLock()) {
 					try {
 						processLogQueue();
 					} finally {
-						aQueueAccessLock.unlock();
+						queueAccessLock.unlock();
 					}
 				}
 			}
 		}
 
-		return rLogRecord;
+		return logRecord;
 	}
 }

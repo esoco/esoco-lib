@@ -48,77 +48,78 @@ import static de.esoco.lib.comm.http.HttpStatusCode.badRequest;
  */
 public class HttpRequest extends RelatedObject {
 
-	private final Reader aRequestReader;
+	private final Reader requestReader;
 
-	private final HttpRequestMethod eRequestMethod;
+	private final HttpRequestMethod requestMethod;
 
-	private final String sRequestPath;
+	private final String requestPath;
 
-	private final Map<String, List<String>> aRequestHeaders;
+	private final Map<String, List<String>> requestHeaders;
 
-	private int nMaxLineLength;
+	private int maxLineLength;
 
 	/**
 	 * Reads the incoming request and throws an exception if it doesn't match
 	 * the requirements.
 	 *
-	 * @param rInput         rInputReader The reader to read the request from
-	 * @param nMaxLineLength The maximum length a request header line
-	 *                       (terminated with CRLF) is allowed to have
+	 * @param input         inputReader The reader to read the request from
+	 * @param maxLineLength The maximum length a request header line
+	 *                         (terminated
+	 *                      with CRLF) is allowed to have
 	 * @throws IOException         If reading from the input fails
 	 * @throws HttpStatusException The corresponding HTTP status if the request
 	 *                             violates requirements
 	 */
-	public HttpRequest(InputStream rInput, int nMaxLineLength)
+	public HttpRequest(InputStream input, int maxLineLength)
 		throws IOException, HttpStatusException {
-		this.nMaxLineLength = nMaxLineLength;
-		aRequestReader = new BufferedReader(
-			new InputStreamReader(rInput, StandardCharsets.UTF_8));
+		this.maxLineLength = maxLineLength;
+		requestReader = new BufferedReader(
+			new InputStreamReader(input, StandardCharsets.UTF_8));
 
-		String sRequestLine = readLine(aRequestReader);
+		String requestLine = readLine(requestReader);
 
-		if (sRequestLine == null) {
+		if (requestLine == null) {
 			badRequest("Unterminated request");
-		} else if (sRequestLine.isEmpty()) {
+		} else if (requestLine.isEmpty()) {
 			badRequest("Empty request line");
 		}
 
-		HttpRequestMethod eMethod = HttpRequestMethod.GET;
-		String[] aRequestParts = sRequestLine.split(" ");
+		HttpRequestMethod method = HttpRequestMethod.GET;
+		String[] requestParts = requestLine.split(" ");
 
-		if (aRequestParts.length != 3 ||
-			!aRequestParts[2].startsWith("HTTP/")) {
-			badRequest("Malformed request line: " + sRequestLine);
+		if (requestParts.length != 3 || !requestParts[2].startsWith("HTTP/")) {
+			badRequest("Malformed request line: " + requestLine);
 		}
 
 		try {
-			eMethod = HttpRequestMethod.valueOf(aRequestParts[0]);
+			method = HttpRequestMethod.valueOf(requestParts[0]);
 		} catch (Exception e) {
-			badRequest("Unknown request method: " + aRequestParts[0]);
+			badRequest("Unknown request method: " + requestParts[0]);
 		}
 
-		eRequestMethod = eMethod;
-		sRequestPath = aRequestParts[1];
-		aRequestHeaders = readHeaders(aRequestReader);
+		requestMethod = method;
+		requestPath = requestParts[1];
+		requestHeaders = readHeaders(requestReader);
 
-		Log.debugf("Request: %s %s", sRequestLine, aRequestHeaders);
+		Log.debugf("Request: %s %s", requestLine, requestHeaders);
 	}
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rRequestMethod     The request method
-	 * @param rRequestPath       The request path
-	 * @param rRequestHeaders    The request headers
-	 * @param rRequestBodyReader The reader that given access to the request
-	 *                           body (if applicable)
+	 * @param requestMethod     The request method
+	 * @param requestPath       The request path
+	 * @param requestHeaders    The request headers
+	 * @param requestBodyReader The reader that given access to the request
+	 *                             body
+	 *                          (if applicable)
 	 */
-	public HttpRequest(HttpRequestMethod rRequestMethod, String rRequestPath,
-		Map<String, List<String>> rRequestHeaders, Reader rRequestBodyReader) {
-		eRequestMethod = rRequestMethod;
-		sRequestPath = rRequestPath;
-		aRequestHeaders = rRequestHeaders;
-		aRequestReader = rRequestBodyReader;
+	public HttpRequest(HttpRequestMethod requestMethod, String requestPath,
+		Map<String, List<String>> requestHeaders, Reader requestBodyReader) {
+		this.requestMethod = requestMethod;
+		this.requestPath = requestPath;
+		this.requestHeaders = requestHeaders;
+		requestReader = requestBodyReader;
 	}
 
 	/**
@@ -134,15 +135,14 @@ public class HttpRequest extends RelatedObject {
 	 * @throws IOException         If reading the body content fails
 	 */
 	public final String getBody() throws IOException {
-		Integer rLength = get(CONTENT_LENGTH);
+		Integer length = get(CONTENT_LENGTH);
 
-		if (rLength == null) {
+		if (length == null) {
 			throw new HttpStatusException(HttpStatusCode.LENGTH_REQUIRED,
 				"Content-Length header missing");
 		}
 
-		return StreamUtil.readAll(aRequestReader, 8 * 1024,
-			rLength.intValue());
+		return StreamUtil.readAll(requestReader, 8 * 1024, length.intValue());
 	}
 
 	/**
@@ -154,28 +154,28 @@ public class HttpRequest extends RelatedObject {
 	 * @return A reader that provides the body data
 	 */
 	public final Reader getBodyReader() {
-		return aRequestReader;
+		return requestReader;
 	}
 
 	/**
 	 * Returns the value of a header field in this request.
 	 *
-	 * @param sName The name of the header field
+	 * @param name The name of the header field
 	 * @return The header field value or NULL if the header is not set
 	 */
-	public final List<String> getHeaderField(String sName) {
-		return aRequestHeaders.get(sName);
+	public final List<String> getHeaderField(String name) {
+		return requestHeaders.get(name);
 	}
 
 	/**
 	 * Returns the value of a header field in this request. Invokes the method
 	 * {@link #getHeaderField(String)} with the field name.
 	 *
-	 * @param eField sName The header field
+	 * @param field sName The header field
 	 * @return The header field value or NULL if the header is not set
 	 */
-	public final List<String> getHeaderField(HttpHeaderField eField) {
-		return getHeaderField(eField.getFieldName());
+	public final List<String> getHeaderField(HttpHeaderField field) {
+		return getHeaderField(field.getFieldName());
 	}
 
 	/**
@@ -184,7 +184,7 @@ public class HttpRequest extends RelatedObject {
 	 * @return The request method
 	 */
 	public final HttpRequestMethod getMethod() {
-		return eRequestMethod;
+		return requestMethod;
 	}
 
 	/**
@@ -193,7 +193,7 @@ public class HttpRequest extends RelatedObject {
 	 * @return The requested path
 	 */
 	public final String getPath() {
-		return sRequestPath;
+		return requestPath;
 	}
 
 	/**
@@ -202,7 +202,7 @@ public class HttpRequest extends RelatedObject {
 	@Override
 	public String toString() {
 		return String.format("%s[%s %s]", getClass().getSimpleName(),
-			eRequestMethod, sRequestPath);
+			requestMethod, requestPath);
 	}
 
 	/**
@@ -213,24 +213,24 @@ public class HttpRequest extends RelatedObject {
 	 * {@link Conversions#parseValue(String, Class)} with the relation
 	 * datatype.
 	 *
-	 * @param sHeaderName  The name of the header field
-	 * @param sHeaderValue The value of the header field
+	 * @param headerName  The name of the header field
+	 * @param headerValue The value of the header field
 	 * @throws HttpStatusException If the field value could not be parsed
 	 */
 	@SuppressWarnings("unchecked")
-	protected void parseRequestHeader(String sHeaderName, String sHeaderValue)
+	protected void parseRequestHeader(String headerName, String headerValue)
 		throws HttpStatusException {
-		RelationType<?> rHeaderType = HttpHeaderTypes.get(sHeaderName);
+		RelationType<?> headerType = HttpHeaderTypes.get(headerName);
 
-		if (rHeaderType != null) {
+		if (headerType != null) {
 			try {
-				Object rValue = Conversions.parseValue(sHeaderValue,
-					rHeaderType.getTargetType());
+				Object value = Conversions.parseValue(headerValue,
+					headerType.getTargetType());
 
-				set((RelationType<Object>) rHeaderType, rValue);
+				set((RelationType<Object>) headerType, value);
 			} catch (Exception e) {
 				badRequest(String.format("Invalid value for header '%s': %s",
-					sHeaderName, sHeaderValue));
+					headerName, headerValue));
 			}
 		}
 	}
@@ -238,70 +238,70 @@ public class HttpRequest extends RelatedObject {
 	/**
 	 * Reads the request headers into a map and returns it.
 	 *
-	 * @param rInputReader The reader to read the header fields from
+	 * @param inputReader The reader to read the header fields from
 	 * @return A mapping from header field names to field values
 	 * @throws IOException         On stream acces failures
 	 * @throws HttpStatusException On malformed requests
 	 */
-	protected Map<String, List<String>> readHeaders(Reader rInputReader)
+	protected Map<String, List<String>> readHeaders(Reader inputReader)
 		throws IOException, HttpStatusException {
-		Map<String, List<String>> aHeaders = new LinkedHashMap<>();
-		String sHeader;
+		Map<String, List<String>> headers = new LinkedHashMap<>();
+		String header;
 
 		do {
-			sHeader = readLine(rInputReader);
+			header = readLine(inputReader);
 
-			if (sHeader == null) {
+			if (header == null) {
 				badRequest(
 					"Request must be terminated with CRLF on empty line");
-			} else if (!sHeader.isEmpty()) {
-				int nColon = sHeader.indexOf(':');
+			} else if (!header.isEmpty()) {
+				int colon = header.indexOf(':');
 
-				if (nColon < 1) {
-					badRequest("Malformed header: " + sHeader);
+				if (colon < 1) {
+					badRequest("Malformed header: " + header);
 				}
 
-				String sHeaderName = sHeader.substring(0, nColon).trim();
-				String sHeaderValue = sHeader.substring(nColon + 1).trim();
+				String headerName = header.substring(0, colon).trim();
+				String headerValue = header.substring(colon + 1).trim();
 
-				List<String> rHeaderValues = aHeaders.get(sHeaderName);
+				List<String> headerValues = headers.get(headerName);
 
-				if (rHeaderValues == null) {
-					rHeaderValues = new ArrayList<>();
+				if (headerValues == null) {
+					headerValues = new ArrayList<>();
 				}
 
-				rHeaderValues.add(sHeaderValue);
-				aHeaders.put(sHeaderName, rHeaderValues);
-				parseRequestHeader(sHeaderName, sHeaderValue);
+				headerValues.add(headerValue);
+				headers.put(headerName, headerValues);
+				parseRequestHeader(headerName, headerValue);
 			}
-		} while (!sHeader.isEmpty());
+		} while (!header.isEmpty());
 
-		return aHeaders;
+		return headers;
 	}
 
 	/**
 	 * Helper method to read a single HTTP request line (terminated with CRLF)
 	 * from a {@link Reader}.
 	 *
-	 * @param rReader The reader to read the line from
+	 * @param reader The reader to read the line from
 	 * @return The line string or NULL if no terminating CRLF could be found
 	 * @throws IOException         If reading data fails
 	 * @throws HttpStatusException If the line is not terminated correctly
 	 */
-	protected String readLine(Reader rReader) throws IOException {
-		StringWriter aLine = new StringWriter();
-		String sLine = null;
+	protected String readLine(Reader reader) throws IOException {
+		StringWriter result = new StringWriter();
+		String line = null;
 
-		if (StreamUtil.readUntil(rReader, aLine, NetUtil.CRLF, nMaxLineLength,
+		if (StreamUtil.readUntil(reader, result, NetUtil.CRLF, maxLineLength,
 			false)) {
-			sLine = aLine.toString();
-			sLine = sLine.substring(0, sLine.length() - 2);
-		} else if (aLine.getBuffer().length() == 0) {
+			line = result.toString();
+			line = line.substring(0, line.length() - 2);
+		} else if (result.getBuffer().length() == 0) {
 			throw new EmptyRequestException();
 		} else {
 			badRequest("Request line not terminated with CRLF");
 		}
 
-		return sLine;
+		return line;
 	}
 }

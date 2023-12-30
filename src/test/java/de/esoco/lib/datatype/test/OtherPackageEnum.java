@@ -36,7 +36,7 @@ public class OtherPackageEnum extends GenericEnum<OtherPackageEnum> {
 	/**
 	 * Constructor.
 	 */
-	OtherPackageEnum(String rName) {
-		super(rName);
+	OtherPackageEnum(String name) {
+		super(name);
 	}
 }

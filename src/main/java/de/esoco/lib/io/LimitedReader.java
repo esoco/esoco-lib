@@ -35,19 +35,19 @@ import java.io.Reader;
  */
 public class LimitedReader extends FilterReader {
 
-	private int nRemainingLimit;
+	private int remainingLimit;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedReader The reader wrapped by this instance
-	 * @param nMax           The maximum number of characters that can be read
-	 *                       from this instance
+	 * @param wrappedReader The reader wrapped by this instance
+	 * @param max           The maximum number of characters that can be read
+	 *                      from this instance
 	 */
-	public LimitedReader(Reader rWrappedReader, int nMax) {
-		super(rWrappedReader);
+	public LimitedReader(Reader wrappedReader, int max) {
+		super(wrappedReader);
 
-		nRemainingLimit = nMax;
+		remainingLimit = max;
 	}
 
 	/**
@@ -56,7 +56,7 @@ public class LimitedReader extends FilterReader {
 	 * @return The remaining limit
 	 */
 	public int getRemainingLimit() {
-		return nRemainingLimit;
+		return remainingLimit;
 	}
 
 	/**
@@ -65,7 +65,7 @@ public class LimitedReader extends FilterReader {
 	@Override
 	public int read() throws IOException {
 		checkLimit();
-		nRemainingLimit--;
+		remainingLimit--;
 
 		return super.read();
 	}
@@ -74,19 +74,18 @@ public class LimitedReader extends FilterReader {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(char[] rBuffer, int nOffset, int nLength)
-		throws IOException {
+	public int read(char[] buffer, int offset, int length) throws IOException {
 		checkLimit();
 
-		if (nRemainingLimit < nLength) {
-			nLength = nRemainingLimit;
+		if (remainingLimit < length) {
+			length = remainingLimit;
 		}
 
-		int nRead = super.read(rBuffer, nOffset, nLength);
+		int read = super.read(buffer, offset, length);
 
-		nRemainingLimit -= nRead;
+		remainingLimit -= read;
 
-		return nRead;
+		return read;
 	}
 
 	/**
@@ -96,7 +95,7 @@ public class LimitedReader extends FilterReader {
 	@SuppressWarnings("boxing")
 	public String toString() {
 		return String.format("%s(%d, %s)", getClass().getSimpleName(),
-			nRemainingLimit, in);
+			remainingLimit, in);
 	}
 
 	/**
@@ -105,7 +104,7 @@ public class LimitedReader extends FilterReader {
 	 * @throws StreamLimitException If the limit has been reached
 	 */
 	protected void checkLimit() throws StreamLimitException {
-		if (nRemainingLimit == 0) {
+		if (remainingLimit == 0) {
 			throw new StreamLimitException("Input limit reached", true);
 		}
 	}

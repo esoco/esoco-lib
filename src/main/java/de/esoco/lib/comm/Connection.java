@@ -35,16 +35,16 @@ import static org.obrel.type.MetaTypes.CLOSED;
  */
 public class Connection extends RelatedObject implements Closeable {
 
-	private final Endpoint rEndpoint;
+	private final Endpoint endpoint;
 
 	/**
 	 * Creates a connection to a certain endpoint. Private because only to be
 	 * used by factory methods.
 	 *
-	 * @param rEndpoint The connection endpoint
+	 * @param endpoint The connection endpoint
 	 */
-	Connection(Endpoint rEndpoint) {
-		this.rEndpoint = rEndpoint;
+	Connection(Endpoint endpoint) {
+		this.endpoint = endpoint;
 	}
 
 	/**
@@ -53,7 +53,7 @@ public class Connection extends RelatedObject implements Closeable {
 	@Override
 	public void close() {
 		try {
-			rEndpoint.closeConnection(this);
+			endpoint.closeConnection(this);
 		} catch (Exception e) {
 			if (e instanceof CommunicationException) {
 				throw (CommunicationException) e;
@@ -71,7 +71,7 @@ public class Connection extends RelatedObject implements Closeable {
 	 * @return The connection endpoint
 	 */
 	public final Endpoint getEndpoint() {
-		return rEndpoint;
+		return endpoint;
 	}
 
 	/**

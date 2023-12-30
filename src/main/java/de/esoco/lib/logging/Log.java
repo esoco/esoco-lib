@@ -112,20 +112,20 @@ public final class Log {
 	private static final Object[] NO_ARGS = null;
 
 	private static final Map<String, Consumer<? super LogRecord>>
-		aLogHandlerRegistry = new HashMap<>();
+		logHandlerRegistry = new HashMap<>();
 
 	private static final Map<String, Consumer<? super LogRecord>>
-		aLogHandlerCache = new HashMap<>();
+		logHandlerCache = new HashMap<>();
 
-	private static Consumer<LogRecord> aStandardLogHandler;
+	private static Consumer<LogRecord> standardLogHandler;
 
-	private static Group<LogRecord> aDefaultLogHandlers;
+	private static Group<LogRecord> defaultLogHandlers;
 
-	private static LogLevelFilter aGlobalLevelFilter =
+	private static LogLevelFilter globalLevelFilter =
 		LogLevelFilter.startingAt(ERROR);
 
 	@SuppressWarnings("rawtypes")
-	private static Map<Class<? extends LogAspect>, LogAspect<?>> aLogAspects;
+	private static Map<Class<? extends LogAspect>, LogAspect<?>> logAspects;
 
 	static {
 		RelationTypes.init(Log.class);
@@ -145,21 +145,21 @@ public final class Log {
 	 * that a
 	 * log call originates from.
 	 *
-	 * @param rHandler An additional default log handler
+	 * @param handler An additional default log handler
 	 * @throws NullPointerException If the argument is NULL
 	 */
 	public static void addDefaultLogHandler(
-		Consumer<? super LogRecord> rHandler) {
-		Objects.requireNonNull(rHandler);
+		Consumer<? super LogRecord> handler) {
+		Objects.requireNonNull(handler);
 
-		synchronized (aLogHandlerCache) {
-			List<Consumer<? super LogRecord>> rFunctions =
-				aDefaultLogHandlers.getMembers();
+		synchronized (logHandlerCache) {
+			List<Consumer<? super LogRecord>> functions =
+				defaultLogHandlers.getMembers();
 
-			rFunctions.add(rHandler);
-			aDefaultLogHandlers = new Group<>(rFunctions);
+			functions.add(handler);
+			defaultLogHandlers = new Group<>(functions);
 
-			aLogHandlerCache.clear();
+			logHandlerCache.clear();
 		}
 	}
 
@@ -169,144 +169,141 @@ public final class Log {
 	 * already
 	 * exists it will be shut down and removed first.
 	 *
-	 * @param rLogAspect The log aspect to register
+	 * @param logAspect The log aspect to register
 	 */
-	public static void addLogAspect(LogAspect<?> rLogAspect) {
+	public static void addLogAspect(LogAspect<?> logAspect) {
 		@SuppressWarnings("unchecked")
-		Class<? extends LogAspect<?>> rLogAspectType =
-			(Class<? extends LogAspect<?>>) rLogAspect.getClass();
+		Class<? extends LogAspect<?>> logAspectType =
+			(Class<? extends LogAspect<?>>) logAspect.getClass();
 
-		if (aLogAspects == null) {
-			aLogAspects = new HashMap<>();
+		if (logAspects == null) {
+			logAspects = new HashMap<>();
 		} else {
-			removeLogAspect(rLogAspectType);
+			removeLogAspect(logAspectType);
 		}
 
-		aLogAspects.put(rLogAspectType, rLogAspect);
-		rLogAspect.initLogging();
+		logAspects.put(logAspectType, logAspect);
+		logAspect.initLogging();
 	}
 
 	/**
 	 * Logs a message at debug log level.
 	 *
-	 * @param sMessage The log message
+	 * @param message The log message
 	 */
-	public static void debug(String sMessage) {
-		logImpl(DEBUG, null, sMessage, NO_ARGS);
+	public static void debug(String message) {
+		logImpl(DEBUG, null, message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a message and an exception at debug log level.
 	 *
-	 * @param sMessage The log message
-	 * @param rCause   The causing exception
+	 * @param message The log message
+	 * @param cause   The causing exception
 	 */
-	public static void debug(String sMessage, Throwable rCause) {
-		logImpl(DEBUG, rCause, "%s", sMessage, NO_ARGS);
+	public static void debug(String message, Throwable cause) {
+		logImpl(DEBUG, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a formatted message at debug log level.
 	 *
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void debugf(String sFormat, Object... rArgs) {
-		logImpl(DEBUG, null, sFormat, rArgs);
+	public static void debugf(String format, Object... args) {
+		logImpl(DEBUG, null, format, args);
 	}
 
 	/**
 	 * Logs a formatted message and an exception at debug log level.
 	 *
-	 * @param rCause  The causing exception (may be NULL)
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param cause  The causing exception (may be NULL)
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void debugf(Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(DEBUG, rCause, sFormat, rArgs);
+	public static void debugf(Throwable cause, String format, Object... args) {
+		logImpl(DEBUG, cause, format, args);
 	}
 
 	/**
 	 * Logs a message at error log level.
 	 *
-	 * @param sMessage The log message
+	 * @param message The log message
 	 */
-	public static void error(String sMessage) {
-		logImpl(ERROR, null, "%s", sMessage, NO_ARGS);
+	public static void error(String message) {
+		logImpl(ERROR, null, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a message and an exception at error log level.
 	 *
-	 * @param sMessage The log message
-	 * @param rCause   The causing exception
+	 * @param message The log message
+	 * @param cause   The causing exception
 	 */
-	public static void error(String sMessage, Throwable rCause) {
-		logImpl(ERROR, rCause, "%s", sMessage, NO_ARGS);
+	public static void error(String message, Throwable cause) {
+		logImpl(ERROR, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a formatted message at error log level.
 	 *
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void errorf(String sFormat, Object... rArgs) {
-		logImpl(ERROR, null, sFormat, rArgs);
+	public static void errorf(String format, Object... args) {
+		logImpl(ERROR, null, format, args);
 	}
 
 	/**
 	 * Logs a formatted message and an exception at error log level.
 	 *
-	 * @param rCause  The causing exception (may be NULL)
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param cause  The causing exception (may be NULL)
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void errorf(Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(ERROR, rCause, sFormat, rArgs);
+	public static void errorf(Throwable cause, String format, Object... args) {
+		logImpl(ERROR, cause, format, args);
 	}
 
 	/**
 	 * Logs a message at fatal log level.
 	 *
-	 * @param sMessage The log message
+	 * @param message The log message
 	 */
-	public static void fatal(String sMessage) {
-		logImpl(FATAL, null, "%s", sMessage, NO_ARGS);
+	public static void fatal(String message) {
+		logImpl(FATAL, null, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a message and an exception at fatal log level.
 	 *
-	 * @param sMessage The log message
-	 * @param rCause   The causing exception
+	 * @param message The log message
+	 * @param cause   The causing exception
 	 */
-	public static void fatal(String sMessage, Throwable rCause) {
-		logImpl(FATAL, rCause, "%s", sMessage, NO_ARGS);
+	public static void fatal(String message, Throwable cause) {
+		logImpl(FATAL, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a formatted message at fatal log level.
 	 *
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void fatalf(String sFormat, Object... rArgs) {
-		logImpl(FATAL, null, sFormat, rArgs);
+	public static void fatalf(String format, Object... args) {
+		logImpl(FATAL, null, format, args);
 	}
 
 	/**
 	 * Logs a formatted message and an exception at fatal log level.
 	 *
-	 * @param rCause  The causing exception (may be NULL)
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param cause  The causing exception (may be NULL)
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void fatalf(Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(FATAL, rCause, sFormat, rArgs);
+	public static void fatalf(Throwable cause, String format, Object... args) {
+		logImpl(FATAL, cause, format, args);
 	}
 
 	/**
@@ -316,26 +313,26 @@ public final class Log {
 	 * If no handler has been registered at all the default handler will be
 	 * returned.
 	 *
-	 * @param sPackageOrClass The name of the package to lookup the log handler
-	 *                        for
+	 * @param packageOrClass The name of the package to lookup the log handler
+	 *                       for
 	 * @return The handler to be used to perform logging from the given package
 	 */
 	private static Consumer<? super LogRecord> findLogHandler(
-		String sPackageOrClass) {
-		Consumer<? super LogRecord> rHandler;
+		String packageOrClass) {
+		Consumer<? super LogRecord> handler;
 
-		if (sPackageOrClass != null) {
-			rHandler = aLogHandlerRegistry.get(sPackageOrClass);
+		if (packageOrClass != null) {
+			handler = logHandlerRegistry.get(packageOrClass);
 
-			if (rHandler == null) {
-				sPackageOrClass = ReflectUtil.getNamespace(sPackageOrClass);
-				rHandler = findLogHandler(sPackageOrClass);
+			if (handler == null) {
+				packageOrClass = ReflectUtil.getNamespace(packageOrClass);
+				handler = findLogHandler(packageOrClass);
 			}
 		} else {
-			rHandler = asConsumer(aDefaultLogHandlers);
+			handler = asConsumer(defaultLogHandlers);
 		}
 
-		return rHandler;
+		return handler;
 	}
 
 	/**
@@ -344,7 +341,7 @@ public final class Log {
 	 * @return The global minimum log level
 	 */
 	public static LogLevel getGlobalMinimumLogLevel() {
-		return aGlobalLevelFilter.getMinimumLevel();
+		return globalLevelFilter.getMinimumLevel();
 	}
 
 	/**
@@ -352,25 +349,24 @@ public final class Log {
 	 * matching handler exists a new one will be created. Performs thread
 	 * synchronization.
 	 *
-	 * @param rRecord The log record to return the handler for
+	 * @param record The log record to return the handler for
 	 * @return The log handler
 	 */
-	private static Consumer<? super LogRecord> getLogHandler(
-		LogRecord rRecord) {
-		String sClassName = rRecord.getLogClass().getName();
+	private static Consumer<? super LogRecord> getLogHandler(LogRecord record) {
+		String className = record.getLogClass().getName();
 
-		Consumer<? super LogRecord> rLogHandler = null;
+		Consumer<? super LogRecord> logHandler = null;
 
-		synchronized (aLogHandlerCache) {
-			rLogHandler = aLogHandlerCache.get(sClassName);
+		synchronized (logHandlerCache) {
+			logHandler = logHandlerCache.get(className);
 
-			if (rLogHandler == null) {
-				rLogHandler = findLogHandler(sClassName);
-				aLogHandlerCache.put(sClassName, rLogHandler);
+			if (logHandler == null) {
+				logHandler = findLogHandler(className);
+				logHandlerCache.put(className, logHandler);
 			}
 		}
 
-		return rLogHandler;
+		return logHandler;
 	}
 
 	/**
@@ -378,14 +374,13 @@ public final class Log {
 	 * package or
 	 * class.
 	 *
-	 * @param sPackageOrClass The name of the package or class to lookup the
-	 *                          log
-	 *                        handler for
+	 * @param packageOrClass The name of the package or class to lookup the log
+	 *                       handler for
 	 * @return The log handler for the given name or NULL for none
 	 */
 	public static Consumer<? super LogRecord> getRegisteredLogHandler(
-		String sPackageOrClass) {
-		return aLogHandlerRegistry.get(sPackageOrClass);
+		String packageOrClass) {
+		return logHandlerRegistry.get(packageOrClass);
 	}
 
 	/**
@@ -396,83 +391,81 @@ public final class Log {
 	 * @return The standard log handler
 	 */
 	public static Consumer<LogRecord> getStandardLogHandler() {
-		return aStandardLogHandler;
+		return standardLogHandler;
 	}
 
 	/**
 	 * Logs a message at info log level.
 	 *
-	 * @param sMessage The log message
+	 * @param message The log message
 	 */
-	public static void info(String sMessage) {
-		logImpl(INFO, null, "%s", sMessage, NO_ARGS);
+	public static void info(String message) {
+		logImpl(INFO, null, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a message and an exception at info log level.
 	 *
-	 * @param sMessage The log message
-	 * @param rCause   The causing exception
+	 * @param message The log message
+	 * @param cause   The causing exception
 	 */
-	public static void info(String sMessage, Throwable rCause) {
-		logImpl(INFO, rCause, "%s", sMessage, NO_ARGS);
+	public static void info(String message, Throwable cause) {
+		logImpl(INFO, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a formatted message at info log level.
 	 *
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void infof(String sFormat, Object... rArgs) {
-		logImpl(INFO, null, sFormat, rArgs);
+	public static void infof(String format, Object... args) {
+		logImpl(INFO, null, format, args);
 	}
 
 	/**
 	 * Logs a formatted message and an exception at info log level.
 	 *
-	 * @param rCause  The causing exception (may be NULL)
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param cause  The causing exception (may be NULL)
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void infof(Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(INFO, rCause, sFormat, rArgs);
+	public static void infof(Throwable cause, String format, Object... args) {
+		logImpl(INFO, cause, format, args);
 	}
 
 	/**
 	 * Checks if the argument log level is enabled globally for logging.
 	 *
-	 * @param rLevel The log level to check
+	 * @param level The log level to check
 	 * @return TRUE if the level is enabled globally for logging
 	 * @see #setGlobalLogLevels(LogLevel[])
 	 * @see #setGlobalMinimumLogLevel(LogLevel)
 	 */
-	public static boolean isLevelEnabled(LogLevel rLevel) {
-		return aGlobalLevelFilter.isLevelEnabled(rLevel);
+	public static boolean isLevelEnabled(LogLevel level) {
+		return globalLevelFilter.isLevelEnabled(level);
 	}
 
 	/**
 	 * Generic method to log a message at a certain log level.
 	 *
-	 * @param rLevel   The log level
-	 * @param sMessage The message to log
+	 * @param level   The log level
+	 * @param message The message to log
 	 */
-	public static void log(LogLevel rLevel, String sMessage) {
-		logImpl(rLevel, null, "%s", sMessage, NO_ARGS);
+	public static void log(LogLevel level, String message) {
+		logImpl(level, null, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Generic method to log a message at a certain log level with a causing
 	 * exception.
 	 *
-	 * @param rLevel   The log level
-	 * @param sMessage The message to log
-	 * @param rCause   The throwable that caused the logging (may be NULL)
+	 * @param level   The log level
+	 * @param message The message to log
+	 * @param cause   The throwable that caused the logging (may be NULL)
 	 */
-	public static void log(LogLevel rLevel, String sMessage,
-		Throwable rCause) {
-		logImpl(rLevel, rCause, "%s", sMessage, NO_ARGS);
+	public static void log(LogLevel level, String message, Throwable cause) {
+		logImpl(level, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
@@ -480,28 +473,26 @@ public final class Log {
 	 * exception. This method must always be invoked directly by all public log
 	 * methods to ensure the same stack overhead in all log records.
 	 *
-	 * @param eLevel         The log level
-	 * @param rCause         The throwable that caused the logging (may be
-	 *                       NULL)
-	 * @param sMessageFormat The format string for the log message
-	 * @param rMessageValues The log message values to be inserted into the
-	 *                       format string
+	 * @param level         The log level
+	 * @param cause         The throwable that caused the logging (may be NULL)
+	 * @param messageFormat The format string for the log message
+	 * @param messageValues The log message values to be inserted into the
+	 *                      format string
 	 */
-	private static void logImpl(LogLevel eLevel, Throwable rCause,
-		String sMessageFormat, Object... rMessageValues) {
-		LogRecord aLogRecord = null;
+	private static void logImpl(LogLevel level, Throwable cause,
+		String messageFormat, Object... messageValues) {
+		LogRecord logRecord = null;
 
-		if (aGlobalLevelFilter.isLevelEnabled(eLevel)) {
-			aLogRecord =
-				new LogRecord(eLevel, rCause, sMessageFormat, rMessageValues);
+		if (globalLevelFilter.isLevelEnabled(level)) {
+			logRecord =
+				new LogRecord(level, cause, messageFormat, messageValues);
 
-			Consumer<? super LogRecord> rLogHandler =
-				getLogHandler(aLogRecord);
+			Consumer<? super LogRecord> logHandler = getLogHandler(logRecord);
 
-			if (rLogHandler != null) {
+			if (logHandler != null) {
 				// synchronize on log handler to process requests sequentially
-				synchronized (rLogHandler) {
-					rLogHandler.accept(aLogRecord);
+				synchronized (logHandler) {
+					logHandler.accept(logRecord);
 				}
 			}
 		}
@@ -510,25 +501,25 @@ public final class Log {
 	/**
 	 * Generic method to log a formatted message at a certain log level.
 	 *
-	 * @param rLevel  The log level
-	 * @param sFormat The format string of the message to log
-	 * @param rArgs   The optional arguments to add to the message
+	 * @param level  The log level
+	 * @param format The format string of the message to log
+	 * @param args   The optional arguments to add to the message
 	 */
-	public static void logf(LogLevel rLevel, String sFormat, Object... rArgs) {
-		logImpl(rLevel, null, sFormat, rArgs);
+	public static void logf(LogLevel level, String format, Object... args) {
+		logImpl(level, null, format, args);
 	}
 
 	/**
 	 * Generic method to log a formatted message at a certain log level.
 	 *
-	 * @param rLevel  The log level
-	 * @param rCause  The throwable that caused the logging (may be NULL)
-	 * @param sFormat The format string of the message to log
-	 * @param rArgs   The optional arguments to add to the message
+	 * @param level  The log level
+	 * @param cause  The throwable that caused the logging (may be NULL)
+	 * @param format The format string of the message to log
+	 * @param args   The optional arguments to add to the message
 	 */
-	public static void logf(LogLevel rLevel, Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(rLevel, rCause, sFormat, rArgs);
+	public static void logf(LogLevel level, Throwable cause, String format,
+		Object... args) {
+		logImpl(level, cause, format, args);
 	}
 
 	/**
@@ -536,13 +527,13 @@ public final class Log {
 	 * certain class. All logging calls from that class will be logged through
 	 * that handler.
 	 *
-	 * @param rClass      The root package to register the handler for
-	 * @param rNewHandler The log handler to register or NULL to remove the log
-	 *                    handler for the given class
+	 * @param type       The root package to register the handler for
+	 * @param newHandler The log handler to register or NULL to remove the log
+	 *                   handler for the given class
 	 */
-	public static void registerLogHandler(Class<?> rClass,
-		Consumer<? super LogRecord> rNewHandler) {
-		registerLogHandler(rClass.getName(), rNewHandler);
+	public static void registerLogHandler(Class<?> type,
+		Consumer<? super LogRecord> newHandler) {
+		registerLogHandler(type.getName(), newHandler);
 	}
 
 	/**
@@ -551,13 +542,13 @@ public final class Log {
 	 * package
 	 * will be logged through that handler.
 	 *
-	 * @param rPackage    The root package to register the handler for
-	 * @param rNewHandler The log handler to register or NULL to remove the log
-	 *                    handler for the given package
+	 * @param pkg        The root package to register the handler for
+	 * @param newHandler The log handler to register or NULL to remove the log
+	 *                   handler for the given package
 	 */
-	public static void registerLogHandler(Package rPackage,
-		Consumer<? super LogRecord> rNewHandler) {
-		registerLogHandler(rPackage.getName(), rNewHandler);
+	public static void registerLogHandler(Package pkg,
+		Consumer<? super LogRecord> newHandler) {
+		registerLogHandler(pkg.getName(), newHandler);
 	}
 
 	/**
@@ -566,38 +557,38 @@ public final class Log {
 	 * is registered all logging calls from classes in and below that package
 	 * will be logged through the registered handler.
 	 *
-	 * @param sPackageOrClass The name of the package or class to register the
-	 *                        handler for
-	 * @param rNewHandler     The log handler to register or NULL to unregister
-	 *                        the current log handler for the given name
+	 * @param packageOrClass The name of the package or class to register the
+	 *                       handler for
+	 * @param newHandler     The log handler to register or NULL to unregister
+	 *                       the current log handler for the given name
 	 */
-	private static void registerLogHandler(String sPackageOrClass,
-		Consumer<? super LogRecord> rNewHandler) {
-		synchronized (aLogHandlerCache) {
-			if (rNewHandler != null) {
-				aLogHandlerRegistry.put(sPackageOrClass, rNewHandler);
+	private static void registerLogHandler(String packageOrClass,
+		Consumer<? super LogRecord> newHandler) {
+		synchronized (logHandlerCache) {
+			if (newHandler != null) {
+				logHandlerRegistry.put(packageOrClass, newHandler);
 			} else {
-				aLogHandlerRegistry.remove(sPackageOrClass);
+				logHandlerRegistry.remove(packageOrClass);
 			}
 
-			aLogHandlerCache.clear();
+			logHandlerCache.clear();
 		}
 	}
 
 	/**
 	 * Removes a log handler from the default log handlers.
 	 *
-	 * @param rHandler The default log handler to remove
+	 * @param handler The default log handler to remove
 	 */
 	public static void removeDefaultLogHandler(
-		Consumer<? super LogRecord> rHandler) {
-		synchronized (aLogHandlerCache) {
-			List<Consumer<? super LogRecord>> rFunctions =
-				aDefaultLogHandlers.getMembers();
+		Consumer<? super LogRecord> handler) {
+		synchronized (logHandlerCache) {
+			List<Consumer<? super LogRecord>> functions =
+				defaultLogHandlers.getMembers();
 
-			rFunctions.remove(rHandler);
-			aDefaultLogHandlers = new Group<>(rFunctions);
-			aLogHandlerCache.clear();
+			functions.remove(handler);
+			defaultLogHandlers = new Group<>(functions);
+			logHandlerCache.clear();
 		}
 	}
 
@@ -607,15 +598,15 @@ public final class Log {
 	 * with
 	 * the given type has been registered the call will be ignored.
 	 *
-	 * @param rLogAspectType The class of the log aspect to remove
+	 * @param logAspectType The class of the log aspect to remove
 	 */
 	public static void removeLogAspect(
-		Class<? extends LogAspect<?>> rLogAspectType) {
-		if (aLogAspects != null) {
-			LogAspect<?> rLogAspect = aLogAspects.remove(rLogAspectType);
+		Class<? extends LogAspect<?>> logAspectType) {
+		if (logAspects != null) {
+			LogAspect<?> logAspect = logAspects.remove(logAspectType);
 
-			if (rLogAspect != null) {
-				rLogAspect.shutdownLogging();
+			if (logAspect != null) {
+				logAspect.shutdownLogging();
 			}
 		}
 	}
@@ -625,7 +616,7 @@ public final class Log {
 	 * {@link #getStandardLogHandler()}).
 	 */
 	public static void removeStandardLogHandler() {
-		removeDefaultLogHandler(aStandardLogHandler);
+		removeDefaultLogHandler(standardLogHandler);
 	}
 
 	/**
@@ -636,11 +627,10 @@ public final class Log {
 	 * empty) all levels except FATAL will be disabled. The log level FATAL
 	 * cannot be disabled globally.
 	 *
-	 * @param rLevels The minimum level to log
+	 * @param levels The minimum level to log
 	 */
-	public static void setGlobalLogLevels(LogLevel... rLevels) {
-		aGlobalLevelFilter = LogLevelFilter.isLevel(EnumSet.of(FATAL,
-			rLevels));
+	public static void setGlobalLogLevels(LogLevel... levels) {
+		globalLevelFilter = LogLevelFilter.isLevel(EnumSet.of(FATAL, levels));
 	}
 
 	/**
@@ -651,10 +641,10 @@ public final class Log {
 	 * TRACE, DEBUG, INFO, WARN, ERROR, FATAL. The log level FATAL cannot be
 	 * disabled globally.
 	 *
-	 * @param rLevel The minimum level to log
+	 * @param level The minimum level to log
 	 */
-	public static void setGlobalMinimumLogLevel(LogLevel rLevel) {
-		aGlobalLevelFilter = LogLevelFilter.startingAt(rLevel);
+	public static void setGlobalMinimumLogLevel(LogLevel level) {
+		globalLevelFilter = LogLevelFilter.startingAt(level);
 	}
 
 	/**
@@ -664,20 +654,21 @@ public final class Log {
 	 * level. This allows to reduce the log output for certain classes or
 	 * (parent) packages.
 	 *
-	 * @param sPackageOrClass The name of the class or package to set the log
-	 *                        level for
-	 * @param eLevel          The minimum log level for the given package or
-	 *                        NULL to remove any special log handling for the
-	 *                        given name
+	 * @param packageOrClass The name of the class or package to set the log
+	 *                       level for
+	 * @param level          The minimum log level for the given package or
+	 *                          NULL
+	 *                       to remove any special log handling for the given
+	 *                       name
 	 */
-	public static void setLogLevel(String sPackageOrClass, LogLevel eLevel) {
+	public static void setLogLevel(String packageOrClass, LogLevel level) {
 		// first clear any previous handler
-		registerLogHandler(sPackageOrClass, null);
+		registerLogHandler(packageOrClass, null);
 
-		if (eLevel != null) {
-			registerLogHandler(sPackageOrClass,
-				doIf(LogLevelFilter.startingAt(eLevel),
-					findLogHandler(sPackageOrClass)));
+		if (level != null) {
+			registerLogHandler(packageOrClass,
+				doIf(LogLevelFilter.startingAt(level),
+					findLogHandler(packageOrClass)));
 		}
 	}
 
@@ -686,29 +677,29 @@ public final class Log {
 	 * package-specific log level handlers if such exist.
 	 */
 	private static void setupPackageLogHandlers() {
-		String sPackageLevels = System.getProperty("esoco.log.plevels");
+		String packageLevels = System.getProperty("esoco.log.plevels");
 
-		if (sPackageLevels != null) {
-			String[] aPackageLevels = sPackageLevels.split(",");
+		if (packageLevels != null) {
+			String[] pkgLevels = packageLevels.split(",");
 
-			for (String sPackageLevel : aPackageLevels) {
-				String[] aPackageLevel = sPackageLevel.split("=");
+			for (String packageLevel : pkgLevels) {
+				String[] pgkLevel = packageLevel.split("=");
 
-				if (aPackageLevel.length != 2) {
+				if (pgkLevel.length != 2) {
 					throw new IllegalArgumentException(
-						"Invalid package log level: " + sPackageLevel);
+						"Invalid package log pgkLevel: " + packageLevel);
 				}
 
-				String sPackageOrClass = aPackageLevel[0];
-				LogLevel eLevel = LogLevel.valueOf(aPackageLevel[1]);
+				String packageOrClass = pgkLevel[0];
+				LogLevel logLevel = LogLevel.valueOf(pgkLevel[1]);
 
-				if (sPackageOrClass == null || eLevel == null) {
+				if (packageOrClass == null) {
 					throw new IllegalArgumentException(
 						String.format("Invalid log package definition: %s",
-							sPackageLevel));
+							packageLevel));
 				}
 
-				setLogLevel(sPackageOrClass, eLevel);
+				setLogLevel(packageOrClass, logLevel);
 			}
 		}
 	}
@@ -717,13 +708,13 @@ public final class Log {
 	 * Performs the static setup of the standard log handler.
 	 */
 	private static void setupStandardLogHandler() {
-		String sLevel = System.getProperty("esoco.log.level");
-		String sFile = System.getProperty("esoco.log.file");
-		PrintWriter rOut = new PrintWriter(System.out);
+		String level = System.getProperty("esoco.log.level");
+		String file = System.getProperty("esoco.log.file");
+		PrintWriter out = new PrintWriter(System.out);
 
-		if (sFile != null) {
+		if (file != null) {
 			try {
-				rOut = new PrintWriter(new FileWriter(sFile, true));
+				out = new PrintWriter(new FileWriter(file, true));
 			} catch (IOException e) {
 				System.err.println(
 					"Log file not found, reverting to System.out");
@@ -731,25 +722,26 @@ public final class Log {
 			}
 		}
 
-		LogRecordFormat aStackTop = new LogRecordFormat("  at {stacktop}");
+		LogRecordFormat stackTop = new LogRecordFormat("  at {stacktop}");
 
-		Consumer<LogRecord> fStandardLog =
-			asConsumer(println(rOut, "%s").from(DEFAULT_FORMAT));
+		Consumer<LogRecord> standardLog =
+			asConsumer(println(out, "%s").from(DEFAULT_FORMAT));
 
-		Consumer<LogRecord> fTraceLog = doIf(isLevel(TRACE),
-			asConsumer(println(rOut, "%s").from(aStackTop)));
+		Consumer<LogRecord> traceLog =
+			doIf(isLevel(TRACE),
+				asConsumer(println(out, "%s").from(stackTop)));
 
-		Consumer<LogRecord> fCauseLog = doIfElse(LogRecord.HAS_CAUSE,
-			asConsumer(println(rOut, "%s").from(CAUSE_TRACE)), fTraceLog);
+		Consumer<LogRecord> causeLog = doIfElse(LogRecord.HAS_CAUSE,
+			asConsumer(println(out, "%s").from(CAUSE_TRACE)), traceLog);
 
-		aStandardLogHandler = asConsumer(Group.of(fStandardLog, fCauseLog));
-		aDefaultLogHandlers = Group.of(aStandardLogHandler);
+		standardLogHandler = asConsumer(Group.of(standardLog, causeLog));
+		defaultLogHandlers = Group.of(standardLogHandler);
 
-		if (sLevel != null) {
+		if (level != null) {
 			try {
-				setGlobalMinimumLogLevel(LogLevel.valueOf(sLevel));
+				setGlobalMinimumLogLevel(LogLevel.valueOf(level));
 			} catch (Exception e) {
-				Log.error("Invalid log level system property: " + sLevel, e);
+				Log.error("Invalid log level system property: " + level, e);
 			}
 		}
 	}
@@ -757,82 +749,80 @@ public final class Log {
 	/**
 	 * Logs a message at trace log level.
 	 *
-	 * @param sMessage The log message
+	 * @param message The log message
 	 */
-	public static void trace(String sMessage) {
-		logImpl(TRACE, null, "%s", sMessage, NO_ARGS);
+	public static void trace(String message) {
+		logImpl(TRACE, null, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a message and an exception at trace log level.
 	 *
-	 * @param sMessage The log message
-	 * @param rCause   The causing exception
+	 * @param message The log message
+	 * @param cause   The causing exception
 	 */
-	public static void trace(String sMessage, Throwable rCause) {
-		logImpl(TRACE, rCause, "%s", sMessage, NO_ARGS);
+	public static void trace(String message, Throwable cause) {
+		logImpl(TRACE, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a formatted message and an exception at trace log level.
 	 *
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void tracef(String sFormat, Object... rArgs) {
-		logImpl(TRACE, null, sFormat, rArgs);
+	public static void tracef(String format, Object... args) {
+		logImpl(TRACE, null, format, args);
 	}
 
 	/**
 	 * Logs a formatted message at trace log level.
 	 *
-	 * @param rCause  The causing exception (may be NULL)
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param cause  The causing exception (may be NULL)
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void tracef(Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(TRACE, rCause, sFormat, rArgs);
+	public static void tracef(Throwable cause, String format, Object... args) {
+		logImpl(TRACE, cause, format, args);
 	}
 
 	/**
 	 * Logs a message at warn log level.
 	 *
-	 * @param sMessage The message
+	 * @param message The message
 	 */
-	public static void warn(String sMessage) {
-		logImpl(WARN, null, "%s", sMessage, NO_ARGS);
+	public static void warn(String message) {
+		logImpl(WARN, null, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a message and an exception at warn log level.
 	 *
-	 * @param sMessage The log message
-	 * @param rCause   The causing exception
+	 * @param message The log message
+	 * @param cause   The causing exception
 	 */
-	public static void warn(String sMessage, Throwable rCause) {
-		logImpl(WARN, rCause, "%s", sMessage, NO_ARGS);
+	public static void warn(String message, Throwable cause) {
+		logImpl(WARN, cause, "%s", message, NO_ARGS);
 	}
 
 	/**
 	 * Logs a formatted message at warn log level.
 	 *
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void warnf(String sFormat, Object... rArgs) {
-		logImpl(WARN, null, sFormat, rArgs);
+	public static void warnf(String format, Object... args) {
+		logImpl(WARN, null, format, args);
 	}
 
 	/**
 	 * Logs a formatted message and an exception at warn log level.
 	 *
-	 * @param rCause  The causing exception (may be NULL)
-	 * @param sFormat The format of the log message
-	 * @param rArgs   The optional arguments to format as the log message
+	 * @param cause  The causing exception (may be NULL)
+	 * @param format The format of the log message
+	 * @param args   The optional arguments to format as the log message
 	 */
-	public static void warnf(Throwable rCause, String sFormat,
-		Object... rArgs) {
-		logImpl(WARN, rCause, sFormat, rArgs);
+	public static void warnf(Throwable cause, String format, Object... args) {
+		logImpl(WARN, cause, format, args);
 	}
 }

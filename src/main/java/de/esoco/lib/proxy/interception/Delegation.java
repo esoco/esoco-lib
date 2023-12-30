@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
  */
 public class Delegation implements Interception {
 
-	MethodMappingDefinition rMapping;
+	MethodMappingDefinition mapping;
 
 	/**
 	 * Default constructor that uses a 1:1 mapping.
@@ -41,18 +41,18 @@ public class Delegation implements Interception {
 	/**
 	 * Creates a new delegation with a specific mapping of methods.
 	 *
-	 * @param rMapping The mapping definition
+	 * @param mapping The mapping definition
 	 */
-	public Delegation(MethodMappingDefinition rMapping) {
-		this.rMapping = rMapping;
+	public Delegation(MethodMappingDefinition mapping) {
+		this.mapping = mapping;
 	}
 
 	/**
 	 * @see Interception#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) throws Exception {
-		return rMapping.invoke(rOriginalMethod, rTarget, rArgs);
+	public Object invoke(Object proxy, Method originalMethod, Object target,
+		Object[] args) throws Exception {
+		return mapping.invoke(originalMethod, target, args);
 	}
 }

@@ -32,36 +32,36 @@ public class MACAddress extends RelatedObject implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	// allowed MAC string patterns: xx-xx-xx-xx-xx-xx or xx:xx:xx:xx:xx:xx
-	private static final Pattern aMACPattern =
+	private static final Pattern mACPattern =
 		Pattern.compile("(\\p{XDigit}{2}[:-]){5}" + "\\p{XDigit}{2}");
 
-	private byte[] aBytes;
+	private byte[] bytes;
 
 	/**
 	 * Creates a new instance from a string representation of the MAC address.
 	 *
-	 * @param sMAC A string containing the MAC address
+	 * @param mAC A string containing the MAC address
 	 * @throws IllegalArgumentException If the format of the argument string is
 	 *                                  invalid
 	 */
-	public MACAddress(String sMAC) {
-		aBytes = parseBytes(sMAC);
+	public MACAddress(String mAC) {
+		bytes = parseBytes(mAC);
 	}
 
 	/**
 	 * Creates a new instance from a byte array. The array must contain exactly
 	 * 6 bytes in transmission order.
 	 *
-	 * @param rBytes An array containing the 6 bytes of the MAC address
+	 * @param bytes An array containing the 6 bytes of the MAC address
 	 * @throws IllegalArgumentException If the argument array is NULL or does
 	 *                                  not contain exactly 6 bytes
 	 */
-	public MACAddress(byte[] rBytes) {
-		if (rBytes == null || rBytes.length != 6) {
-			aBytes = new byte[6];
+	public MACAddress(byte[] bytes) {
+		if (bytes == null || bytes.length != 6) {
+			bytes = new byte[6];
 		}
 
-		System.arraycopy(rBytes, 0, aBytes, 0, aBytes.length);
+		System.arraycopy(bytes, 0, bytes, 0, bytes.length);
 	}
 
 	/**
@@ -75,43 +75,43 @@ public class MACAddress extends RelatedObject implements Serializable {
 	 * @param b6 Byte 6
 	 */
 	public MACAddress(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6) {
-		aBytes = new byte[6];
+		bytes = new byte[6];
 
-		aBytes[0] = b1;
-		aBytes[1] = b2;
-		aBytes[2] = b3;
-		aBytes[3] = b4;
-		aBytes[4] = b5;
-		aBytes[5] = b6;
+		bytes[0] = b1;
+		bytes[1] = b2;
+		bytes[2] = b3;
+		bytes[3] = b4;
+		bytes[4] = b5;
+		bytes[5] = b6;
 	}
 
 	/**
 	 * Parses the bytes of a MAC address string and returns a new array
 	 * containing the bytes in transmission order.
 	 *
-	 * @param sMAC The MAC address string to parse
+	 * @param mAC The MAC address string to parse
 	 * @return A new array containing the MAC address bytes
 	 * @throws IllegalArgumentException If the argument string is NULL or
 	 * has an
 	 *                                  invalid format
 	 */
-	public static byte[] parseBytes(String sMAC)
+	public static byte[] parseBytes(String mAC)
 		throws IllegalArgumentException {
-		if (sMAC == null || !aMACPattern.matcher(sMAC).matches()) {
-			throw new IllegalArgumentException("Invalid MAC string: " + sMAC);
+		if (mAC == null || !mACPattern.matcher(mAC).matches()) {
+			throw new IllegalArgumentException("Invalid MAC string: " + mAC);
 		}
 
-		String[] aByteTokens = sMAC.split("[:-]");
-		byte[] aBytes = new byte[6];
+		String[] byteTokens = mAC.split("[:-]");
+		byte[] bytes = new byte[6];
 
 		// should be covered by the pattern, but to be sure...
-		assert aByteTokens.length == 6;
+		assert byteTokens.length == 6;
 
 		for (int i = 0; i < 6; i++) {
-			aBytes[i] = (byte) Integer.parseInt(aByteTokens[i], 16);
+			bytes[i] = (byte) Integer.parseInt(byteTokens[i], 16);
 		}
 
-		return aBytes;
+		return bytes;
 	}
 
 	/**
@@ -122,10 +122,10 @@ public class MACAddress extends RelatedObject implements Serializable {
 	 * @return A new array containing the bytes of the MAC address
 	 */
 	public byte[] getBytes() {
-		byte[] aResult = new byte[aBytes.length];
+		byte[] result = new byte[bytes.length];
 
-		System.arraycopy(aBytes, 0, aResult, 0, aBytes.length);
+		System.arraycopy(bytes, 0, result, 0, bytes.length);
 
-		return aResult;
+		return result;
 	}
 }

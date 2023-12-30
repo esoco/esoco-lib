@@ -46,23 +46,23 @@ public class HttpHeaderTypes {
 		CONTENT_TYPE, COOKIE, HOST, USER_AGENT,
 		WWW_AUTHENTICATE("WWW-Authenticate");
 
-		private final String sFieldName;
+		private final String fieldName;
 
 		/**
 		 * Creates a new instance with a field name derived from the instance
 		 * name.
 		 */
 		HttpHeaderField() {
-			this.sFieldName = TextConvert.capitalize(name(), "-");
+			this.fieldName = TextConvert.capitalize(name(), "-");
 		}
 
 		/**
 		 * Creates a new instance with an explicit field name.
 		 *
-		 * @param sFieldName The field name
+		 * @param fieldName The field name
 		 */
-		HttpHeaderField(String sFieldName) {
-			this.sFieldName = sFieldName;
+		HttpHeaderField(String fieldName) {
+			this.fieldName = fieldName;
 		}
 
 		/**
@@ -71,7 +71,7 @@ public class HttpHeaderTypes {
 		 * @return The field name
 		 */
 		public final String getFieldName() {
-			return sFieldName;
+			return fieldName;
 		}
 	}
 
@@ -167,13 +167,13 @@ public class HttpHeaderTypes {
 	 * header
 	 * field name.
 	 *
-	 * @param sHeaderName The HTTP request header field name
+	 * @param headerName The HTTP request header field name
 	 * @return The header relation type
 	 */
-	public static RelationType<?> get(String sHeaderName) {
-		sHeaderName = sHeaderName.replaceAll("-", "_").toUpperCase();
+	public static RelationType<?> get(String headerName) {
+		headerName = headerName.replaceAll("-", "_").toUpperCase();
 
 		return RelationType.valueOf(
-			HttpHeaderTypes.HTTP_HEADER_TYPES_NAMESPACE + "." + sHeaderName);
+			HttpHeaderTypes.HTTP_HEADER_TYPES_NAMESPACE + "." + headerName);
 	}
 }

@@ -28,7 +28,7 @@ public class CommandLineException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	private final String sInvalidOption;
+	private final String invalidOption;
 
 	/**
 	 * Creates a new instance for a certain invalid command line option. If the
@@ -36,13 +36,13 @@ public class CommandLineException extends RuntimeException {
 	 * name
 	 * of the invalid option
 	 *
-	 * @param sMessage       The error message
-	 * @param sInvalidOption The name of the invalid command line option
+	 * @param message       The error message
+	 * @param invalidOption The name of the invalid command line option
 	 */
-	public CommandLineException(String sMessage, String sInvalidOption) {
-		super(createErrorMessage(sMessage, sInvalidOption));
+	public CommandLineException(String message, String invalidOption) {
+		super(createErrorMessage(message, invalidOption));
 
-		this.sInvalidOption = sInvalidOption;
+		this.invalidOption = invalidOption;
 	}
 
 	/**
@@ -51,28 +51,28 @@ public class CommandLineException extends RuntimeException {
 	 * name
 	 * of the invalid option
 	 *
-	 * @param sMessage       The error message
-	 * @param sInvalidOption The name of the invalid command line option
-	 * @param eCause         The causing exception
+	 * @param message       The error message
+	 * @param invalidOption The name of the invalid command line option
+	 * @param cause         The causing exception
 	 */
-	public CommandLineException(String sMessage, String sInvalidOption,
-		Throwable eCause) {
-		super(createErrorMessage(sMessage, sInvalidOption), eCause);
+	public CommandLineException(String message, String invalidOption,
+		Throwable cause) {
+		super(createErrorMessage(message, invalidOption), cause);
 
-		this.sInvalidOption = sInvalidOption;
+		this.invalidOption = invalidOption;
 	}
 
 	/**
 	 * Creates the error message for the superclass by formatting it with the
 	 * invalid option name if necessary.
 	 */
-	private static String createErrorMessage(String sMessage,
-		String sInvalidOption) {
-		if (sMessage.contains("%s")) {
-			sMessage = String.format(sMessage, sInvalidOption);
+	private static String createErrorMessage(String message,
+		String invalidOption) {
+		if (message.contains("%s")) {
+			message = String.format(message, invalidOption);
 		}
 
-		return sMessage;
+		return message;
 	}
 
 	/**
@@ -81,6 +81,6 @@ public class CommandLineException extends RuntimeException {
 	 * @return The invalid command line option
 	 */
 	public final String getInvalidOption() {
-		return sInvalidOption;
+		return invalidOption;
 	}
 }

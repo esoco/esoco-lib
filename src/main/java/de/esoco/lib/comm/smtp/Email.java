@@ -71,62 +71,62 @@ public class Email extends RelatedObject implements FluentRelatable<Email> {
 	/**
 	 * Sets the sender address and an empty sender name.
 	 *
-	 * @param sAddress The receiver address
+	 * @param address The receiver address
 	 * @return This instance for fluent invocation
 	 */
-	public Email from(String sAddress) {
-		return from("", sAddress);
+	public Email from(String address) {
+		return from("", address);
 	}
 
 	/**
 	 * Sets the receiver address.
 	 *
-	 * @param sName    The receiver name
-	 * @param sAddress The receiver address
+	 * @param name    The receiver name
+	 * @param address The receiver address
 	 * @return This instance for fluent invocation
 	 */
-	public Email from(String sName, String sAddress) {
-		return with(SENDER_NAME, sName).with(SENDER_ADDRESS, sAddress);
+	public Email from(String name, String address) {
+		return with(SENDER_NAME, name).with(SENDER_ADDRESS, address);
 	}
 
 	/**
 	 * Sets the email's message text.
 	 *
-	 * @param sMessage sSubject The message text
+	 * @param message sSubject The message text
 	 * @return This instance for fluent invocation
 	 */
-	public Email message(String sMessage) {
-		return with(MESSAGE, sMessage);
+	public Email message(String message) {
+		return with(MESSAGE, message);
 	}
 
 	/**
 	 * Sets the email's subject line.
 	 *
-	 * @param sSubject The subject line
+	 * @param subject The subject line
 	 * @return This instance for fluent invocation
 	 */
-	public Email subject(String sSubject) {
-		return with(SUBJECT, sSubject);
+	public Email subject(String subject) {
+		return with(SUBJECT, subject);
 	}
 
 	/**
 	 * Sets the recipient address and an empty recipient name.
 	 *
-	 * @param sAddress The recipient address
+	 * @param address The recipient address
 	 * @return This instance for fluent invocation
 	 */
-	public Email to(String sAddress) {
-		return to("", sAddress);
+	public Email to(String address) {
+		return to("", address);
 	}
 
 	/**
 	 * Sets the receiver address.
 	 *
-	 * @param sName    The receiver name
-	 * @param sAddress The receiver address
+	 * @param name    The receiver name
+	 * @param address The receiver address
 	 * @return This instance for fluent invocation
 	 */
-	public Email to(String sName, String sAddress) {
-		return with(RECIPIENT_NAME, sName).with(RECIPIENT_ADDRESS, sAddress);
+	public Email to(String name, String address) {
+		return with(RECIPIENT_NAME, name).with(RECIPIENT_ADDRESS, address);
 	}
 }

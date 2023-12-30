@@ -64,30 +64,30 @@ public class CommandLine {
 	private static final Set<String> STANDARD_OPTIONS =
 		CollectionUtil.fixedSetOf("h", "-help");
 
-	private final Map<String, Object> aCommandLineOptions;
+	private final Map<String, Object> commandLineOptions;
 
-	private Map<String, String> rAllowedOptions = null;
+	private Map<String, String> allowedOptions = null;
 
 	/**
 	 * Creates a new command line from an input stream in Java properties file
 	 * format. Boolean values will be converted to {@link Boolean} objects, all
 	 * other argument values will be stored as strings.
 	 *
-	 * @param rArgsStream sFileName The file name (including path) of the
-	 *                    properties file
+	 * @param argsStream sFileName The file name (including path) of the
+	 *                   properties file
 	 * @throws IllegalArgumentException If accessing the stream fails
 	 */
-	public CommandLine(InputStream rArgsStream) {
-		aCommandLineOptions = readArguments(rArgsStream);
+	public CommandLine(InputStream argsStream) {
+		commandLineOptions = readArguments(argsStream);
 	}
 
 	/**
 	 * Creates a new command line that allows arbitrary arguments.
 	 *
-	 * @param rArgs The command line arguments
+	 * @param args The command line arguments
 	 */
-	public CommandLine(String[] rArgs) {
-		this(rArgs, null);
+	public CommandLine(String[] args) {
+		this(args, null);
 	}
 
 	/**
@@ -98,34 +98,32 @@ public class CommandLine {
 	 * {@link #createStandardPattern(String[])}. Otherwise the
 	 * {@link #DEFAULT_OPTION_PATTERN} will be used.
 	 *
-	 * @param rArgs           The command line arguments
-	 * @param rAllowedOptions A list containing all the options that are
-	 *                           allowed
-	 *                        on the command line
+	 * @param args           The command line arguments
+	 * @param allowedOptions A list containing all the options that are allowed
+	 *                       on the command line
 	 * @throws IllegalArgumentException If one of the arguments is invalid
 	 */
-	public CommandLine(String[] rArgs, Map<String, String> rAllowedOptions) {
-		this(rArgs, Pattern.compile(DEFAULT_OPTION_PATTERN), rAllowedOptions);
+	public CommandLine(String[] args, Map<String, String> allowedOptions) {
+		this(args, Pattern.compile(DEFAULT_OPTION_PATTERN), allowedOptions);
 	}
 
 	/**
 	 * Creates a new command line instance. Parses the command line with the
 	 * static {@link #parse(String[], Pattern) parse()} method.
 	 *
-	 * @param rArgs           The command line arguments
-	 * @param rArgPattern     The pattern to parse a single command line option
-	 *                        or NULL for the default pattern
-	 * @param rAllowedOptions A list containing all the options that are
-	 *                           allowed
-	 *                        on the command line
+	 * @param args           The command line arguments
+	 * @param argPattern     The pattern to parse a single command line option
+	 *                       or NULL for the default pattern
+	 * @param allowedOptions A list containing all the options that are allowed
+	 *                       on the command line
 	 * @throws IllegalArgumentException If either the argument pattern or an
 	 *                                  argument is invalid
 	 */
-	public CommandLine(String[] rArgs, Pattern rArgPattern,
-		Map<String, String> rAllowedOptions) {
-		this.rAllowedOptions = rAllowedOptions;
+	public CommandLine(String[] args, Pattern argPattern,
+		Map<String, String> allowedOptions) {
+		this.allowedOptions = allowedOptions;
 
-		aCommandLineOptions = parse(rArgs, rArgPattern);
+		commandLineOptions = parse(args, argPattern);
 	}
 
 	/**
@@ -145,28 +143,27 @@ public class CommandLine {
 	 * with the resulting pattern, any option will cause an exception to be
 	 * thrown.</p>
 	 *
-	 * @param sPrefix         The allowed prefixes for an option
-	 * @param sAssignment     The string or character used to assign a value to
-	 *                        an option
-	 * @param rAllowedOptions A list containing all the options that are
-	 *                           allowed
-	 *                        on the command line
+	 * @param prefix         The allowed prefixes for an option
+	 * @param assignment     The string or character used to assign a value to
+	 *                       an option
+	 * @param allowedOptions A list containing all the options that are allowed
+	 *                       on the command line
 	 * @return A new pattern based on the method arguments
 	 */
-	public static Pattern createPattern(String sPrefix, String sAssignment,
-		String... rAllowedOptions) {
-		StringBuilder aPattern = new StringBuilder(sPrefix + "(");
-		StringBuilder aValueOptions = new StringBuilder();
+	public static Pattern createPattern(String prefix, String assignment,
+		String... allowedOptions) {
+		StringBuilder pattern = new StringBuilder(prefix + "(");
+		StringBuilder valueOptions = new StringBuilder();
 
-		for (String sOption : rAllowedOptions) {
-			boolean bValueRequired = sOption.endsWith(sAssignment);
+		for (String option : allowedOptions) {
+			boolean valueRequired = option.endsWith(assignment);
 
-			if (bValueRequired) {
-				int l = sOption.length() - sAssignment.length();
+			if (valueRequired) {
+				int l = option.length() - assignment.length();
 
-				aValueOptions.append(sOption, 0, l).append('|');
+				valueOptions.append(option, 0, l).append('|');
 			} else {
-				aPattern.append(sOption).append('|');
+				pattern.append(option).append('|');
 			}
 		}
 
@@ -175,28 +172,28 @@ public class CommandLine {
 		// -(?:(s1|s2|...)(?:=(.+))?|(p1|p2|...)=(.+))
 		// group 1 & 2 for simple options, 3 & 4 for parameterized options
 
-		if (aPattern.charAt(aPattern.length() - 1) == '|') {
+		if (pattern.charAt(pattern.length() - 1) == '|') {
 			// remove trailing '|'
-			aPattern.setLength(aPattern.length() - 1);
-			aPattern.append(")(?:").append(sAssignment).append("(.+))?");
+			pattern.setLength(pattern.length() - 1);
+			pattern.append(")(?:").append(assignment).append("(.+))?");
 
-			if (aValueOptions.length() > 0) {
-				aPattern.append("|(");
+			if (valueOptions.length() > 0) {
+				pattern.append("|(");
 			}
 		}
 
-		if (aValueOptions.length() > 0) {
+		if (valueOptions.length() > 0) {
 			// remove trailing '|'
-			aValueOptions.setLength(aValueOptions.length() - 1);
-			aPattern.append(aValueOptions).append(")");
-			aPattern.append(sAssignment).append("(.+)");
+			valueOptions.setLength(valueOptions.length() - 1);
+			pattern.append(valueOptions).append(")");
+			pattern.append(assignment).append("(.+)");
 		}
 
-		if (rAllowedOptions.length == 0) {
-			aPattern.append(")");
+		if (allowedOptions.length == 0) {
+			pattern.append(")");
 		}
 
-		return Pattern.compile(aPattern.toString());
+		return Pattern.compile(pattern.toString());
 	}
 
 	/**
@@ -205,29 +202,28 @@ public class CommandLine {
 	 * used instead of of '-'). Based on the method
 	 * {@link #createPattern(String, String, String[])}.
 	 *
-	 * @param rAllowedOptions A list containing all the options that are
-	 *                           allowed
-	 *                        on the command line
+	 * @param allowedOptions A list containing all the options that are allowed
+	 *                       on the command line
 	 * @return A new pattern based on the method arguments
 	 */
-	public static Pattern createStandardPattern(String... rAllowedOptions) {
-		return createPattern("-", "=", rAllowedOptions);
+	public static Pattern createStandardPattern(String... allowedOptions) {
+		return createPattern("-", "=", allowedOptions);
 	}
 
 	/**
 	 * Tries to read the command line arguments from a Java properties file.
 	 *
-	 * @param sFileName The file name (including path) of the properties file
+	 * @param fileName The file name (including path) of the properties file
 	 * @return A map containing the arguments as read from the file
 	 * @throws IllegalArgumentException If the file doesn't exist or could not
 	 *                                  be read
 	 */
-	public static Map<String, Object> readArguments(String sFileName) {
+	public static Map<String, Object> readArguments(String fileName) {
 		try {
-			return readArguments(new FileInputStream(sFileName));
+			return readArguments(new FileInputStream(fileName));
 		} catch (FileNotFoundException e) {
 			throw new IllegalArgumentException(
-				"Arguments file not found: " + sFileName);
+				"Arguments file not found: " + fileName);
 		}
 	}
 
@@ -237,34 +233,34 @@ public class CommandLine {
 	 * objects,
 	 * all other argument values will be stored as strings.
 	 *
-	 * @param rArgsStream The input stream to read the arguments from
+	 * @param argsStream The input stream to read the arguments from
 	 * @return A map containing the arguments as read from the stream
 	 * @throws IllegalArgumentException If accessing the stream fails
 	 */
-	public static Map<String, Object> readArguments(InputStream rArgsStream) {
-		Properties aProperties = new Properties();
+	public static Map<String, Object> readArguments(InputStream argsStream) {
+		Properties properties = new Properties();
 
 		try {
-			aProperties.load(rArgsStream);
+			properties.load(argsStream);
 		} catch (IOException e) {
 			throw new IllegalArgumentException("Could not read arguments", e);
 		}
 
-		Map<String, Object> aFileArguments = new HashMap<>(aProperties.size());
+		Map<String, Object> fileArguments = new HashMap<>(properties.size());
 
-		for (Entry<Object, Object> rProperty : aProperties.entrySet()) {
-			Object rValue = rProperty.getValue();
+		for (Entry<Object, Object> property : properties.entrySet()) {
+			Object value = property.getValue();
 
-			if ("true".equalsIgnoreCase(rValue.toString())) {
-				rValue = Boolean.TRUE;
-			} else if ("false".equalsIgnoreCase(rValue.toString())) {
-				rValue = Boolean.FALSE;
+			if ("true".equalsIgnoreCase(value.toString())) {
+				value = Boolean.TRUE;
+			} else if ("false".equalsIgnoreCase(value.toString())) {
+				value = Boolean.FALSE;
 			}
 
-			aFileArguments.put(rProperty.getKey().toString(), rValue);
+			fileArguments.put(property.getKey().toString(), value);
 		}
 
-		return aFileArguments;
+		return fileArguments;
 	}
 
 	/**
@@ -278,7 +274,7 @@ public class CommandLine {
 	 */
 	@SuppressWarnings("unchecked")
 	public List<String> getArguments() {
-		return (List<String>) aCommandLineOptions.get(EXTRA_ARGUMENTS);
+		return (List<String>) commandLineOptions.get(EXTRA_ARGUMENTS);
 	}
 
 	/**
@@ -286,19 +282,20 @@ public class CommandLine {
 	 * {@link #getOption(String)}
 	 * to an integer value.
 	 *
-	 * @param sOption The option name
+	 * @param option The option name
 	 * @return The integer value or -1 if the option doesn't exists
 	 * @throws CommandLineException If the option cannot be parsed as an
 	 *                              integer
 	 */
-	public int getInt(String sOption) {
-		String sValue = getString(sOption);
+	public int getInt(String option) {
+		String value = getString(option);
 
 		try {
-			return sValue != null ? Integer.parseInt(sValue) : -1;
+			return value != null ? Integer.parseInt(value) : -1;
 		} catch (NumberFormatException e) {
 			throw new CommandLineException("Integer value expected: %s",
-				sOption, e);
+				option,
+				e);
 		}
 	}
 
@@ -314,11 +311,11 @@ public class CommandLine {
 	 * it must always invoke this method with lower case option names because
 	 * all option names have been converted to lower case on creation.</p>
 	 *
-	 * @param sOption The option to query
+	 * @param option The option to query
 	 * @return The option value or NULL for none
 	 */
-	public Object getOption(String sOption) {
-		return aCommandLineOptions.get(sOption);
+	public Object getOption(String option) {
+		return commandLineOptions.get(option);
 	}
 
 	/**
@@ -326,13 +323,13 @@ public class CommandLine {
 	 * {@link #getOption(String)}
 	 * to a string.
 	 *
-	 * @param sOption The option name
+	 * @param option The option name
 	 * @return The option string or NULL for none
 	 */
-	public String getString(String sOption) {
-		Object rOption = getOption(sOption);
+	public String getString(String option) {
+		Object opt = getOption(option);
 
-		return rOption != null ? rOption.toString() : null;
+		return opt != null ? opt.toString() : null;
 	}
 
 	/**
@@ -342,31 +339,30 @@ public class CommandLine {
 	 * invoke this method with lower case option names because all option names
 	 * have been converted to lower case on creation.
 	 *
-	 * @param sOption The option to check
+	 * @param option The option to check
 	 * @return TRUE if the option exists
 	 */
-	public boolean hasOption(String sOption) {
-		return aCommandLineOptions.containsKey(sOption);
+	public boolean hasOption(String option) {
+		return commandLineOptions.containsKey(option);
 	}
 
 	/**
 	 * Parses a list of command line arguments into a map with the default
 	 * argument pattern that allows arbitrary case-insensitive options.
 	 *
-	 * @param rArgs The list of command line arguments
+	 * @param args The list of command line arguments
 	 * @return A new map containing all command line options together with
 	 * their
 	 * values; will be empty if the argument list is empty
 	 * @throws IllegalArgumentException If one of the arguments is invalid
 	 */
-	public Map<String, Object> parse(String[] rArgs) {
-		return parse(rArgs, Pattern.compile(DEFAULT_OPTION_PATTERN));
+	public Map<String, Object> parse(String[] args) {
+		return parse(args, Pattern.compile(DEFAULT_OPTION_PATTERN));
 	}
 
 	/**
 	 * Parses a list of command line arguments into a map. Each element in the
-	 * rArgs array will be matched against the given regular expression
-	 * pattern.
+	 * args array will be matched against the given regular expression pattern.
 	 * If the pattern matches the first group in the pattern will be considered
 	 * to be a command line option and stored in the result map as a key. If
 	 * the
@@ -405,82 +401,81 @@ public class CommandLine {
 	 * {@link #EXTRA_ARGUMENTS}. This list will always exist but may be
 	 * empty.</p>
 	 *
-	 * @param rArgs       The original command line arguments
-	 * @param rArgPattern The pattern to parse a single command line option or
-	 *                    NULL for the default pattern
+	 * @param args       The original command line arguments
+	 * @param argPattern The pattern to parse a single command line option or
+	 *                   NULL for the default pattern
 	 * @return A new map containing all command line options together with
 	 * their
 	 * values; will be empty if the argument list is empty
 	 * @throws CommandLineException If an argument cannot be parsed
 	 */
-	public Map<String, Object> parse(String[] rArgs, Pattern rArgPattern) {
-		Map<String, Object> aResult =
-			new LinkedHashMap<String, Object>(rArgs.length);
+	public Map<String, Object> parse(String[] args, Pattern argPattern) {
+		Map<String, Object> result =
+			new LinkedHashMap<String, Object>(args.length);
 
-		List<String> aExtraArguments = new ArrayList<>();
-		String sPrevOption = null;
+		List<String> extraArguments = new ArrayList<>();
+		String prevOption = null;
 
-		for (String sArg : rArgs) {
-			Matcher aArgMatcher = rArgPattern.matcher(sArg);
-			boolean bIsArg = aArgMatcher.matches();
+		for (String arg : args) {
+			Matcher argMatcher = argPattern.matcher(arg);
+			boolean isArg = argMatcher.matches();
 
-			if (bIsArg) {
-				if (aArgMatcher.groupCount() > 0) {
-					int nGroup = TextUtil.nextGroup(aArgMatcher, 1);
+			if (isArg) {
+				if (argMatcher.groupCount() > 0) {
+					int group = TextUtil.nextGroup(argMatcher, 1);
 
-					if (nGroup == -1) {
+					if (group == -1) {
 						throw new IllegalArgumentException(
-							"Invalid option: " + sArg);
+							"Invalid option: " + arg);
 					}
 
-					String sOption = aArgMatcher.group(nGroup);
-					Object rValue = Boolean.TRUE;
+					String option = argMatcher.group(group);
+					Object value = Boolean.TRUE;
 
-					nGroup = TextUtil.nextGroup(aArgMatcher, nGroup + 1);
+					group = TextUtil.nextGroup(argMatcher, group + 1);
 
-					if (nGroup != -1) {
-						rValue =
-							TextUtil.parseObject(aArgMatcher.group(nGroup));
+					if (group != -1) {
+						value = TextUtil.parseObject(argMatcher.group(group));
 					}
 
-					if ((rArgPattern.flags() & Pattern.CASE_INSENSITIVE) != 0) {
-						sOption = sOption.toLowerCase();
+					if ((argPattern.flags() & Pattern.CASE_INSENSITIVE) != 0) {
+						option = option.toLowerCase();
 					}
 
-					if (sOption.equals("-args")) {
-						if (rValue instanceof String) {
-							aResult.putAll(readArguments(rValue.toString()));
+					if (option.equals("-args")) {
+						if (value instanceof String) {
+							result.putAll(readArguments(value.toString()));
 						} else {
 							throw new CommandLineException(
 								"--args must point " + "to an argument " +
 									"properties file", "--args");
 						}
 					} else {
-						if (rAllowedOptions != null &&
-							!STANDARD_OPTIONS.contains(sOption) &&
-							!rAllowedOptions.containsKey(sOption)) {
+						if (allowedOptions != null &&
+							!STANDARD_OPTIONS.contains(option) &&
+							!allowedOptions.containsKey(option)) {
 							throw new CommandLineException(
-								"Unsupported option: " + sArg, sArg);
+								"Unsupported option: " + arg, arg);
 						}
 
-						aResult.put(sOption, rValue);
-						sPrevOption = sOption;
+						result.put(option, value);
+						prevOption = option;
 					}
 				} else {
-					throw new CommandLineException("Invalid option: " + sArg,
-						sArg);
+					throw new CommandLineException("Invalid option: " + arg,
+						arg);
 				}
-			} else if (sPrevOption != null) {
-				aResult.put(sPrevOption, TextUtil.parseObject(sArg));
-				sPrevOption = null;
+			} else if (prevOption != null) {
+				result.put(prevOption, TextUtil.parseObject(arg));
+				prevOption = null;
 			} else {
-				aExtraArguments.add(sArg);
+				extraArguments.add(arg);
 			}
 		}
 
-		aResult.put(EXTRA_ARGUMENTS, aExtraArguments);
+		result.put(EXTRA_ARGUMENTS, extraArguments);
 
-		return aResult;
+		return result;
 	}
 
 	/**
@@ -488,8 +483,8 @@ public class CommandLine {
 	 *
 	 * @see #requireOption(String, Predicate)
 	 */
-	public Object requireOption(String sOption) throws CommandLineException {
-		return requireOption(sOption, null);
+	public Object requireOption(String option) throws CommandLineException {
+		return requireOption(option, null);
 	}
 
 	/**
@@ -499,27 +494,27 @@ public class CommandLine {
 	 * the option value doesn't exist or the predicate yields FALSE for it an
 	 * exception will be thrown.
 	 *
-	 * @param sOption        The command line option to return the value of
-	 * @param pIsValidOption An optional predicate to apply to option values or
-	 *                       NULL for no validation
+	 * @param option        The command line option to return the value of
+	 * @param isValidOption An optional predicate to apply to option values or
+	 *                      NULL for no validation
 	 * @return The validated command line option
 	 * @throws CommandLineException If the option value doesn't exist or cannot
 	 *                              be validated
 	 */
-	public Object requireOption(String sOption,
-		Predicate<Object> pIsValidOption) throws CommandLineException {
-		Object rValue = getOption(sOption);
+	public Object requireOption(String option, Predicate<Object> isValidOption)
+		throws CommandLineException {
+		Object value = getOption(option);
 
-		if (rValue != null) {
-			if (pIsValidOption == null || pIsValidOption.test(rValue)) {
-				return rValue;
+		if (value != null) {
+			if (isValidOption == null || isValidOption.test(value)) {
+				return value;
 			} else {
 				throw new CommandLineException(
-					"Invalid command line option '%s'", sOption);
+					"Invalid command line option '%s'", option);
 			}
 		} else {
 			throw new CommandLineException("Missing command line option '%s'",
-				sOption);
+				option);
 		}
 	}
 
@@ -528,8 +523,8 @@ public class CommandLine {
 	 *
 	 * @see #requireOption(String, Predicate)
 	 */
-	public String requireString(String sOption) throws CommandLineException {
-		return requireOption(sOption).toString();
+	public String requireString(String option) throws CommandLineException {
+		return requireOption(option).toString();
 	}
 
 	/**
@@ -539,6 +534,6 @@ public class CommandLine {
 	 */
 	@Override
 	public String toString() {
-		return "CommandLine[" + aCommandLineOptions + "]";
+		return "CommandLine[" + commandLineOptions + "]";
 	}
 }

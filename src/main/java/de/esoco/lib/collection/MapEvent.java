@@ -33,13 +33,13 @@ public class MapEvent<K, V> extends ElementEvent<Map<K, V>, K, V> {
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rType        The event type
-	 * @param rSource      The map that is the source of this event
-	 * @param rElement     The map key affected by this event
-	 * @param rUpdateValue The new value in case of update events
+	 * @param type        The event type
+	 * @param source      The map that is the source of this event
+	 * @param element     The map key affected by this event
+	 * @param updateValue The new value in case of update events
 	 */
-	public MapEvent(EventType rType, Map<K, V> rSource, K rElement,
-		V rUpdateValue) {
-		super(rType, rSource, rElement, rUpdateValue);
+	public MapEvent(EventType type, Map<K, V> source, K element,
+		V updateValue) {
+		super(type, source, element, updateValue);
 	}
 }

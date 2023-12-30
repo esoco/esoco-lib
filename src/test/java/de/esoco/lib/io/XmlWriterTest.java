@@ -16,11 +16,8 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.io;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
@@ -32,7 +29,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for the {@link XmlWriter} class.
@@ -41,46 +39,24 @@ import static org.junit.Assert.assertEquals;
  */
 public class XmlWriterTest {
 
-	private XmlWriter aXmlWriter;
+	private XmlWriter xmlWriter;
 
-	private Writer aWriter;
+	private Writer writer;
 
-	private DocumentBuilder aDocumentBuilder;
-
-	/**
-	 * Test class setup.
-	 */
-	@BeforeClass
-	public static void setUpBeforeClass() {
-	}
-
-	/**
-	 * Test class tear down.
-	 */
-	@AfterClass
-	public static void tearDownAfterClass() {
-	}
+	private DocumentBuilder documentBuilder;
 
 	/**
 	 * Test set up.
 	 *
 	 * @throws Exception If setup fails
 	 */
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
-		aWriter = new StringWriter();
-		aXmlWriter = new XmlWriter(aWriter, "1.0", "UTF-8", Boolean.TRUE);
+		writer = new StringWriter();
+		xmlWriter = new XmlWriter(writer, "1.0", "UTF-8", Boolean.TRUE);
 
-		aDocumentBuilder =
+		documentBuilder =
 			DocumentBuilderFactory.newInstance().newDocumentBuilder();
-	}
-
-	/**
-	 * Test tear down.
-	 */
-	@After
-	public void tearDown() {
-		aXmlWriter = null;
 	}
 
 	/**
@@ -89,19 +65,19 @@ public class XmlWriterTest {
 	@SuppressWarnings("boxing")
 	@Test
 	public void testEmptyFile() throws Exception {
-		aXmlWriter.startElement("test");
-		aXmlWriter.endElement();
+		xmlWriter.startElement("test");
+		xmlWriter.endElement();
 
-		Document aDocument = createResultDocument();
+		Document document = createResultDocument();
 
-		assertEquals("1.0", aDocument.getXmlVersion());
-		assertEquals("UTF-8", aDocument.getXmlEncoding());
-		assertEquals(true, aDocument.getXmlStandalone());
+		assertEquals("1.0", document.getXmlVersion());
+		assertEquals("UTF-8", document.getXmlEncoding());
+		assertTrue(document.getXmlStandalone());
 
-		NodeList rTestElement = aDocument.getElementsByTagName("test");
+		NodeList testElement = document.getElementsByTagName("test");
 
-		assertEquals(1, rTestElement.getLength());
-		assertEquals("test", rTestElement.item(0).getNodeName());
+		assertEquals(1, testElement.getLength());
+		assertEquals("test", testElement.item(0).getNodeName());
 	}
 
 	/**
@@ -109,36 +85,35 @@ public class XmlWriterTest {
 	 */
 	@Test
 	public void testNestedElements() throws Exception {
-		aXmlWriter.startElement("test");
-		aXmlWriter.writeAttribute("attr1", "value1");
-		aXmlWriter.writeAttribute("attr2", "value2");
-		aXmlWriter.startElement("test-c1");
-		aXmlWriter.writeAttribute("c1-attr1", "c1-value1");
-		aXmlWriter.startElement("test-c1-1");
-		aXmlWriter.writeAttribute("c1-1-attr1", "c1-1-value1");
-		aXmlWriter.writeText("c1-1-test-text");
-		aXmlWriter.endElement();
-		aXmlWriter.endElement();
-		aXmlWriter.startElement("test-c2");
-		aXmlWriter.writeElement("test-c2-1", "c2-1-attr1", "c2-1-value1",
+		xmlWriter.startElement("test");
+		xmlWriter.writeAttribute("attr1", "value1");
+		xmlWriter.writeAttribute("attr2", "value2");
+		xmlWriter.startElement("test-c1");
+		xmlWriter.writeAttribute("c1-attr1", "c1-value1");
+		xmlWriter.startElement("test-c1-1");
+		xmlWriter.writeAttribute("c1-1-attr1", "c1-1-value1");
+		xmlWriter.writeText("c1-1-test-text");
+		xmlWriter.endElement();
+		xmlWriter.endElement();
+		xmlWriter.startElement("test-c2");
+		xmlWriter.writeElement("test-c2-1", "c2-1-attr1", "c2-1-value1",
 			"c2-1-test-text");
-		aXmlWriter.writeElement("test-c2-2", "c2-2-attr1", "c2-2-value1",
-			null);
-		aXmlWriter.endElement();
-		aXmlWriter.endElement();
+		xmlWriter.writeElement("test-c2-2", "c2-2-attr1", "c2-2-value1", null);
+		xmlWriter.endElement();
+		xmlWriter.endElement();
 
-		System.out.printf("-------RESULT-------\n%s\n", aWriter);
+		System.out.printf("-------RESULT-------\n%s\n", writer);
 
-		Document aDocument = createResultDocument();
+		Document document = createResultDocument();
 
-		NamedNodeMap rAttributes =
-			aDocument.getElementsByTagName("test").item(0).getAttributes();
+		NamedNodeMap attributes =
+			document.getElementsByTagName("test").item(0).getAttributes();
 
-		assertEquals(2, rAttributes.getLength());
+		assertEquals(2, attributes.getLength());
 		assertEquals("value1",
-			rAttributes.getNamedItem("attr1").getNodeValue());
+			attributes.getNamedItem("attr1").getNodeValue());
 		assertEquals("value2",
-			rAttributes.getNamedItem("attr2").getNodeValue());
+			attributes.getNamedItem("attr2").getNodeValue());
 	}
 
 	/**
@@ -146,22 +121,22 @@ public class XmlWriterTest {
 	 */
 	@Test
 	public void testSingleElement() throws Exception {
-		aXmlWriter.startElement("test");
-		aXmlWriter.writeAttribute("attr1", "value1");
-		aXmlWriter.writeAttribute("attr2", "value2");
-		aXmlWriter.writeText("test-text");
-		aXmlWriter.endElement();
+		xmlWriter.startElement("test");
+		xmlWriter.writeAttribute("attr1", "value1");
+		xmlWriter.writeAttribute("attr2", "value2");
+		xmlWriter.writeText("test-text");
+		xmlWriter.endElement();
 
-		Document aDocument = createResultDocument();
+		Document document = createResultDocument();
 
-		NamedNodeMap rAttributes =
-			aDocument.getElementsByTagName("test").item(0).getAttributes();
+		NamedNodeMap attributes =
+			document.getElementsByTagName("test").item(0).getAttributes();
 
-		assertEquals(2, rAttributes.getLength());
+		assertEquals(2, attributes.getLength());
 		assertEquals("value1",
-			rAttributes.getNamedItem("attr1").getNodeValue());
+			attributes.getNamedItem("attr1").getNodeValue());
 		assertEquals("value2",
-			rAttributes.getNamedItem("attr2").getNodeValue());
+			attributes.getNamedItem("attr2").getNodeValue());
 	}
 
 	/**
@@ -170,9 +145,9 @@ public class XmlWriterTest {
 	 * @return The result document
 	 */
 	private Document createResultDocument() throws Exception {
-		aXmlWriter.close();
+		xmlWriter.close();
 
-		return aDocumentBuilder.parse(
-			new InputSource(new StringReader(aWriter.toString())));
+		return documentBuilder.parse(
+			new InputSource(new StringReader(writer.toString())));
 	}
 }

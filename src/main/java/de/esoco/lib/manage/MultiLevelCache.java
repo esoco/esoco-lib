@@ -56,75 +56,73 @@ import java.util.Map.Entry;
  */
 public class MultiLevelCache<K, V> {
 
-	private final CacheMap<K, V> aFirstLevelMap;
+	private final CacheMap<K, V> firstLevelMap;
 
-	private final ReferenceCacheMap<K, V> aSecondLevelMap;
+	private final ReferenceCacheMap<K, V> secondLevelMap;
 
-	private final ReferenceCacheMap<K, V> aThirdLevelMap;
+	private final ReferenceCacheMap<K, V> thirdLevelMap;
 
 	/**
 	 * Creates a new cache with certain capacities.
 	 *
-	 * @param nFirstLevelCapacity  The maximum number of entries that will be
-	 *                             kept permanently in this cache (zero to
-	 *                             disable the permanent cache)
-	 * @param nSecondLevelCapacity The maximum number of entries this cache
-	 *                                will
-	 *                             store as soft references in the first level
-	 * @param nThirdLevelCapacity  The maximum number of entries that will be
-	 *                             stored as weak references after they have
-	 *                             been removed from the first level
+	 * @param firstLevelCapacity  The maximum number of entries that will be
+	 *                            kept permanently in this cache (zero to
+	 *                            disable the permanent cache)
+	 * @param secondLevelCapacity The maximum number of entries this cache will
+	 *                            store as soft references in the first level
+	 * @param thirdLevelCapacity  The maximum number of entries that will be
+	 *                            stored as weak references after they have
+	 *                            been
+	 *                            removed from the first level
 	 */
-	public MultiLevelCache(int nFirstLevelCapacity, int nSecondLevelCapacity,
-		int nThirdLevelCapacity) {
-		aFirstLevelMap = new CacheMap<K, V>(nFirstLevelCapacity);
-		aSecondLevelMap =
-			new ReferenceCacheMap<K, V>(nSecondLevelCapacity, true);
-		aThirdLevelMap =
-			new ReferenceCacheMap<K, V>(nThirdLevelCapacity, false);
+	public MultiLevelCache(int firstLevelCapacity, int secondLevelCapacity,
+		int thirdLevelCapacity) {
+		firstLevelMap = new CacheMap<K, V>(firstLevelCapacity);
+		secondLevelMap = new ReferenceCacheMap<K, V>(secondLevelCapacity,
+			true);
+		thirdLevelMap = new ReferenceCacheMap<K, V>(thirdLevelCapacity, false);
 	}
 
 	/**
 	 * Clears both first and second level cache.
 	 */
 	public void clear() {
-		aThirdLevelMap.clear();
-		aSecondLevelMap.clear();
-		aFirstLevelMap.clear();
+		thirdLevelMap.clear();
+		secondLevelMap.clear();
+		firstLevelMap.clear();
 	}
 
 	/**
 	 * Checks whether this cache contains a mapping with a certain key.
 	 *
-	 * @param rKey The key to check
+	 * @param key The key to check
 	 * @return TRUE if this instance contains the given key
 	 */
-	public boolean contains(K rKey) {
-		return aFirstLevelMap.containsKey(rKey) ||
-			aSecondLevelMap.containsKey(rKey) ||
-			aThirdLevelMap.containsKey(rKey);
+	public boolean contains(K key) {
+		return firstLevelMap.containsKey(key) ||
+			secondLevelMap.containsKey(key) || thirdLevelMap.containsKey(key);
 	}
 
 	/**
 	 * Returns a certain value from this cache.
 	 *
-	 * @param rKey The key to return the value for
+	 * @param key The key to return the value for
 	 * @return The value associated with the key or NULL if no such value
 	 * exists
 	 * or if it has expired
 	 */
-	public final synchronized V get(K rKey) {
-		V rValue = null;
+	public final synchronized V get(K key) {
+		V value = null;
 
-		if (aFirstLevelMap.containsKey(rKey)) {
-			rValue = aFirstLevelMap.get(rKey);
-		} else if (aSecondLevelMap.containsKey(rKey)) {
-			rValue = getReferenceValue(rKey, aSecondLevelMap);
-		} else if (aThirdLevelMap.containsKey(rKey)) {
-			rValue = getReferenceValue(rKey, aThirdLevelMap);
+		if (firstLevelMap.containsKey(key)) {
+			value = firstLevelMap.get(key);
+		} else if (secondLevelMap.containsKey(key)) {
+			value = getReferenceValue(key, secondLevelMap);
+		} else if (thirdLevelMap.containsKey(key)) {
+			value = getReferenceValue(key, thirdLevelMap);
 		}
 
-		return rValue;
+		return value;
 	}
 
 	/**
@@ -134,8 +132,8 @@ public class MultiLevelCache<K, V> {
 	 * cache levels
 	 */
 	public int[] getCapacity() {
-		return new int[] { aFirstLevelMap.getCapacity(),
-			aSecondLevelMap.getCapacity(), aThirdLevelMap.getCapacity() };
+		return new int[] { firstLevelMap.getCapacity(),
+			secondLevelMap.getCapacity(), thirdLevelMap.getCapacity() };
 	}
 
 	/**
@@ -145,10 +143,10 @@ public class MultiLevelCache<K, V> {
 	 */
 	@SuppressWarnings("boxing")
 	public String getUsage() {
-		return String.format("%d/%d, %d/%d, %s/%d", aFirstLevelMap.size(),
-			aFirstLevelMap.getCapacity(), aSecondLevelMap.size(),
-			aSecondLevelMap.getCapacity(), aThirdLevelMap.size(),
-			aThirdLevelMap.getCapacity());
+		return String.format("%d/%d, %d/%d, %s/%d", firstLevelMap.size(),
+			firstLevelMap.getCapacity(), secondLevelMap.size(),
+			secondLevelMap.getCapacity(), thirdLevelMap.size(),
+			thirdLevelMap.getCapacity());
 	}
 
 	/**
@@ -156,90 +154,89 @@ public class MultiLevelCache<K, V> {
 	 * cache level is exceeded the oldest entry will be moved to the next cache
 	 * level.
 	 *
-	 * @param rKey   The key to associate the value with
-	 * @param rValue The value of the entry
+	 * @param key   The key to associate the value with
+	 * @param value The value of the entry
 	 */
-	public final synchronized void put(K rKey, V rValue) {
+	public final synchronized void put(K key, V value) {
 		// make sure that the value doesn't exist in multiple cache levels
-		remove(rKey);
+		remove(key);
 
-		int nFirstLevelCapacity = aFirstLevelMap.getCapacity();
+		int firstLevelCapacity = firstLevelMap.getCapacity();
 
-		if (nFirstLevelCapacity > 0) {
-			if (aFirstLevelMap.size() == nFirstLevelCapacity) {
+		if (firstLevelCapacity > 0) {
+			if (firstLevelMap.size() == firstLevelCapacity) {
 				saveEldest();
 			}
 
-			aFirstLevelMap.put(rKey, rValue);
+			firstLevelMap.put(key, value);
 		} else {
-			putReference(rKey, rValue);
+			putReference(key, value);
 		}
 	}
 
 	/**
 	 * Removes a certain value from this cache.
 	 *
-	 * @param rKey The key associated with the value to remove
+	 * @param key The key associated with the value to remove
 	 * @return The value associated with the key or NULL for none
 	 */
-	public final synchronized V remove(K rKey) {
-		V rOldValue = aFirstLevelMap.remove(rKey);
+	public final synchronized V remove(K key) {
+		V oldValue = firstLevelMap.remove(key);
 
-		rOldValue = checkRemoveReference(rKey, rOldValue, aSecondLevelMap);
-		rOldValue = checkRemoveReference(rKey, rOldValue, aThirdLevelMap);
+		oldValue = checkRemoveReference(key, oldValue, secondLevelMap);
+		oldValue = checkRemoveReference(key, oldValue, thirdLevelMap);
 
-		return rOldValue;
+		return oldValue;
 	}
 
 	/**
 	 * Sets the capacities of the different cache levels.
 	 *
-	 * @param nFirstLevel  The maximum number of entries that will be kept
-	 *                     permanently in this cache (zero to disable the
-	 *                     permanent cache)
-	 * @param nSecondLevel The maximum number of entries this cache will store
-	 *                     as soft references in the first level
-	 * @param nThirdLevel  The maximum number of entries that will be stored as
-	 *                     weak references after they have been removed from
-	 *                     the
-	 *                     first level
+	 * @param firstLevel  The maximum number of entries that will be kept
+	 *                    permanently in this cache (zero to disable the
+	 *                    permanent cache)
+	 * @param secondLevel The maximum number of entries this cache will
+	 *                       store as
+	 *                    soft references in the first level
+	 * @param thirdLevel  The maximum number of entries that will be stored as
+	 *                    weak references after they have been removed from the
+	 *                    first level
 	 */
-	public void setCapacity(int nFirstLevel, int nSecondLevel,
-		int nThirdLevel) {
+	public void setCapacity(int firstLevel, int secondLevel, int thirdLevel) {
 		// set increased secondary level capacities first to store any overflow
 		// from first level if necessary
-		if (nSecondLevel > aSecondLevelMap.getCapacity()) {
-			aSecondLevelMap.setCapacity(nSecondLevel);
+		if (secondLevel > secondLevelMap.getCapacity()) {
+			secondLevelMap.setCapacity(secondLevel);
 		}
 
-		if (nThirdLevel > aThirdLevelMap.getCapacity()) {
-			aThirdLevelMap.setCapacity(nThirdLevel);
+		if (thirdLevel > thirdLevelMap.getCapacity()) {
+			thirdLevelMap.setCapacity(thirdLevel);
 		}
 
 		// try to overflow from first into the secondary levels
-		while (aFirstLevelMap.size() > nFirstLevel) {
+		while (firstLevelMap.size() > firstLevel) {
 			saveEldest();
 		}
 
 		// overflow from second to third level
-		if (nThirdLevel > 0) {
-			while (aSecondLevelMap.size() > nSecondLevel) {
-				Entry<K, MappedReference<K, V>> rEldest =
-					aSecondLevelMap.removeEldest();
+		if (thirdLevel > 0) {
+			while (secondLevelMap.size() > secondLevel) {
+				Entry<K, MappedReference<K, V>> eldest =
+					secondLevelMap.removeEldest();
 
-				if (rEldest != null) {
-					V rValue = rEldest.getValue().get();
+				if (eldest != null) {
+					V value = eldest.getValue().get();
 
-					if (rValue != null) {
-						aThirdLevelMap.putValue(rEldest.getKey(), rValue);
+					if (value != null) {
+						thirdLevelMap.putValue(eldest.getKey(), value);
 					}
 				}
 			}
 		}
 
-		aFirstLevelMap.setCapacity(nFirstLevel);
-		aSecondLevelMap.setCapacity(nSecondLevel);
-		aThirdLevelMap.setCapacity(nThirdLevel);
+		firstLevelMap.setCapacity(firstLevel);
+		secondLevelMap.setCapacity(secondLevel);
+		thirdLevelMap.setCapacity(thirdLevel);
 	}
 
 	/**
@@ -253,20 +250,20 @@ public class MultiLevelCache<K, V> {
 	/**
 	 * Checks whether a value needs to be removed from a reference map
 	 *
-	 * @param rKey          The key to check
-	 * @param rOldValue     The old value to return if it is not NULL
-	 * @param rReferenceMap The reference map
+	 * @param key          The key to check
+	 * @param oldValue     The old value to return if it is not NULL
+	 * @param referenceMap The reference map
 	 * @return The value that has been removed
 	 */
-	private V checkRemoveReference(K rKey, V rOldValue,
-		ReferenceCacheMap<K, V> rReferenceMap) {
-		MappedReference<K, V> rReference = rReferenceMap.remove(rKey);
+	private V checkRemoveReference(K key, V oldValue,
+		ReferenceCacheMap<K, V> referenceMap) {
+		MappedReference<K, V> reference = referenceMap.remove(key);
 
-		if (rOldValue == null && rReference != null) {
-			rOldValue = rReference.get();
+		if (oldValue == null && reference != null) {
+			oldValue = reference.get();
 		}
 
-		return rOldValue;
+		return oldValue;
 	}
 
 	/**
@@ -274,26 +271,25 @@ public class MultiLevelCache<K, V> {
 	 * most-recently used value by putting it again in this cache. This will
 	 * move the value to the first active cache level.
 	 *
-	 * @param rKey          The key to return the value for
-	 * @param rReferenceMap The reference map to lookup
+	 * @param key          The key to return the value for
+	 * @param referenceMap The reference map to lookup
 	 * @return The value for the given key or NULL if it is expired or not
 	 * available from this cache
 	 */
-	private V getReferenceValue(K rKey,
-		ReferenceCacheMap<K, V> rReferenceMap) {
-		MappedReference<K, V> rReference = rReferenceMap.remove(rKey);
-		V rValue = null;
+	private V getReferenceValue(K key, ReferenceCacheMap<K, V> referenceMap) {
+		MappedReference<K, V> reference = referenceMap.remove(key);
+		V value = null;
 
-		if (rReference != null) {
-			rValue = rReference.get();
+		if (reference != null) {
+			value = reference.get();
 
-			if (rValue != null) {
+			if (value != null) {
 				// move to first cache level
-				put(rKey, rValue);
+				put(key, value);
 			}
 		}
 
-		return rValue;
+		return value;
 	}
 
 	/**
@@ -301,34 +297,34 @@ public class MultiLevelCache<K, V> {
 	 * exceeded by this new entry the oldest entry will be moved to the second
 	 * cache level.
 	 *
-	 * @param rKey   The key to associate the value with
-	 * @param rValue The value of the entry
+	 * @param key   The key to associate the value with
+	 * @param value The value of the entry
 	 */
-	private void putReference(K rKey, V rValue) {
-		int nSecondLevelCapacity = aSecondLevelMap.getCapacity();
-		int nThirdLevelCapacity = aThirdLevelMap.getCapacity();
+	private void putReference(K key, V value) {
+		int secondLevelCapacity = secondLevelMap.getCapacity();
+		int thirdLevelCapacity = thirdLevelMap.getCapacity();
 
-		if (aSecondLevelMap.size() == nSecondLevelCapacity) {
-			Entry<K, MappedReference<K, V>> rEldest =
-				aSecondLevelMap.removeEldest();
+		if (secondLevelMap.size() == secondLevelCapacity) {
+			Entry<K, MappedReference<K, V>> eldest =
+				secondLevelMap.removeEldest();
 
-			if (rEldest != null && nThirdLevelCapacity > 0) {
-				V rEldestValue = rEldest.getValue().get();
+			if (eldest != null && thirdLevelCapacity > 0) {
+				V eldestValue = eldest.getValue().get();
 
-				if (rEldestValue != null) {
-					if (aThirdLevelMap.size() == nThirdLevelCapacity) {
-						aThirdLevelMap.removeEldest();
+				if (eldestValue != null) {
+					if (thirdLevelMap.size() == thirdLevelCapacity) {
+						thirdLevelMap.removeEldest();
 					}
 
-					aThirdLevelMap.putValue(rEldest.getKey(), rEldestValue);
+					thirdLevelMap.putValue(eldest.getKey(), eldestValue);
 				}
 			}
 		}
 
-		if (aSecondLevelMap.getCapacity() > 0) {
-			aSecondLevelMap.putValue(rKey, rValue);
-		} else if (nThirdLevelCapacity > 0) {
-			aThirdLevelMap.putValue(rKey, rValue);
+		if (secondLevelMap.getCapacity() > 0) {
+			secondLevelMap.putValue(key, value);
+		} else if (thirdLevelCapacity > 0) {
+			thirdLevelMap.putValue(key, value);
 		}
 	}
 
@@ -337,10 +333,10 @@ public class MultiLevelCache<K, V> {
 	 * levels.
 	 */
 	private void saveEldest() {
-		Entry<K, V> rEldest = aFirstLevelMap.removeEldest();
+		Entry<K, V> eldest = firstLevelMap.removeEldest();
 
-		if (rEldest != null) {
-			putReference(rEldest.getKey(), rEldest.getValue());
+		if (eldest != null) {
+			putReference(eldest.getKey(), eldest.getValue());
 		}
 	}
 }

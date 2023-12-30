@@ -43,38 +43,37 @@ public class CommunicationFunctions {
 	 * Returns a function that encodes a mapping of URL parameter names and
 	 * their values.
 	 *
-	 * @param rParams The string names and values of the URL parameters
+	 * @param params The string names and values of the URL parameters
 	 * @return A function that
 	 * @see NetUtil#encodeUrlParameters(java.util.Map)
 	 */
 	@SafeVarargs
 	public static Function<String, String> encodeUrlParameters(
-		String sInputParam, Pair<String, String>... rParams) {
-		return encodeUrlParameters(sInputParam, orderedMapOf(rParams));
+		String inputParam, Pair<String, String>... params) {
+		return encodeUrlParameters(inputParam, orderedMapOf(params));
 	}
 
 	/**
 	 * Returns a function that encodes a mapping of URL parameter names and
 	 * their values.
 	 *
-	 * @param rParams The string names and values of the URL parameters
+	 * @param params The string names and values of the URL parameters
 	 * @return A function that
 	 * @see NetUtil#encodeUrlParameters(java.util.Map)
 	 */
 	public static Function<String, String> encodeUrlParameters(
-		String sInputParam, Map<String, String> rParams) {
-		String sEncodedParams = NetUtil.encodeUrlParameters(rParams);
+		String inputParam, Map<String, String> params) {
+		String encodedParams = NetUtil.encodeUrlParameters(params);
 
-		if (sInputParam != null) {
-			sEncodedParams =
-				String.format("%s=%s&%s",
-					NetUtil.encodeUrlElement(sInputParam),
-					URL_INPUT_PARAM, sEncodedParams);
+		if (inputParam != null) {
+			encodedParams =
+				String.format("%s=%s&%s", NetUtil.encodeUrlElement(inputParam),
+					URL_INPUT_PARAM, encodedParams);
 		}
 
-		String sUrlParams = sEncodedParams;
+		String urlParams = encodedParams;
 
-		return sParamValue -> sUrlParams.replace(URL_INPUT_PARAM,
-			NetUtil.encodeUrlElement(sParamValue));
+		return paramValue -> urlParams.replace(URL_INPUT_PARAM,
+			NetUtil.encodeUrlElement(paramValue));
 	}
 }

@@ -43,21 +43,21 @@ import java.util.function.Supplier;
  */
 public class ResultRunner<T> implements Runnable {
 
-	private final ThrowingSupplier<T> fCreateResult;
+	private final ThrowingSupplier<T> createResult;
 
-	private T rResult = null;
+	private T result = null;
 
-	private Throwable rException = null;
+	private Throwable exception = null;
 
-	private boolean bFinished = false;
+	private boolean finished = false;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rCreateResult The function that generates the result
+	 * @param createResult The function that generates the result
 	 */
-	public ResultRunner(ThrowingSupplier<T> rCreateResult) {
-		fCreateResult = rCreateResult;
+	public ResultRunner(ThrowingSupplier<T> createResult) {
+		this.createResult = createResult;
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class ResultRunner<T> implements Runnable {
 	 * @return An exception thrown by execute() or NULL for none
 	 */
 	public final Throwable getException() {
-		return rException;
+		return exception;
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class ResultRunner<T> implements Runnable {
 	 * @return TRUE if the execution has finished
 	 */
 	public synchronized boolean isFinished() {
-		return bFinished;
+		return finished;
 	}
 
 	/**
@@ -100,15 +100,15 @@ public class ResultRunner<T> implements Runnable {
 	 *                          exception
 	 */
 	public final T result() {
-		if (rException != null) {
-			if (rException instanceof RuntimeException) {
-				throw (RuntimeException) rException;
+		if (exception != null) {
+			if (exception instanceof RuntimeException) {
+				throw (RuntimeException) exception;
 			} else {
-				throw new RuntimeException(rException);
+				throw new RuntimeException(exception);
 			}
 		}
 
-		return rResult;
+		return result;
 	}
 
 	/**
@@ -118,9 +118,9 @@ public class ResultRunner<T> implements Runnable {
 	@Override
 	public final void run() {
 		try {
-			rResult = fCreateResult.tryGet();
+			result = createResult.tryGet();
 		} catch (Throwable t) {
-			rException = t;
+			exception = t;
 		} finally {
 			finish();
 		}
@@ -130,6 +130,6 @@ public class ResultRunner<T> implements Runnable {
 	 * Internal method to set the finished state of this instance to true.
 	 */
 	private final synchronized void finish() {
-		bFinished = true;
+		finished = true;
 	}
 }

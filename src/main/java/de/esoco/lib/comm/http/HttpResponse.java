@@ -31,7 +31,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -53,31 +52,32 @@ import static de.esoco.lib.comm.http.HttpHeaderTypes.HTTP_HEADER_TYPES;
  */
 public class HttpResponse extends RelatedObject {
 
-	private final Reader rResponseBodyReader;
+	private final Reader responseBodyReader;
 
 	/**
 	 * Creates a new instance for a successful request from a response data
 	 * string. The HTTP status code will be be set to
 	 * {@link HttpStatusCode#OK}.
 	 *
-	 * @param sResponseData The response data string
+	 * @param responseData The response data string
 	 * @see HttpResponse#HttpResponse(HttpStatusCode, Reader, int)
 	 */
-	public HttpResponse(String sResponseData) {
-		this(HttpStatusCode.OK, sResponseData);
+	public HttpResponse(String responseData) {
+		this(HttpStatusCode.OK, responseData);
 	}
 
 	/**
 	 * Creates a new instance for a successful request with the status code
 	 * {@link HttpStatusCode#OK}.
 	 *
-	 * @param rResponseData   A stream reader that provides access to the data
-	 *                        of the response body
-	 * @param nResponseLength The length of the response data stream
+	 * @param responseData   A stream reader that provides access to the
+	 *                          data of
+	 *                       the response body
+	 * @param responseLength The length of the response data stream
 	 * @see HttpResponse#HttpResponse(HttpStatusCode, Reader, int)
 	 */
-	public HttpResponse(Reader rResponseData, int nResponseLength) {
-		this(HttpStatusCode.OK, rResponseData, nResponseLength);
+	public HttpResponse(Reader responseData, int responseLength) {
+		this(HttpStatusCode.OK, responseData, responseLength);
 	}
 
 	/**
@@ -86,12 +86,12 @@ public class HttpResponse extends RelatedObject {
 	 * the
 	 * constructor with a {@link Reader} argument.
 	 *
-	 * @param eStatus       The response status code
-	 * @param sResponseData The data of the response body
+	 * @param status       The response status code
+	 * @param responseData The data of the response body
 	 * @see HttpResponse#HttpResponse(HttpStatusCode, Reader, int)
 	 */
-	public HttpResponse(HttpStatusCode eStatus, String sResponseData) {
-		this(eStatus, new StringReader(sResponseData), sResponseData.length());
+	public HttpResponse(HttpStatusCode status, String responseData) {
+		this(status, new StringReader(responseData), responseData.length());
 	}
 
 	/**
@@ -101,30 +101,31 @@ public class HttpResponse extends RelatedObject {
 	 * this instance as a relation with the relation type
 	 * {@link CommunicationRelationTypes#HTTP_STATUS_CODE}.
 	 *
-	 * @param eStatus         The response status code
-	 * @param rResponseData   A stream reader that provides access to the data
-	 *                        of the response body
-	 * @param nResponseLength The length of the response data stream
+	 * @param status         The response status code
+	 * @param responseData   A stream reader that provides access to the
+	 *                          data of
+	 *                       the response body
+	 * @param responseLength The length of the response data stream
 	 */
-	public HttpResponse(HttpStatusCode eStatus, Reader rResponseData,
-		int nResponseLength) {
-		rResponseBodyReader = rResponseData;
+	public HttpResponse(HttpStatusCode status, Reader responseData,
+		int responseLength) {
+		responseBodyReader = responseData;
 
 		init(HTTP_HEADER_TYPES);
-		set(HTTP_STATUS_CODE, eStatus);
-		set(CONTENT_LENGTH, nResponseLength);
+		set(HTTP_STATUS_CODE, status);
+		set(CONTENT_LENGTH, responseLength);
 	}
 
 	/**
 	 * Sets a header field of this response to a certain value.
 	 *
-	 * @param eField The header field to set
-	 * @param sValue The field value
+	 * @param field The header field to set
+	 * @param value The field value
 	 * @return The previous header value or NULL for none
 	 */
-	public List<String> setHeader(HttpHeaderField eField, String sValue) {
-		return get(HTTP_RESPONSE_HEADERS).put(eField.getFieldName(),
-			Collections.singletonList(sValue));
+	public List<String> setHeader(HttpHeaderField field, String value) {
+		return get(HTTP_RESPONSE_HEADERS).put(field.getFieldName(),
+			Collections.singletonList(value));
 	}
 
 	/**
@@ -132,12 +133,12 @@ public class HttpResponse extends RelatedObject {
 	 * returns this response instance to allow the concatenation of multiple
 	 * method invocations.
 	 *
-	 * @param rType  The type of the relation to set
-	 * @param rValue The relation value
+	 * @param type  The type of the relation to set
+	 * @param value The relation value
 	 * @return This instance for concatenation
 	 */
-	public <T> HttpResponse with(RelationType<T> rType, T rValue) {
-		set(rType, rValue);
+	public <T> HttpResponse with(RelationType<T> type, T value) {
+		set(type, value);
 
 		return this;
 	}
@@ -145,54 +146,54 @@ public class HttpResponse extends RelatedObject {
 	/**
 	 * Writes this response to the given output stream.
 	 *
-	 * @param rOutput The target output stream
+	 * @param output The target output stream
 	 * @throws IOException If writing to the stream fails
 	 */
-	public void write(OutputStream rOutput) throws IOException {
-		Writer aResponseHeaderWriter = new BufferedWriter(
-			new OutputStreamWriter(rOutput, StandardCharsets.US_ASCII));
+	public void write(OutputStream output) throws IOException {
+		Writer responseHeaderWriter = new BufferedWriter(
+			new OutputStreamWriter(output, StandardCharsets.US_ASCII));
 
 		// no buffer needed because StreamUtil.send() performs buffering
-		Writer aResponseBodyWriter =
-			new OutputStreamWriter(rOutput, get(RESPONSE_ENCODING));
+		Writer responseBodyWriter =
+			new OutputStreamWriter(output, get(RESPONSE_ENCODING));
 
-		Collection<RelationType<?>> rHeaderTypes = get(HTTP_HEADER_TYPES);
+		Collection<RelationType<?>> headerTypes = get(HTTP_HEADER_TYPES);
 
-		for (RelationType<?> rHeader : rHeaderTypes) {
-			setHeader(rHeader.get(HTTP_HEADER_FIELD), get(rHeader).toString());
+		for (RelationType<?> header : headerTypes) {
+			setHeader(header.get(HTTP_HEADER_FIELD), get(header).toString());
 		}
 
 		writeResponseHeader(get(HTTP_STATUS_CODE), get(HTTP_RESPONSE_HEADERS),
-			aResponseHeaderWriter);
-		StreamUtil.send(rResponseBodyReader, aResponseBodyWriter);
-		aResponseHeaderWriter.flush();
-		aResponseBodyWriter.flush();
-		rOutput.flush();
+			responseHeaderWriter);
+		StreamUtil.send(responseBodyReader, responseBodyWriter);
+		responseHeaderWriter.flush();
+		responseBodyWriter.flush();
+		output.flush();
 	}
 
 	/**
 	 * Writes the header for an HTTP response with a certain status code to a
 	 * {@link Writer}.
 	 *
-	 * @param eStatus The response status
-	 * @param rOut    The output writer
+	 * @param status The response status
+	 * @param out    The output writer
 	 * @throws IOException If writing data fails
 	 */
-	protected void writeResponseHeader(HttpStatusCode eStatus,
-		Map<String, List<String>> rResponseHeaders, Writer rOut)
+	protected void writeResponseHeader(HttpStatusCode status,
+		Map<String, List<String>> responseHeaders, Writer out)
 		throws IOException {
-		rOut.write(eStatus.toResponseString());
+		out.write(status.toResponseString());
 
-		for (Entry<String, List<String>> rResponseHeader :
-			rResponseHeaders.entrySet()) {
-			rOut.write(rResponseHeader.getKey());
-			rOut.write(": ");
-			rOut.write(rResponseHeader.getValue().get(0));
-			rOut.write(NetUtil.CRLF);
+		for (Entry<String, List<String>> responseHeader :
+			responseHeaders.entrySet()) {
+			out.write(responseHeader.getKey());
+			out.write(": ");
+			out.write(responseHeader.getValue().get(0));
+			out.write(NetUtil.CRLF);
 		}
 
 		// terminate with empty line
-		rOut.write(NetUtil.CRLF);
-		rOut.flush();
+		out.write(NetUtil.CRLF);
+		out.flush();
 	}
 }

@@ -42,8 +42,8 @@ public class MethodMappingDefinition {
 	private static final MethodMappingHandler IGNORED_CALL_HANDLER =
 		new MethodMappingHandler() {
 			@Override
-			protected Object invoke(Method rOriginalMethod, Object rTarget,
-				Object[] rArgs) throws Exception {
+			protected Object invoke(Method originalMethod, Object target,
+				Object[] args) throws Exception {
 				return null;
 			}
 		};
@@ -52,13 +52,13 @@ public class MethodMappingDefinition {
 	 * The default handler that is used if no other handler has been set
 	 */
 
-	private final MethodMappingHandler aDefaultHandler =
+	private final MethodMappingHandler defaultHandler =
 		new MethodMappingHandler(this);
 
-	private final List<MethodDatatypeMapper> aDatatypeMapping =
+	private final List<MethodDatatypeMapper> datatypeMapping =
 		new ArrayList<MethodDatatypeMapper>();
 
-	private final Map<String, MethodMappingHandler> aMethodMapping =
+	private final Map<String, MethodMappingHandler> methodMapping =
 		new HashMap<String, MethodMappingHandler>();
 
 	/**
@@ -73,31 +73,30 @@ public class MethodMappingDefinition {
 	 * consists of the original method name as the key and either the mapped
 	 * method name or a MethodMappingHandler instance as the value.
 	 *
-	 * @param rMappingTable The map containing the method mappings (may be
-	 *                      NULL)
+	 * @param mappingTable The map containing the method mappings (may be NULL)
 	 * @throws IllegalArgumentException If the map contains an invalid entry
 	 */
-	public MethodMappingDefinition(Map<String, ?> rMappingTable) {
-		if (rMappingTable != null) {
-			for (String sMethod : rMappingTable.keySet()) {
-				Object rValue = rMappingTable.get(sMethod);
-				MethodMappingHandler rHandler;
+	public MethodMappingDefinition(Map<String, ?> mappingTable) {
+		if (mappingTable != null) {
+			for (String method : mappingTable.keySet()) {
+				Object value = mappingTable.get(method);
+				MethodMappingHandler handler;
 
-				if (rValue instanceof String) {
-					if (IGNORE.equals(rValue)) {
-						rHandler = IGNORED_CALL_HANDLER;
+				if (value instanceof String) {
+					if (IGNORE.equals(value)) {
+						handler = IGNORED_CALL_HANDLER;
 					} else {
-						rHandler = new MethodMappingHandler((String) rValue);
+						handler = new MethodMappingHandler((String) value);
 					}
-				} else if (rValue instanceof MethodMappingHandler) {
-					rHandler = (MethodMappingHandler) rValue;
+				} else if (value instanceof MethodMappingHandler) {
+					handler = (MethodMappingHandler) value;
 				} else {
 					throw new IllegalArgumentException(
-						"Invalid map entry type: " + rValue.getClass());
+						"Invalid map entry type: " + value.getClass());
 				}
 
-				rHandler.setMappingDefinition(this);
-				aMethodMapping.put(sMethod, rHandler);
+				handler.setMappingDefinition(this);
+				methodMapping.put(method, handler);
 			}
 		}
 	}
@@ -111,12 +110,11 @@ public class MethodMappingDefinition {
 	 * mappings it must make sure that the more specific mappers come first in
 	 * the list.
 	 *
-	 * @param rDatatypeMapping A list of datatype mappers (may be NULL)
+	 * @param datatypeMapping A list of datatype mappers (may be NULL)
 	 * @throws IllegalArgumentException If the map contains an invalid entry
 	 */
-	public MethodMappingDefinition(
-		List<MethodDatatypeMapper> rDatatypeMapping) {
-		this(null, rDatatypeMapping);
+	public MethodMappingDefinition(List<MethodDatatypeMapper> datatypeMapping) {
+		this(null, datatypeMapping);
 	}
 
 	/**
@@ -132,17 +130,17 @@ public class MethodMappingDefinition {
 	 * specific and more generic mappings it must make sure that the more
 	 * specific mappers come first in the list.</p>
 	 *
-	 * @param rMappingTable    A map containing the method mappings (may be
-	 *                         NULL)
-	 * @param rDatatypeMapping A list of datatype mappers (may be NULL)
+	 * @param mappingTable    A map containing the method mappings (may be
+	 *                        NULL)
+	 * @param datatypeMapping A list of datatype mappers (may be NULL)
 	 * @throws IllegalArgumentException If the map contains an invalid entry
 	 */
-	public MethodMappingDefinition(Map<String, ?> rMappingTable,
-		List<MethodDatatypeMapper> rDatatypeMapping) {
-		this(rMappingTable);
+	public MethodMappingDefinition(Map<String, ?> mappingTable,
+		List<MethodDatatypeMapper> datatypeMapping) {
+		this(mappingTable);
 
-		if (rDatatypeMapping != null) {
-			aDatatypeMapping.addAll(rDatatypeMapping);
+		if (datatypeMapping != null) {
+			datatypeMapping.addAll(datatypeMapping);
 		}
 	}
 
@@ -150,15 +148,15 @@ public class MethodMappingDefinition {
 	 * Checks the global set of datatype mappers if a certain datatype needs
 	 * conversion and returns the corresponding converter or NULL.
 	 *
-	 * @param rMethod   The method for which the datatype shall be mapped
-	 * @param rDatatype The datatype to check for mapping
+	 * @param method   The method for which the datatype shall be mapped
+	 * @param datatype The datatype to check for mapping
 	 * @return The matching datatype mapper or NULL if no mapping is necessary
 	 */
-	public MethodDatatypeMapper getDatatypeMapper(Method rMethod,
-		Class<?> rDatatype) {
-		for (MethodDatatypeMapper rMapper : aDatatypeMapping) {
-			if (rMapper.appliesTo(rMethod, rDatatype)) {
-				return rMapper;
+	public MethodDatatypeMapper getDatatypeMapper(Method method,
+		Class<?> datatype) {
+		for (MethodDatatypeMapper mapper : datatypeMapping) {
+			if (mapper.appliesTo(method, datatype)) {
+				return mapper;
 			}
 		}
 
@@ -168,19 +166,19 @@ public class MethodMappingDefinition {
 	/**
 	 * Returns the mapping handler for a particular method.
 	 *
-	 * @param rMethod The name of the method to map.
+	 * @param method The name of the method to map.
 	 * @return The mapping handler for the method name
 	 */
-	public MethodMappingHandler getMappingHandler(Method rMethod) {
-		String sName = rMethod.getName();
-		MethodMappingHandler rHandler = aMethodMapping.get(sName);
+	public MethodMappingHandler getMappingHandler(Method method) {
+		String name = method.getName();
+		MethodMappingHandler handler = methodMapping.get(name);
 
-		if (rHandler == null) {
-			rHandler = aDefaultHandler;
-			aMethodMapping.put(sName, rHandler);
+		if (handler == null) {
+			handler = defaultHandler;
+			methodMapping.put(name, handler);
 		}
 
-		return rHandler;
+		return handler;
 	}
 
 	/**
@@ -198,21 +196,20 @@ public class MethodMappingDefinition {
 	 * <p>The implementation can signal errors by throwing any kind of
 	 * exception.</p>
 	 *
-	 * @param rOriginalMethod The unmapped method that has been invoked
-	 * @param rTarget         The target object of the method mapping proxy
-	 * @param rArgs           The arguments of the method call
+	 * @param originalMethod The unmapped method that has been invoked
+	 * @param target         The target object of the method mapping proxy
+	 * @param args           The arguments of the method call
 	 * @return The return value of the method call; this must match the return
 	 * type of the method (NULL for void methods)
 	 * @throws Exception Any exception may be thrown if either the method
 	 *                   invocation or the mapping of arguments or the return
 	 *                   value fails
 	 */
-	public Object invoke(Method rOriginalMethod, Object rTarget,
-		Object[] rArgs)
+	public Object invoke(Method originalMethod, Object target, Object[] args)
 		throws Exception {
-		MethodMappingHandler rHandler = getMappingHandler(rOriginalMethod);
+		MethodMappingHandler handler = getMappingHandler(originalMethod);
 
-		return rHandler.invoke(rOriginalMethod, rTarget, rArgs);
+		return handler.invoke(originalMethod, target, args);
 	}
 
 	/**
@@ -220,18 +217,18 @@ public class MethodMappingDefinition {
 	 * into this one. Only mappings that don't exist already in this instance
 	 * will me added, existing mappings won't be changed.
 	 *
-	 * @param rOther The other mapping to merge into this
+	 * @param other The other mapping to merge into this
 	 */
-	public void merge(MethodMappingDefinition rOther) {
-		for (MethodDatatypeMapper rMapper : rOther.aDatatypeMapping) {
-			if (!aDatatypeMapping.contains(rMapper)) {
-				aDatatypeMapping.add(rMapper);
+	public void merge(MethodMappingDefinition other) {
+		for (MethodDatatypeMapper mapper : other.datatypeMapping) {
+			if (!datatypeMapping.contains(mapper)) {
+				datatypeMapping.add(mapper);
 			}
 		}
 
-		for (String s : rOther.aMethodMapping.keySet()) {
-			if (!aMethodMapping.containsKey(s)) {
-				aMethodMapping.put(s, rOther.aMethodMapping.get(s));
+		for (String s : other.methodMapping.keySet()) {
+			if (!methodMapping.containsKey(s)) {
+				methodMapping.put(s, other.methodMapping.get(s));
 			}
 		}
 	}

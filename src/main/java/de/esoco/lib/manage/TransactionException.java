@@ -29,21 +29,21 @@ public class TransactionException extends RuntimeException {
 	/**
 	 * @see Exception#Exception(String)
 	 */
-	public TransactionException(String sMessage) {
-		super(sMessage);
+	public TransactionException(String message) {
+		super(message);
 	}
 
 	/**
 	 * @see Exception#Exception(Throwable)
 	 */
-	public TransactionException(Throwable eCause) {
-		super(eCause);
+	public TransactionException(Throwable cause) {
+		super(cause);
 	}
 
 	/**
 	 * @see Exception#Exception(Throwable)
 	 */
-	public TransactionException(String sMessage, Throwable eCause) {
-		super(sMessage, eCause);
+	public TransactionException(String message, Throwable cause) {
+		super(message, cause);
 	}
 }

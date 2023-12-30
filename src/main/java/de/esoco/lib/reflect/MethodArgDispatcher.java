@@ -27,7 +27,7 @@ package de.esoco.lib.reflect;
  */
 public class MethodArgDispatcher<T> extends MethodDispatcher<T> {
 
-	private final Object[] rArguments;
+	private final Object[] arguments;
 
 	/**
 	 * Creates a new method dispatcher for a method with predefined parameters.
@@ -35,15 +35,14 @@ public class MethodArgDispatcher<T> extends MethodDispatcher<T> {
 	 * type of the elements in the given arguments array, else an
 	 * IllegalArgumentException will be thrown.
 	 *
-	 * @param rTarget The target on which the method shall be invoked
-	 * @param sMethod The name of the method to invoke
-	 * @param rArgs   The arguments to be used on invocation
+	 * @param target The target on which the method shall be invoked
+	 * @param method The name of the method to invoke
+	 * @param args   The arguments to be used on invocation
 	 */
-	public MethodArgDispatcher(Object rTarget, String sMethod,
-		Object... rArgs) {
-		super(rTarget, sMethod, ReflectUtil.getArgumentTypes(rArgs));
+	public MethodArgDispatcher(Object target, String method, Object... args) {
+		super(target, method, ReflectUtil.getArgumentTypes(args));
 
-		rArguments = rArgs;
+		arguments = args;
 	}
 
 	/**
@@ -54,6 +53,6 @@ public class MethodArgDispatcher<T> extends MethodDispatcher<T> {
 	 */
 	@Override
 	public T dispatch() {
-		return dispatch(rArguments);
+		return dispatch(arguments);
 	}
 }

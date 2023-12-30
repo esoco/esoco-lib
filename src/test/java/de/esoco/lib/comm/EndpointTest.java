@@ -34,8 +34,8 @@ import static de.esoco.lib.expression.MathFunctions.parseInteger;
 import static de.esoco.lib.expression.StringFunctions.find;
 import static de.esoco.lib.io.StreamFunctions.find;
 import static de.esoco.lib.io.StreamFunctions.readUntil;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.obrel.type.MetaTypes.CLOSED;
 
 /**
@@ -120,87 +120,86 @@ public class EndpointTest {
 	 * Implementation of an HTTP GET request to a certain endpoint address that
 	 * is defined dynamically at runtime by providing an URL argument.
 	 *
-	 * @param sEndpointAddress The endpoint address
+	 * @param endpointAddress The endpoint address
 	 */
 	@SuppressWarnings("resource")
-	void testHttpGetDynamic(String sEndpointAddress) {
-		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
-		Connection rAssertConnection;
+	void testHttpGetDynamic(String endpointAddress) {
+		Endpoint endpoint = Endpoint.at(endpointAddress);
+		Connection assertConnection;
 
-		try (Connection rConnection = aEndpoint.connect()) {
-			rAssertConnection = rConnection;
+		try (Connection connection = endpoint.connect()) {
+			assertConnection = connection;
 
-			CommunicationMethod<String, String> fBody =
+			CommunicationMethod<String, String> body =
 				httpGet().then(find(HTML_BODY_PATTERN));
 
 			assertTrue(Pattern.matches(HTML_BODY_PATTERN,
-				fBody.getFrom(rConnection, HTML_GET_URL)));
+				body.getFrom(connection, HTML_GET_URL)));
 
-			assertEquals(Boolean.FALSE, rConnection.get(MetaTypes.CLOSED));
+			assertEquals(Boolean.FALSE, connection.get(MetaTypes.CLOSED));
 			assertTrue(Pattern.matches(HTML_BODY_PATTERN,
-				fBody.getFrom(rConnection, HTML_GET_URL)));
+				body.getFrom(connection, HTML_GET_URL)));
 		}
 
-		assertEquals(Boolean.TRUE, rAssertConnection.get(MetaTypes.CLOSED));
+		assertEquals(Boolean.TRUE, assertConnection.get(MetaTypes.CLOSED));
 	}
 
 	/**
 	 * Implementation of a static HTTP GET request to a certain endpoint
 	 * address.
 	 *
-	 * @param sEndpointAddress The endpoint address
+	 * @param endpointAddress The endpoint address
 	 */
-	void testHttpGetStatic(String sEndpointAddress) {
-		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
+	void testHttpGetStatic(String endpointAddress) {
+		Endpoint endpoint = Endpoint.at(endpointAddress);
 
-		EndpointFunction<String, String> fGetBody =
-			httpGet(HTML_GET_URL).from(aEndpoint).then(find(HTML_BODY_PATTERN));
+		EndpointFunction<String, String> getBody =
+			httpGet(HTML_GET_URL).from(endpoint).then(find(HTML_BODY_PATTERN));
 
-		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.receive()));
+		assertTrue(Pattern.matches(HTML_BODY_PATTERN, getBody.receive()));
 	}
 
 	/**
 	 * Implementation of a static HTTP POST request to a certain endpoint
 	 * address.
 	 *
-	 * @param sEndpointAddress The endpoint address
+	 * @param endpointAddress The endpoint address
 	 */
-	void testHttpPostStatic(String sEndpointAddress)
+	void testHttpPostStatic(String endpointAddress)
 		throws UnsupportedEncodingException {
-		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
+		Endpoint endpoint = Endpoint.at(endpointAddress);
 
-		EndpointFunction<String, String> fPostParam = httpPost("post.php",
+		EndpointFunction<String, String> postParam = httpPost("post.php",
 			NetUtil.encodeUrlParameter("test_param", "test_value")).from(
-			aEndpoint);
+			endpoint);
 
-		System.out.printf("POST: %s\n", fPostParam.send());
-//		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fPostParam.result()));
+		System.out.printf("POST: %s\n", postParam.send());
+//		assertTrue(Pattern.matches(HTML_BODY_PATTERN, postParam.result()));
 	}
 
 	/**
 	 * Implementation of a socket request to a certain endpoint address.
 	 *
-	 * @param sEndpointAddress The endpoint address
+	 * @param endpointAddress The endpoint address
 	 */
-	void testSocketRequest(String sEndpointAddress) {
-		Endpoint aEndpoint = Endpoint.at(sEndpointAddress);
+	void testSocketRequest(String endpointAddress) {
+		Endpoint endpoint = Endpoint.at(endpointAddress);
 
-		BinaryPredicate<Reader, String> pFindLength =
+		BinaryPredicate<Reader, String> findLength =
 			find("Content-Length: ", Short.MAX_VALUE, false);
 
-		Function<Reader, String> fReadLength =
+		Function<Reader, String> readLength =
 			r -> readUntil("\r\n", 1000, false).apply(r, null);
 
-		Function<Reader, Integer> fReadContentLength =
-			doIfElse(pFindLength, fReadLength, value("-1")).then(
-				parseInteger());
+		Function<Reader, Integer> readContentLength =
+			doIfElse(findLength, readLength, value("-1")).then(parseInteger());
 
-		EndpointFunction<String, String> fGetBody =
-			textRequest(HTTP_GET_INDEX, fReadContentLength)
-				.from(aEndpoint)
+		EndpointFunction<String, String> getBody =
+			textRequest(HTTP_GET_INDEX, readContentLength)
+				.from(endpoint)
 				.then(find(HTML_BODY_PATTERN));
 
-		assertTrue(Pattern.matches(HTML_BODY_PATTERN, fGetBody.receive()));
-		assertTrue(fGetBody.get(Endpoint.ENDPOINT_CONNECTION).hasFlag(CLOSED));
+		assertTrue(Pattern.matches(HTML_BODY_PATTERN, getBody.receive()));
+		assertTrue(getBody.get(Endpoint.ENDPOINT_CONNECTION).hasFlag(CLOSED));
 	}
 }

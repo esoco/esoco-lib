@@ -45,9 +45,9 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 
 	private static final long serialVersionUID = 1L;
 
-	private final Map<K, V> rObservedMap;
+	private final Map<K, V> observedMap;
 
-	private List<EventHandler<? super MapEvent<K, V>>> aListeners;
+	private List<EventHandler<? super MapEvent<K, V>>> listeners;
 
 	/**
 	 * Creates a new instance that is backed by a hash map.
@@ -59,23 +59,22 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 	/**
 	 * Creates a new instance that observes changes in a particular map.
 	 *
-	 * @param rObservedMap The map to be observed for changes
+	 * @param observedMap The map to be observed for changes
 	 */
-	public ObservableMap(Map<K, V> rObservedMap) {
-		this.rObservedMap = rObservedMap;
+	public ObservableMap(Map<K, V> observedMap) {
+		this.observedMap = observedMap;
 	}
 
 	/**
 	 * @see EventSource#addListener(EventHandler)
 	 */
 	@Override
-	public void addListener(EventHandler<? super MapEvent<K, V>> rListener) {
-		if (aListeners == null) {
-			aListeners =
-				new ArrayList<EventHandler<? super MapEvent<K, V>>>(1);
+	public void addListener(EventHandler<? super MapEvent<K, V>> listener) {
+		if (listeners == null) {
+			listeners = new ArrayList<EventHandler<? super MapEvent<K, V>>>(1);
 		}
 
-		aListeners.add(rListener);
+		listeners.add(listener);
 	}
 
 	/**
@@ -84,7 +83,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 	@Override
 	public void clear() {
 		notifyListeners(REMOVE_ALL, null, null);
-		rObservedMap.clear();
+		observedMap.clear();
 	}
 
 	/**
@@ -92,7 +91,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 	 */
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		return new ObservableEntrySet(rObservedMap.entrySet());
+		return new ObservableEntrySet(observedMap.entrySet());
 	}
 
 	/**
@@ -110,47 +109,47 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 	 * @return TRUE if at least one listener has been registered
 	 */
 	public boolean hasListeners() {
-		return aListeners != null;
+		return listeners != null;
 	}
 
 	/**
 	 * @see Map#put(Object, Object)
 	 */
 	@Override
-	public V put(K rKey, V rValue) {
-		notifyListeners(rObservedMap.containsKey(rKey) ? UPDATE : ADD, rKey,
-			rValue);
+	public V put(K key, V value) {
+		notifyListeners(observedMap.containsKey(key) ? UPDATE : ADD, key,
+			value);
 
-		return rObservedMap.put(rKey, rValue);
+		return observedMap.put(key, value);
 	}
 
 	/**
 	 * @see EventSource#removeListener(EventHandler)
 	 */
 	@Override
-	public void removeListener(EventHandler<? super MapEvent<K, V>> rListener) {
-		aListeners.remove(rListener);
+	public void removeListener(EventHandler<? super MapEvent<K, V>> listener) {
+		listeners.remove(listener);
 
-		if (aListeners.size() == 0) {
-			aListeners = null;
+		if (listeners.size() == 0) {
+			listeners = null;
 		}
 	}
 
 	/**
 	 * Notifies all registered listeners of an element event.
 	 *
-	 * @param rEventType   The event type
-	 * @param rElement     The element affected by the event
-	 * @param rUpdateValue The new element value in case of an update event
+	 * @param eventType   The event type
+	 * @param element     The element affected by the event
+	 * @param updateValue The new element value in case of an update event
 	 */
-	protected void notifyListeners(EventType rEventType, K rElement,
-		V rUpdateValue) {
-		if (aListeners != null) {
-			MapEvent<K, V> rEvent =
-				new MapEvent<K, V>(rEventType, this, rElement, rUpdateValue);
+	protected void notifyListeners(EventType eventType, K element,
+		V updateValue) {
+		if (listeners != null) {
+			MapEvent<K, V> event =
+				new MapEvent<K, V>(eventType, this, element, updateValue);
 
-			for (EventHandler<? super MapEvent<K, V>> rListener : aListeners) {
-				rListener.handleEvent(rEvent);
+			for (EventHandler<? super MapEvent<K, V>> listener : listeners) {
+				listener.handleEvent(event);
 			}
 		}
 	}
@@ -162,27 +161,27 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 	 */
 	class ObservableEntry implements Entry<K, V> {
 
-		private final Entry<K, V> rObservedEntry;
+		private final Entry<K, V> observedEntry;
 
 		/**
 		 * Creates a new instance with a certain key and value
 		 *
-		 * @param rObservedEntry rKey The key
+		 * @param observedEntry rKey The key
 		 */
-		public ObservableEntry(Entry<K, V> rObservedEntry) {
-			this.rObservedEntry = rObservedEntry;
+		public ObservableEntry(Entry<K, V> observedEntry) {
+			this.observedEntry = observedEntry;
 		}
 
 		/**
 		 * Compares this entry with another object for equality.
 		 *
-		 * @param rObject The object to compare this entry with
+		 * @param object The object to compare this entry with
 		 * @return TRUE if the argument is also a map entry and contains an
 		 * equal key and value
 		 */
 		@Override
-		public boolean equals(Object rObject) {
-			return rObservedEntry.equals(rObject);
+		public boolean equals(Object object) {
+			return observedEntry.equals(object);
 		}
 
 		/**
@@ -190,7 +189,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		 */
 		@Override
 		public K getKey() {
-			return rObservedEntry.getKey();
+			return observedEntry.getKey();
 		}
 
 		/**
@@ -198,7 +197,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		 */
 		@Override
 		public V getValue() {
-			return rObservedEntry.getValue();
+			return observedEntry.getValue();
 		}
 
 		/**
@@ -208,17 +207,17 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		 */
 		@Override
 		public int hashCode() {
-			return rObservedEntry.hashCode();
+			return observedEntry.hashCode();
 		}
 
 		/**
 		 * @see java.util.Map.Entry#setValue(Object)
 		 */
 		@Override
-		public V setValue(V rNewValue) {
-			notifyListeners(UPDATE, rObservedEntry.getKey(), rNewValue);
+		public V setValue(V newValue) {
+			notifyListeners(UPDATE, observedEntry.getKey(), newValue);
 
-			return rObservedEntry.setValue(rNewValue);
+			return observedEntry.setValue(newValue);
 		}
 
 		/**
@@ -229,7 +228,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		 */
 		@Override
 		public String toString() {
-			return rObservedEntry.toString();
+			return observedEntry.toString();
 		}
 	}
 
@@ -246,10 +245,10 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rEntrySet The set of entries to wrap
+		 * @param entrySet The set of entries to wrap
 		 */
-		public ObservableEntrySet(Set<Entry<K, V>> rEntrySet) {
-			super(rEntrySet);
+		public ObservableEntrySet(Set<Entry<K, V>> entrySet) {
+			super(entrySet);
 		}
 
 		/**
@@ -258,7 +257,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		 * @see ObservableSet#add(Object)
 		 */
 		@Override
-		public boolean add(Entry<K, V> rElement) {
+		public boolean add(Entry<K, V> element) {
 			throw new UnsupportedOperationException(
 				"Use Map.put() to add map entries");
 		}
@@ -287,10 +286,10 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 			/**
 			 * Creates a new instance that wraps a certain entry iterator.
 			 *
-			 * @param rIterator The iterator to wrap
+			 * @param iterator The iterator to wrap
 			 */
-			ObservableEntrySetIterator(Iterator<Entry<K, V>> rIterator) {
-				super(rIterator);
+			ObservableEntrySetIterator(Iterator<Entry<K, V>> iterator) {
+				super(iterator);
 			}
 
 			/**
@@ -300,11 +299,11 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 			 */
 			@Override
 			public void remove() {
-				Entry<K, V> rCurrent = getCurrentElement();
-				K rKey = rCurrent.getKey();
-				V rValue = rCurrent.getValue();
+				Entry<K, V> current = getCurrentElement();
+				K key = current.getKey();
+				V value = current.getValue();
 
-				ObservableMap.this.notifyListeners(REMOVE, rKey, rValue);
+				ObservableMap.this.notifyListeners(REMOVE, key, value);
 				getIterator().remove();
 				setCurrentElement(null);
 			}
@@ -313,11 +312,11 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 			 * Invokes the superclass after wrapping the new current element in
 			 * an instance of {@link ObservableEntry}.
 			 *
-			 * @param rElement The new current
+			 * @param element The new current
 			 */
 			@Override
-			void setCurrentElement(Entry<K, V> rElement) {
-				super.setCurrentElement(new ObservableEntry(rElement));
+			void setCurrentElement(Entry<K, V> element) {
+				super.setCurrentElement(new ObservableEntry(element));
 			}
 		}
 	}

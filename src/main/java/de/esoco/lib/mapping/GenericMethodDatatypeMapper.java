@@ -52,19 +52,19 @@ import java.util.Map;
 public abstract class GenericMethodDatatypeMapper
 	implements MethodDatatypeMapper {
 
-	private final Map<Class<?>, MappedTypes> aMapping =
+	private final Map<Class<?>, MappedTypes> mapping =
 		new HashMap<Class<?>, MappedTypes>();
 
 	/**
 	 * @see de.esoco.lib.mapping.MethodDatatypeMapper#appliesTo(Method, Class)
 	 */
 	@Override
-	public boolean appliesTo(Method rMethod, Class<?> rDatatype) {
-		if (!aMapping.containsKey(rDatatype)) {
-			initMappedType(rDatatype);
+	public boolean appliesTo(Method method, Class<?> datatype) {
+		if (!mapping.containsKey(datatype)) {
+			initMappedType(datatype);
 		}
 
-		return aMapping.get(rDatatype) != null;
+		return mapping.get(datatype) != null;
 	}
 
 	/**
@@ -74,8 +74,8 @@ public abstract class GenericMethodDatatypeMapper
 	 * @see de.esoco.lib.mapping.MethodDatatypeMapper#mapType(Method, Class)
 	 */
 	@Override
-	public Class<?> mapType(Method rMethod, Class<?> rDatatype) {
-		return aMapping.get(rDatatype).rTargetType;
+	public Class<?> mapType(Method method, Class<?> datatype) {
+		return mapping.get(datatype).targetType;
 	}
 
 	/**
@@ -90,7 +90,7 @@ public abstract class GenericMethodDatatypeMapper
 	 * <p>Example: the method for the mapping from a.b.OldType to x.y.NewType
 	 * would be</p>
 	 *
-	 * <pre>public x.y.NewType mapOldType(Object rTarget, Method rMethod,
+	 * <pre>public x.y.NewType mapOldType(Object target, Method method,
 	 * a.b.OldType)</pre>
 	 *
 	 * <p>The return value of the method may also be of another type, e.g. if
@@ -110,41 +110,38 @@ public abstract class GenericMethodDatatypeMapper
 	 * Object)
 	 */
 	@Override
-	public Object mapValue(Object rTarget, Method rMethod, Object rValue) {
-		Class<?> rSourceType = rValue.getClass();
-		MappedTypes rTypes = aMapping.get(rSourceType);
+	public Object mapValue(Object target, Method method, Object value) {
+		Class<?> sourceType = mapping.get(value.getClass()).sourceType;
 
-		rSourceType = rTypes.rSourceType;
+		String methodName = "map" + sourceType.getSimpleName();
 
-		String sMethod = "map" + rSourceType.getSimpleName();
-
-		return ReflectUtil.invokePublic(this, sMethod,
-			new Object[] { rTarget, rMethod, rValue },
-			new Class[] { Object.class, Method.class, rSourceType });
+		return ReflectUtil.invokePublic(this, methodName,
+			new Object[] { target, method, value },
+			new Class[] { Object.class, Method.class, sourceType });
 	}
 
 	/**
 	 * Adds a two-way mapping to the internal mapping table.
 	 *
-	 * @param rFirst  The first datatype to map
-	 * @param rSecond The second datatype to map
+	 * @param first  The first datatype to map
+	 * @param second The second datatype to map
 	 */
-	protected final void addMapping(Class<?> rFirst, Class<?> rSecond) {
-		addOneWayMapping(rFirst, rSecond);
-		addOneWayMapping(rSecond, rFirst);
+	protected final void addMapping(Class<?> first, Class<?> second) {
+		addOneWayMapping(first, second);
+		addOneWayMapping(second, first);
 	}
 
 	/**
 	 * Adds a one-way mapping to the internal mapping table. This will only map
 	 * the source datatype to the target datatype, but not vice versa.
 	 *
-	 * @param rSource The source datatype
-	 * @param rTarget The target datatype
+	 * @param source The source datatype
+	 * @param target The target datatype
 	 */
-	protected final void addOneWayMapping(Class<?> rSource, Class<?> rTarget) {
-		assert rSource != null;
-		assert rTarget != null;
-		aMapping.put(rSource, new MappedTypes(rSource, rTarget));
+	protected final void addOneWayMapping(Class<?> source, Class<?> target) {
+		assert source != null;
+		assert target != null;
+		mapping.put(source, new MappedTypes(source, target));
 	}
 
 	/**
@@ -157,39 +154,39 @@ public abstract class GenericMethodDatatypeMapper
 	 * could be found a mapping to NULL will be added to signal internally that
 	 * no mapping exists.
 	 *
-	 * @param rDatatype The datatype to initialize the mapping of
+	 * @param datatype The datatype to initialize the mapping of
 	 */
-	void initMappedType(Class<?> rDatatype) {
-		Class<?> rSearchType = rDatatype;
-		boolean bSearch = true;
+	void initMappedType(Class<?> datatype) {
+		Class<?> searchType = datatype;
+		boolean search = true;
 
-		while (bSearch && rSearchType != null &&
-			!aMapping.containsKey(rSearchType)) {
+		while (search && searchType != null &&
+			!mapping.containsKey(searchType)) {
 			// if type unknown check all interfaces
-			for (Class<?> rInterface : rSearchType.getInterfaces()) {
+			for (Class<?> interfaceType : searchType.getInterfaces()) {
 				// check for NULL (not containsKey!) because NULL values will
 				// be registered below to signal undefined mappings
-				if (aMapping.get(rInterface) != null) {
-					rSearchType = rInterface;
-					bSearch = false;
+				if (mapping.get(interfaceType) != null) {
+					searchType = interfaceType;
+					search = false;
 
 					break;
 				}
 			}
 
-			if (bSearch) {
+			if (search) {
 				// if unsuccessful continue with superclass
-				rSearchType = rSearchType.getSuperclass();
+				searchType = searchType.getSuperclass();
 			}
 		}
 
-		if (rSearchType != null) {
-			Class<?> rTarget = aMapping.get(rSearchType).rTargetType;
+		if (searchType != null) {
+			Class<?> target = mapping.get(searchType).targetType;
 
-			aMapping.put(rDatatype, new MappedTypes(rSearchType, rTarget));
+			mapping.put(datatype, new MappedTypes(searchType, target));
 		} else {
 			// map to NULL to indicate that no mapping exists
-			aMapping.put(rDatatype, null);
+			mapping.put(datatype, null);
 		}
 	}
 
@@ -200,16 +197,16 @@ public abstract class GenericMethodDatatypeMapper
 	 */
 	private static class MappedTypes {
 
-		Class<?> rSourceType;
+		Class<?> sourceType;
 
-		Class<?> rTargetType;
+		Class<?> targetType;
 
 		/**
 		 * Default constructor.
 		 */
-		public MappedTypes(Class<?> rSourceType, Class<?> rTargetType) {
-			this.rSourceType = rSourceType;
-			this.rTargetType = rTargetType;
+		public MappedTypes(Class<?> sourceType, Class<?> targetType) {
+			this.sourceType = sourceType;
+			this.targetType = targetType;
 		}
 
 		/**
@@ -217,7 +214,7 @@ public abstract class GenericMethodDatatypeMapper
 		 */
 		@Override
 		public String toString() {
-			return "Mapping: " + rSourceType + " <=> " + rTargetType;
+			return "Mapping: " + sourceType + " <=> " + targetType;
 		}
 	}
 }

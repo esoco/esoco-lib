@@ -17,7 +17,7 @@
 package de.esoco.lib.datatype;
 
 import de.esoco.lib.datatype.test.OtherPackageEnum;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,12 +28,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Test case.
  *
  * @author eso
  */
-public class EnumTest extends TestCase {
+public class EnumTest {
 
 	static final EnumConstant TEST_CONSTANT1 =
 		new EnumConstant("TEST_CONSTANT1");
@@ -48,6 +54,7 @@ public class EnumTest extends TestCase {
 	/**
 	 * Test enum compare.
 	 */
+	@Test
 	public void testEnumCompare() {
 		assertNotSame(TestEnum1.ENUM2, TestEnum2.ENUM2);
 		assertNotSame(TestEnum1.ENUM1, TestEnum1b.ENUM1);
@@ -73,10 +80,10 @@ public class EnumTest extends TestCase {
 		assertEquals(TestEnumNP.NP3, TestEnumNP.NP2.next(false));
 		assertEquals(TestEnumNP.NP3, TestEnumNP.NP2.next(true));
 
-		assertEquals(null, TestEnumNP.NP1.previous(false));
+		assertNull(TestEnumNP.NP1.previous(false));
 		assertEquals(TestEnumNP.NP3, TestEnumNP.NP1.previous(true));
 
-		assertEquals(null, TestEnumNP.NP3.next(false));
+		assertNull(TestEnumNP.NP3.next(false));
 		assertEquals(TestEnumNP.NP1, TestEnumNP.NP3.next(true));
 
 		TestEnumNPSub nps = TestEnumNPSub.NPS2;
@@ -141,19 +148,19 @@ public class EnumTest extends TestCase {
 	 * Test Enum functions.
 	 */
 	public void testEnumValues() {
-		GenericEnum<?>[] aEnums =
+		GenericEnum<?>[] enums =
 			new GenericEnum<?>[] { TestEnum1.ENUM1, TestEnum1.ENUM2,
 				TestEnum1a.ENUM1A };
 
 		@SuppressWarnings("unused")
-		GenericEnum<?>[] aInitEnums =
+		GenericEnum<?>[] initEnums =
 			new GenericEnum<?>[] { TestEnum1b.ENUM1, TestEnum2.ENUM2,
 				FuncEnum.FUNC1, FuncEnum.FUNC2,
 				OtherPackageEnum.PACKAGE_ENUM };
 
-		assertContainsExactly(GenericEnum.getValues(TestEnum1.class), aEnums);
-		assertOrder(GenericEnum.getValues(TestEnum1.class), aEnums);
-		assertContainsExactly(GenericEnum.getValues(TestEnum1a.class), aEnums);
+		assertContainsExactly(GenericEnum.getValues(TestEnum1.class), enums);
+		assertOrder(GenericEnum.getValues(TestEnum1.class), enums);
+		assertContainsExactly(GenericEnum.getValues(TestEnum1a.class), enums);
 
 		// only TestEnum1b.ENUM1 will be returned by getValues because of
 		// overridden method getEnumBaseClass although ENUM2 of TestEnum1 is
@@ -175,21 +182,21 @@ public class EnumTest extends TestCase {
 	 * Checks if a collection contains all and only the elements from an Enum
 	 * array.
 	 *
-	 * @param rActual   The collection
-	 * @param rExpected The Enum array
+	 * @param actual   The collection
+	 * @param expected The Enum array
 	 */
-	private void assertContainsExactly(Collection<GenericEnum<?>> rActual,
-		GenericEnum<?>... rExpected) {
-		List<GenericEnum<?>> rExpectedList = Arrays.asList(rExpected);
+	private void assertContainsExactly(Collection<GenericEnum<?>> actual,
+		GenericEnum<?>... expected) {
+		List<GenericEnum<?>> expectedList = Arrays.asList(expected);
 
-		assertEquals(rExpected.length, rActual.size());
+		assertEquals(expected.length, actual.size());
 
-		for (Object o : rActual) {
-			assertTrue(rExpectedList.contains(o));
+		for (Object o : actual) {
+			assertTrue(expectedList.contains(o));
 		}
 
-		for (Object o : rExpectedList) {
-			assertTrue(rActual.contains(o));
+		for (Object o : expectedList) {
+			assertTrue(actual.contains(o));
 		}
 	}
 
@@ -197,15 +204,15 @@ public class EnumTest extends TestCase {
 	 * Checks if a collection contains enum elements in the same order as an
 	 * array.
 	 *
-	 * @param rActual   The collection
-	 * @param rExpected The Enum array
+	 * @param actual   The collection
+	 * @param expected The Enum array
 	 */
-	private void assertOrder(Collection<GenericEnum<?>> rActual,
-		GenericEnum<?>... rExpected) {
+	private void assertOrder(Collection<GenericEnum<?>> actual,
+		GenericEnum<?>... expected) {
 		int i = 0;
 
-		for (Object o : rActual) {
-			assertEquals(o, rExpected[i++]);
+		for (Object o : actual) {
+			assertEquals(o, expected[i++]);
 		}
 	}
 
@@ -232,8 +239,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor.
 		 */
-		public FuncEnum(String rName) {
-			super(rName);
+		public FuncEnum(String name) {
+			super(name);
 		}
 
 		/**
@@ -262,8 +269,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Creates a new EnumConstant instance.
 		 */
-		protected EnumConstant(String sName) {
-			super(sName);
+		protected EnumConstant(String name) {
+			super(name);
 		}
 	}
 
@@ -286,13 +293,13 @@ public class EnumTest extends TestCase {
 
 		// instance field to make sure it is not checked by enum verification
 		@SuppressWarnings("unused")
-		private final int nTestField = 0;
+		private final int testField = 0;
 
 		/**
 		 * Constructor.
 		 */
-		TestEnum1(String rName) {
-			super(rName);
+		TestEnum1(String name) {
+			super(name);
 		}
 
 		/**
@@ -321,8 +328,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor.
 		 */
-		private TestEnum1a(String rName) {
-			super(rName);
+		private TestEnum1a(String name) {
+			super(name);
 		}
 	}
 
@@ -346,8 +353,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor.
 		 */
-		private TestEnum1b(String rName) {
-			super(rName);
+		private TestEnum1b(String name) {
+			super(name);
 		}
 
 		/**
@@ -372,8 +379,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor.
 		 */
-		TestEnum1c(String rName) {
-			super(rName);
+		TestEnum1c(String name) {
+			super(name);
 		}
 
 		/**
@@ -402,8 +409,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor
 		 */
-		private TestEnum2(String rName) {
-			super(rName);
+		private TestEnum2(String name) {
+			super(name);
 		}
 	}
 
@@ -417,8 +424,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor
 		 */
-		TestEnum3(String rName) {
-			super(rName);
+		TestEnum3(String name) {
+			super(name);
 		}
 	}
 
@@ -450,8 +457,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor
 		 */
-		TestEnumNP(String rName) {
-			super(rName);
+		TestEnumNP(String name) {
+			super(name);
 		}
 	}
 
@@ -475,8 +482,8 @@ public class EnumTest extends TestCase {
 		/**
 		 * Constructor
 		 */
-		private TestEnumNPSub(String rName) {
-			super(rName);
+		private TestEnumNPSub(String name) {
+			super(name);
 		}
 	}
 }

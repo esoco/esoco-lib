@@ -77,12 +77,13 @@ public class HttpEndpoint extends Endpoint {
 	 * Returns a new method instance that performs a GET request by using the
 	 * method input as the endpoint-relative target URL of the request.
 	 *
-	 * @param sTargetUrl The endpoint-relative default URL to be retrieved by
-	 *                   the get request
+	 * @param targetUrl The endpoint-relative default URL to be retrieved by
+	 *                    the
+	 *                  get request
 	 * @return The new communication method
 	 */
-	public static HttpRequest<String, String> httpGet(String sTargetUrl) {
-		return new HttpRequest<String, String>("HttpGet(%s)", sTargetUrl,
+	public static HttpRequest<String, String> httpGet(String targetUrl) {
+		return new HttpRequest<String, String>("HttpGet(%s)", targetUrl,
 			HttpRequestMethod.GET, "", Functions.identity(),
 			Functions.identity());
 	}
@@ -91,54 +92,54 @@ public class HttpEndpoint extends Endpoint {
 	 * Returns a new method instance that performs a POST request by
 	 * transmitting the method input to a certain URL of the target endpoint.
 	 *
-	 * @param sTargetUrl The endpoint-relative target URL for the POST request
-	 * @param sPostData  The default data to be transmitted (the method input)
+	 * @param targetUrl The endpoint-relative target URL for the POST request
+	 * @param postData  The default data to be transmitted (the method input)
 	 * @return The new communication method
 	 */
-	public static HttpRequest<String, String> httpPost(String sTargetUrl,
-		String sPostData) {
-		HttpRequest<String, String> aPostRequest =
-			new HttpRequest<String, String>("HttpPost(%s)", sPostData,
-				HttpRequestMethod.POST, sTargetUrl, Functions.identity(),
+	public static HttpRequest<String, String> httpPost(String targetUrl,
+		String postData) {
+		HttpRequest<String, String> postRequest =
+			new HttpRequest<String, String>("HttpPost(%s)", postData,
+				HttpRequestMethod.POST, targetUrl, Functions.identity(),
 				Functions.identity());
 
-		return aPostRequest;
+		return postRequest;
 	}
 
 	/**
 	 * Builds a HTTP endpoint URL from the given parameters.
 	 *
-	 * @param sHost      The host name or address
-	 * @param nPort      The port to connect to
-	 * @param bEncrypted TRUE for an encrypted connection
+	 * @param host      The host name or address
+	 * @param port      The port to connect to
+	 * @param encrypted TRUE for an encrypted connection
 	 * @return The resulting endpoint URL
 	 */
 	@SuppressWarnings("boxing")
-	public static String url(String sHost, int nPort, boolean bEncrypted) {
-		String sScheme = bEncrypted ? "https" : "http";
-		String sUrl;
+	public static String url(String host, int port, boolean encrypted) {
+		String scheme = encrypted ? "https" : "http";
+		String url;
 
-		if (nPort > 0) {
-			sUrl = String.format("%s://%s:%d", sScheme, sHost, nPort);
+		if (port > 0) {
+			url = String.format("%s://%s:%d", scheme, host, port);
 		} else {
-			sUrl = String.format("%s://%s", sScheme, sHost);
+			url = String.format("%s://%s", scheme, host);
 		}
 
-		return sUrl;
+		return url;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void closeConnection(Connection rConnection) {
+	protected void closeConnection(Connection connection) {
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void initConnection(Connection rConnection) {
+	protected void initConnection(Connection connection) {
 	}
 
 	/**
@@ -149,42 +150,43 @@ public class HttpEndpoint extends Endpoint {
 	 */
 	public static class HttpRequest<I, O> extends CommunicationMethod<I, O> {
 
-		private final HttpRequestMethod eRequestMethod;
+		private final HttpRequestMethod requestMethod;
 
-		private final String sBaseUrl;
+		private final String baseUrl;
 
-		private final Function<I, String> fProvideRequestData;
+		private final Function<I, String> provideRequestData;
 
-		private final Function<String, O> fProcessResponse;
+		private final Function<String, O> processResponse;
 
-		private final Map<String, String> aRequestHeaders =
+		private final Map<String, String> requestHeaders =
 			new LinkedHashMap<String, String>();
 
 		/**
 		 * Creates a new HTTP request.
 		 *
-		 * @param sMethodName         The name of this method
-		 * @param rDefaultInput       The default input value
-		 * @param eRequestMethod      The HTTP request method
-		 * @param sBaseUrl            The base URL for this request
-		 * @param fProvideRequestData A function that derives the request data
-		 *                            to be transferred to the server from the
-		 *                            method input
-		 * @param fProcessResponse    A function to be invoked to process the
-		 *                            raw (text) response into the output
-		 *                            format
-		 *                            of this communication method
+		 * @param methodName         The name of this method
+		 * @param defaultInput       The default input value
+		 * @param requestMethod      The HTTP request method
+		 * @param baseUrl            The base URL for this request
+		 * @param provideRequestData A function that derives the request
+		 *                                 data to
+		 *                           be transferred to the server from the
+		 *                           method input
+		 * @param processResponse    A function to be invoked to process the
+		 *                                raw
+		 *                           (text) response into the output format of
+		 *                           this communication method
 		 */
-		public HttpRequest(String sMethodName, I rDefaultInput,
-			HttpRequestMethod eRequestMethod, String sBaseUrl,
-			Function<I, String> fProvideRequestData,
-			Function<String, O> fProcessResponse) {
-			super(sMethodName, rDefaultInput);
+		public HttpRequest(String methodName, I defaultInput,
+			HttpRequestMethod requestMethod, String baseUrl,
+			Function<I, String> provideRequestData,
+			Function<String, O> processResponse) {
+			super(methodName, defaultInput);
 
-			this.eRequestMethod = eRequestMethod;
-			this.sBaseUrl = sBaseUrl;
-			this.fProvideRequestData = fProvideRequestData;
-			this.fProcessResponse = fProcessResponse;
+			this.requestMethod = requestMethod;
+			this.baseUrl = baseUrl;
+			this.provideRequestData = provideRequestData;
+			this.processResponse = processResponse;
 		}
 
 		/**
@@ -192,45 +194,45 @@ public class HttpEndpoint extends Endpoint {
 		 */
 		@Override
 		@SuppressWarnings("boxing")
-		public O doOn(Connection rConnection, I rInput) {
-			HttpURLConnection aUrlConnection =
-				setupUrlConnection(rConnection, rInput);
+		public O doOn(Connection connection, I input) {
+			HttpURLConnection urlConnection =
+				setupUrlConnection(connection, input);
 
 			try {
-				if (eRequestMethod.doesOutput()) {
-					try (OutputStream rOutStream = new LimitedOutputStream(
-						aUrlConnection.getOutputStream(),
-						rConnection.get(MAX_REQUEST_SIZE))) {
-						writeRequest(rConnection, rOutStream, rInput);
+				if (requestMethod.doesOutput()) {
+					try (OutputStream outStream = new LimitedOutputStream(
+						urlConnection.getOutputStream(),
+						connection.get(MAX_REQUEST_SIZE))) {
+						writeRequest(connection, outStream, input);
 					}
 				}
 
-				try (InputStream rInputStream = new LimitedInputStream(
-					aUrlConnection.getInputStream(),
-					rConnection.get(MAX_RESPONSE_SIZE))) {
-					Reader aInputReader = new InputStreamReader(rInputStream,
-						rConnection.get(RESPONSE_ENCODING));
+				try (InputStream inputStream = new LimitedInputStream(
+					urlConnection.getInputStream(),
+					connection.get(MAX_RESPONSE_SIZE))) {
+					Reader inputReader = new InputStreamReader(inputStream,
+						connection.get(RESPONSE_ENCODING));
 
-					rConnection.set(HTTP_STATUS_CODE, HttpStatusCode.valueOf(
-						aUrlConnection.getResponseCode()));
-					rConnection.set(HTTP_RESPONSE_HEADERS,
-						aUrlConnection.getHeaderFields());
+					connection.set(HTTP_STATUS_CODE, HttpStatusCode.valueOf(
+						urlConnection.getResponseCode()));
+					connection.set(HTTP_RESPONSE_HEADERS,
+						urlConnection.getHeaderFields());
 
-					return readResponse(rConnection, aInputReader);
+					return readResponse(connection, inputReader);
 				}
 			} catch (Exception e) {
-				int nResponseCode;
+				int responseCode;
 
 				try {
-					nResponseCode = aUrlConnection.getResponseCode();
+					responseCode = urlConnection.getResponseCode();
 				} catch (IOException e2) {
 					// continue with original exception
 					throw new CommunicationException(e);
 				}
 
-				if (nResponseCode != -1) {
-					return handleHttpError(aUrlConnection, e,
-						HttpStatusCode.valueOf(nResponseCode));
+				if (responseCode != -1) {
+					return handleHttpError(urlConnection, e,
+						HttpStatusCode.valueOf(responseCode));
 				} else {
 					throw new CommunicationException(e);
 				}
@@ -243,7 +245,7 @@ public class HttpEndpoint extends Endpoint {
 		 * @return The base URL
 		 */
 		public final String getBaseUrl() {
-			return sBaseUrl;
+			return baseUrl;
 		}
 
 		/**
@@ -253,7 +255,7 @@ public class HttpEndpoint extends Endpoint {
 		 * @return The request data provider function or NULL for none
 		 */
 		public final Function<I, String> getRequestDataProvider() {
-			return fProvideRequestData;
+			return provideRequestData;
 		}
 
 		/**
@@ -262,7 +264,7 @@ public class HttpEndpoint extends Endpoint {
 		 * @return The HTTP request method
 		 */
 		public HttpRequestMethod getRequestMethod() {
-			return eRequestMethod;
+			return requestMethod;
 		}
 
 		/**
@@ -271,36 +273,35 @@ public class HttpEndpoint extends Endpoint {
 		 * @return The response processor function
 		 */
 		public final Function<String, O> getResponseProcessor() {
-			return fProcessResponse;
+			return processResponse;
 		}
 
 		/**
 		 * Applies the request headers of this method and the given connection
 		 * to the given URL connection.
 		 *
-		 * @param rConnection    The connection to apply the headers for
-		 * @param rUrlConnection The HTTP URL connection to apply the headers
-		 *                       to
+		 * @param connection    The connection to apply the headers for
+		 * @param urlConnection The HTTP URL connection to apply the headers to
 		 */
-		protected void applyRequestHeaders(Connection rConnection,
-			HttpURLConnection rUrlConnection) {
-			rUrlConnection.setRequestProperty("Accept-Charset",
-				rConnection.get(REQUEST_ENCODING).name());
+		protected void applyRequestHeaders(Connection connection,
+			HttpURLConnection urlConnection) {
+			urlConnection.setRequestProperty("Accept-Charset",
+				connection.get(REQUEST_ENCODING).name());
 
-			for (Entry<String, String> rHeader : aRequestHeaders.entrySet()) {
-				rUrlConnection.setRequestProperty(rHeader.getKey(),
-					rHeader.getValue());
+			for (Entry<String, String> header : requestHeaders.entrySet()) {
+				urlConnection.setRequestProperty(header.getKey(),
+					header.getValue());
 			}
 
-			if (rConnection.hasRelation(HTTP_REQUEST_HEADERS)) {
-				for (Entry<String, List<String>> rHeader : rConnection
+			if (connection.hasRelation(HTTP_REQUEST_HEADERS)) {
+				for (Entry<String, List<String>> header : connection
 					.get(HTTP_REQUEST_HEADERS)
 					.entrySet()) {
-					String sHeaderName = rHeader.getKey();
-					List<String> rHeaderValues = rHeader.getValue();
+					String headerName = header.getKey();
+					List<String> headerValues = header.getValue();
 
-					for (String sValue : rHeaderValues) {
-						rUrlConnection.setRequestProperty(sHeaderName, sValue);
+					for (String value : headerValues) {
+						urlConnection.setRequestProperty(headerName, value);
 					}
 				}
 			}
@@ -310,65 +311,62 @@ public class HttpEndpoint extends Endpoint {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected String getMethodDescription(Connection rConnection,
-			I rInput) {
-			StringBuilder aDescription = new StringBuilder("HTTP ");
+		protected String getMethodDescription(Connection connection, I input) {
+			StringBuilder description = new StringBuilder("HTTP ");
 
-			aDescription.append(eRequestMethod).append(' ');
-			aDescription.append(getTargetUrl(rConnection, rInput));
+			description.append(requestMethod).append(' ');
+			description.append(getTargetUrl(connection, input));
 
-			Map<String, String> rHeaders = getRequestHeaders(rConnection);
+			Map<String, String> headers = getRequestHeaders(connection);
 
-			if (eRequestMethod.doesOutput()) {
-				aDescription.append("\nData: ");
-				aDescription.append(getRequestData(rConnection, rInput));
+			if (requestMethod.doesOutput()) {
+				description.append("\nData: ");
+				description.append(getRequestData(connection, input));
 			}
 
-			if (!rHeaders.isEmpty()) {
-				aDescription.append("\nHeaders: ").append(rHeaders);
+			if (!headers.isEmpty()) {
+				description.append("\nHeaders: ").append(headers);
 			}
 
-			return aDescription.toString();
+			return description.toString();
 		}
 
 		/**
 		 * Retrieves the request data from the request data provider function.
 		 *
-		 * @param rConnection The current connection
-		 * @param rInput      The method input to process with the request data
-		 *                    provider
+		 * @param connection The current connection
+		 * @param input      The method input to process with the request data
+		 *                   provider
 		 * @return The resulting request data
 		 */
-		protected String getRequestData(Connection rConnection, I rInput) {
-			return fProvideRequestData.evaluate(rInput);
+		protected String getRequestData(Connection connection, I input) {
+			return provideRequestData.evaluate(input);
 		}
 
 		/**
 		 * Returns an ordered map with all request headers of this instance and
 		 * the given connection.
 		 *
-		 * @param rConnection The current connection
+		 * @param connection The current connection
 		 * @return The request header map
 		 */
-		protected Map<String, String> getRequestHeaders(
-			Connection rConnection) {
-			Map<String, String> aHeaders =
-				new LinkedHashMap<>(aRequestHeaders);
+		protected Map<String, String> getRequestHeaders(Connection connection) {
+			Map<String, String> headers = new LinkedHashMap<>(requestHeaders);
 
-			if (rConnection.hasRelation(HTTP_REQUEST_HEADERS)) {
-				for (Entry<String, List<String>> rHeader : rConnection
+			if (connection.hasRelation(HTTP_REQUEST_HEADERS)) {
+				for (Entry<String, List<String>> header : connection
 					.get(HTTP_REQUEST_HEADERS)
 					.entrySet()) {
-					String sHeaderName = rHeader.getKey();
-					List<String> rHeaderValues = rHeader.getValue();
+					String headerName = header.getKey();
+					List<String> headerValues = header.getValue();
 
-					aHeaders.put(sHeaderName, rHeaderValues.size() == 1 ?
-					                          rHeaderValues.get(0) :
-					                          rHeaderValues.toString());
+					headers.put(headerName, headerValues.size() == 1 ?
+					                        headerValues.get(0) :
+					                        headerValues.toString());
 				}
 			}
 
-			return aHeaders;
+			return headers;
 		}
 
 		/**
@@ -379,25 +377,25 @@ public class HttpEndpoint extends Endpoint {
 		 * Subclasses can override this method to process the input value in
 		 * different ways.
 		 *
-		 * @param rConnection The connection to return the target URL for
-		 * @param rInput      The input value to derive the URL from
+		 * @param connection The connection to return the target URL for
+		 * @param input      The input value to derive the URL from
 		 * @return The target URL for this instance
 		 */
-		protected String getTargetUrl(Connection rConnection, I rInput) {
-			String sEndpointAddress =
-				rConnection.getEndpoint().get(ENDPOINT_ADDRESS);
+		protected String getTargetUrl(Connection connection, I input) {
+			String endpointAddress =
+				connection.getEndpoint().get(ENDPOINT_ADDRESS);
 
-			StringBuilder aUrlBuilder = new StringBuilder(sEndpointAddress);
+			StringBuilder urlBuilder = new StringBuilder(endpointAddress);
 
-			appendUrlPath(aUrlBuilder, sBaseUrl);
+			appendUrlPath(urlBuilder, baseUrl);
 
-			if (!eRequestMethod.doesOutput()) {
-				String sRequestData = getRequestData(rConnection, rInput);
+			if (!requestMethod.doesOutput()) {
+				String requestData = getRequestData(connection, input);
 
-				appendUrlPath(aUrlBuilder, sRequestData);
+				appendUrlPath(urlBuilder, requestData);
 			}
 
-			return aUrlBuilder.toString();
+			return urlBuilder.toString();
 		}
 
 		/**
@@ -408,28 +406,28 @@ public class HttpEndpoint extends Endpoint {
 		 * value instead of throwing an exception the value will be returned as
 		 * the regular response message of this request.
 		 *
-		 * @param rUrlConnection The URL connection that caused the error
-		 * @param eHttpException The exception that occurred
-		 * @param eStatusCode    nResponseThe response status code
+		 * @param urlConnection The URL connection that caused the error
+		 * @param httpException The exception that occurred
+		 * @param statusCode    responseThe response status code
 		 * @return The request response if the error should be mapped to a
 		 * regular response; else a runtime exception should be thrown
 		 */
-		protected O handleHttpError(HttpURLConnection rUrlConnection,
-			Exception eHttpException, HttpStatusCode eStatusCode) {
-			throw new HttpStatusException(eStatusCode, eHttpException);
+		protected O handleHttpError(HttpURLConnection urlConnection,
+			Exception httpException, HttpStatusCode statusCode) {
+			throw new HttpStatusException(statusCode, httpException);
 		}
 
 		/**
 		 * Invokes the response processing function. Can be overridden by
 		 * subclasses to extend or modify the processing.
 		 *
-		 * @param rConnection  The connection the response has been send over
-		 * @param sRawResponse The original response received from the endpoint
+		 * @param connection  The connection the response has been send over
+		 * @param rawResponse The original response received from the endpoint
 		 * @return The processed response
 		 */
-		protected O processResponse(Connection rConnection,
-			String sRawResponse) {
-			return fProcessResponse.evaluate(sRawResponse);
+		protected O processResponse(Connection connection,
+			String rawResponse) {
+			return processResponse.evaluate(rawResponse);
 		}
 
 		/**
@@ -444,50 +442,50 @@ public class HttpEndpoint extends Endpoint {
 		 * <p>The {@link Reader} argument must not be closed by this
 		 * method.</p>
 		 *
-		 * @param rConnection  The connection the response has been send over
-		 * @param rInputReader The input reader
+		 * @param connection  The connection the response has been send over
+		 * @param inputReader The input reader
 		 * @return The processed response
 		 * @throws IOException If reading the response fails
 		 */
-		protected O readResponse(Connection rConnection, Reader rInputReader)
+		protected O readResponse(Connection connection, Reader inputReader)
 			throws IOException {
 			// the maximum response size is already limited by the stream
 			@SuppressWarnings("boxing")
-			String sRawResponse =
-				StreamUtil.readAll(rInputReader, rConnection.get(BUFFER_SIZE),
+			String rawResponse =
+				StreamUtil.readAll(inputReader, connection.get(BUFFER_SIZE),
 					Integer.MAX_VALUE);
 
-			return processResponse(rConnection, sRawResponse);
+			return processResponse(connection, rawResponse);
 		}
 
 		/**
 		 * Creates and initializes the URL connection used to communicate with
 		 * the HTTP endpoint.
 		 *
-		 * @param rConnection The endpoint connection
-		 * @param rInput      The input value for this communication method
+		 * @param connection The endpoint connection
+		 * @param input      The input value for this communication method
 		 * @return The URL connection
 		 * @throws CommunicationException If the setup fails
 		 */
-		protected HttpURLConnection setupUrlConnection(Connection rConnection,
-			I rInput) {
+		protected HttpURLConnection setupUrlConnection(Connection connection,
+			I input) {
 			try {
-				String sTargetUrl = getTargetUrl(rConnection, rInput);
+				String targetUrl = getTargetUrl(connection, input);
 
-				HttpURLConnection aUrlConnection =
-					(HttpURLConnection) new URL(sTargetUrl).openConnection();
+				HttpURLConnection urlConnection =
+					(HttpURLConnection) new URL(targetUrl).openConnection();
 
-				eRequestMethod.applyTo(aUrlConnection);
-				applyRequestHeaders(rConnection, aUrlConnection);
+				requestMethod.applyTo(urlConnection);
+				applyRequestHeaders(connection, urlConnection);
 
-				String sUserName = rConnection.getUserName();
+				String userName = connection.getUserName();
 
-				if (sUserName != null) {
-					NetUtil.enableHttpBasicAuth(aUrlConnection, sUserName,
-						rConnection.getPassword());
+				if (userName != null) {
+					NetUtil.enableHttpBasicAuth(urlConnection, userName,
+						connection.getPassword());
 				}
 
-				return aUrlConnection;
+				return urlConnection;
 			} catch (Exception e) {
 				throw new CommunicationException(e);
 			}
@@ -499,20 +497,20 @@ public class HttpEndpoint extends Endpoint {
 		 * output
 		 * stream.
 		 *
-		 * @param rConnection   The current connection
-		 * @param rOutputStream The stream to write the data to
-		 * @param rInput        The method input
+		 * @param connection   The current connection
+		 * @param outputStream The stream to write the data to
+		 * @param input        The method input
 		 * @throws IOException If writing the request data fails
 		 */
-		protected void writeRequest(Connection rConnection,
-			OutputStream rOutputStream, I rInput) throws IOException {
-			String sRequestData = getRequestData(rConnection, rInput);
+		protected void writeRequest(Connection connection,
+			OutputStream outputStream, I input) throws IOException {
+			String requestData = getRequestData(connection, input);
 
-			if (sRequestData.length() > 0) {
-				Charset rEncoding = rConnection.get(REQUEST_ENCODING);
+			if (requestData.length() > 0) {
+				Charset encoding = connection.get(REQUEST_ENCODING);
 
-				rOutputStream.write(sRequestData.getBytes(rEncoding));
-				rOutputStream.flush();
+				outputStream.write(requestData.getBytes(encoding));
+				outputStream.flush();
 			}
 		}
 	}

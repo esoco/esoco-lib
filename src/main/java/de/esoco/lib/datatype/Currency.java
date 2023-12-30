@@ -28,11 +28,11 @@ public enum Currency {
 	AED, ANG, AUD, BTN, CHF, CZK, DKK, EUR, GBP, HKD, HRK, HUF, IDR, ILS, KZT,
 	LKR, NGN, NOK, PLN, RUB, RSD, THB, TRY, UAH, USD, JPY, ZAR;
 
-	private static final Map<Currency, BigDecimal> aEuroConversionRates =
+	private static final Map<Currency, BigDecimal> euroConversionRates =
 		new HashMap<Currency, BigDecimal>();
 
 	static {
-		aEuroConversionRates.put(EUR, BigDecimal.ONE);
+		euroConversionRates.put(EUR, BigDecimal.ONE);
 
 		// conversion rate on 26.08.2010 from google
 		// AUD, GBP, JPY, KZT, NGN, NOK 31.03.2011
@@ -40,56 +40,56 @@ public enum Currency {
 		// BTN 13.07.2011
 		// ILS 22.08.2011
 		// HKD, USD 20.10.2011
-		aEuroConversionRates.put(AED, new BigDecimal("0.214528049"));
-		aEuroConversionRates.put(ANG, new BigDecimal("0.450227702"));
-		aEuroConversionRates.put(AUD, new BigDecimal("0.72795101"));
-		aEuroConversionRates.put(BTN, new BigDecimal("0.0159492"));
-		aEuroConversionRates.put(CHF, new BigDecimal("0.767109203"));
-		aEuroConversionRates.put(CZK, new BigDecimal("0.0401599433"));
-		aEuroConversionRates.put(DKK, new BigDecimal("0.134268043"));
-		aEuroConversionRates.put(GBP, new BigDecimal("1.13155487"));
-		aEuroConversionRates.put(HKD, new BigDecimal("0.0938001752"));
-		aEuroConversionRates.put(HRK, new BigDecimal("0.137403089"));
-		aEuroConversionRates.put(HUF, new BigDecimal("0.00354238891"));
-		aEuroConversionRates.put(IDR, new BigDecimal("0.0000874566656"));
-		aEuroConversionRates.put(ILS, new BigDecimal("0.194063433"));
-		aEuroConversionRates.put(JPY, new BigDecimal("0.00850285071"));
-		aEuroConversionRates.put(KZT, new BigDecimal("0.00483423664"));
-		aEuroConversionRates.put(LKR, new BigDecimal("0.00629468599"));
-		aEuroConversionRates.put(NGN, new BigDecimal("0.00454142324"));
-		aEuroConversionRates.put(NOK, new BigDecimal("0.127643415"));
-		aEuroConversionRates.put(PLN, new BigDecimal("0.250356918"));
-		aEuroConversionRates.put(RSD, new BigDecimal("0.009483"));
-		aEuroConversionRates.put(RUB, new BigDecimal("0.0255601954"));
-		aEuroConversionRates.put(THB, new BigDecimal("0.0250283643"));
-		aEuroConversionRates.put(TRY, new BigDecimal("0.516417428"));
-		aEuroConversionRates.put(UAH, new BigDecimal("0.0998479357"));
-		aEuroConversionRates.put(USD, new BigDecimal("0.729820464"));
-		aEuroConversionRates.put(ZAR, new BigDecimal("0.107166719"));
+		euroConversionRates.put(AED, new BigDecimal("0.214528049"));
+		euroConversionRates.put(ANG, new BigDecimal("0.450227702"));
+		euroConversionRates.put(AUD, new BigDecimal("0.72795101"));
+		euroConversionRates.put(BTN, new BigDecimal("0.0159492"));
+		euroConversionRates.put(CHF, new BigDecimal("0.767109203"));
+		euroConversionRates.put(CZK, new BigDecimal("0.0401599433"));
+		euroConversionRates.put(DKK, new BigDecimal("0.134268043"));
+		euroConversionRates.put(GBP, new BigDecimal("1.13155487"));
+		euroConversionRates.put(HKD, new BigDecimal("0.0938001752"));
+		euroConversionRates.put(HRK, new BigDecimal("0.137403089"));
+		euroConversionRates.put(HUF, new BigDecimal("0.00354238891"));
+		euroConversionRates.put(IDR, new BigDecimal("0.0000874566656"));
+		euroConversionRates.put(ILS, new BigDecimal("0.194063433"));
+		euroConversionRates.put(JPY, new BigDecimal("0.00850285071"));
+		euroConversionRates.put(KZT, new BigDecimal("0.00483423664"));
+		euroConversionRates.put(LKR, new BigDecimal("0.00629468599"));
+		euroConversionRates.put(NGN, new BigDecimal("0.00454142324"));
+		euroConversionRates.put(NOK, new BigDecimal("0.127643415"));
+		euroConversionRates.put(PLN, new BigDecimal("0.250356918"));
+		euroConversionRates.put(RSD, new BigDecimal("0.009483"));
+		euroConversionRates.put(RUB, new BigDecimal("0.0255601954"));
+		euroConversionRates.put(THB, new BigDecimal("0.0250283643"));
+		euroConversionRates.put(TRY, new BigDecimal("0.516417428"));
+		euroConversionRates.put(UAH, new BigDecimal("0.0998479357"));
+		euroConversionRates.put(USD, new BigDecimal("0.729820464"));
+		euroConversionRates.put(ZAR, new BigDecimal("0.107166719"));
 	}
 
 	/**
 	 * Converts a value into a certain currency with the exchange rate on a
 	 * certain date.
 	 *
-	 * @param rCurrency The original currency of the value
-	 * @param rValue    The value to convert
-	 * @param rDate     The date to look up the exchange rate for
+	 * @param currency The original currency of the value
+	 * @param value    The value to convert
+	 * @param date     The date to look up the exchange rate for
 	 * @return The resulting BigDecimal value
 	 */
-	public BigDecimal convertTo(Currency rCurrency, BigDecimal rValue,
-		Date rDate) {
-		if (rCurrency != EUR) {
+	public BigDecimal convertTo(Currency currency, BigDecimal value,
+		Date date) {
+		if (currency != EUR) {
 			throw new UnsupportedOperationException(
 				"Only conversions to EURO are currently supported");
 		}
 
 		if (this == EUR) {
-			return rValue;
+			return value;
 		} else {
-			assert aEuroConversionRates.get(this) != null;
+			assert euroConversionRates.get(this) != null;
 
-			return rValue.multiply(aEuroConversionRates.get(this));
+			return value.multiply(euroConversionRates.get(this));
 		}
 	}
 }

@@ -29,18 +29,18 @@ import java.io.Writer;
  */
 public class EchoReader extends FilterReader {
 
-	private final Writer rEchoWriter;
+	private final Writer echoWriter;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedReader The wrapped reader
-	 * @param rEchoWriter    The writer to echo the input to
+	 * @param wrappedReader The wrapped reader
+	 * @param echoWriter    The writer to echo the input to
 	 */
-	public EchoReader(Reader rWrappedReader, Writer rEchoWriter) {
-		super(rWrappedReader);
+	public EchoReader(Reader wrappedReader, Writer echoWriter) {
+		super(wrappedReader);
 
-		this.rEchoWriter = rEchoWriter;
+		this.echoWriter = echoWriter;
 	}
 
 	/**
@@ -48,27 +48,26 @@ public class EchoReader extends FilterReader {
 	 */
 	@Override
 	public int read() throws IOException {
-		int nChar = super.read();
+		int ch = super.read();
 
-		if (nChar >= 0) {
-			rEchoWriter.write(nChar);
+		if (ch >= 0) {
+			echoWriter.write(ch);
 		}
 
-		return nChar;
+		return ch;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(char[] rBuffer, int nOffset, int nLength)
-		throws IOException {
-		int nRead = super.read(rBuffer, nOffset, nLength);
+	public int read(char[] buffer, int offset, int length) throws IOException {
+		int read = super.read(buffer, offset, length);
 
-		if (nRead >= 0) {
-			rEchoWriter.write(rBuffer, nOffset, nRead);
+		if (read >= 0) {
+			echoWriter.write(buffer, offset, read);
 		}
 
-		return nRead;
+		return read;
 	}
 }

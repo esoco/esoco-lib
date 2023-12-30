@@ -29,18 +29,18 @@ import java.util.Map;
  */
 public class HostAuthenticator extends Authenticator {
 
-	private static final Map<String, PasswordAuthentication> aAuthentications =
+	private static final Map<String, PasswordAuthentication> authentications =
 		new HashMap<String, PasswordAuthentication>();
 
 	/**
 	 * Adds a password authentication for a certain host.
 	 *
-	 * @param sHost The host to set the authentication for
-	 * @param rAuth The password authentication object
+	 * @param host The host to set the authentication for
+	 * @param auth The password authentication object
 	 */
-	public static void addAuthentication(String sHost,
-		PasswordAuthentication rAuth) {
-		aAuthentications.put(sHost, rAuth);
+	public static void addAuthentication(String host,
+		PasswordAuthentication auth) {
+		authentications.put(host, auth);
 	}
 
 	/**
@@ -48,14 +48,14 @@ public class HostAuthenticator extends Authenticator {
 	 * use
 	 * the {@link #addAuthentication(String, PasswordAuthentication)} method.
 	 *
-	 * @param sHost     The host to set the authentication for
-	 * @param sUser     The user name
-	 * @param sPassword The password
+	 * @param host     The host to set the authentication for
+	 * @param user     The user name
+	 * @param password The password
 	 */
-	public static void addAuthentication(String sHost, String sUser,
-		String sPassword) {
-		addAuthentication(sHost,
-			new PasswordAuthentication(sUser, sPassword.toCharArray()));
+	public static void addAuthentication(String host, String user,
+		String password) {
+		addAuthentication(host,
+			new PasswordAuthentication(user, password.toCharArray()));
 	}
 
 	/**
@@ -74,6 +74,6 @@ public class HostAuthenticator extends Authenticator {
 	 */
 	@Override
 	protected PasswordAuthentication getPasswordAuthentication() {
-		return aAuthentications.get(getRequestingHost());
+		return authentications.get(getRequestingHost());
 	}
 }

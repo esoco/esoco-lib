@@ -28,26 +28,26 @@ import java.util.Stack;
  */
 public class XmlWriter {
 
-	private Writer rWriter;
+	private Writer writer;
 
-	private String sNamespace = "";
+	private String namespace = "";
 
-	private String sIndentation = "\t";
+	private final String indentation = "\t";
 
-	private Stack<String> aElementStack = new Stack<String>();
+	private Stack<String> elementStack = new Stack<String>();
 
-	private boolean bTagOpen = false;
+	private boolean tagOpen = false;
 
 	/**
 	 * Creates a new instance for a standalone XML file with a version
 	 * number of
 	 * 1.0, UTF-8 encoding.
 	 *
-	 * @param rWriter The writer instance to write the XML to
+	 * @param writer The writer instance to write the XML to
 	 * @throws IOException If writing the XML header fails
 	 */
-	public XmlWriter(Writer rWriter) throws IOException {
-		this(rWriter, "1.0", "UTF-8", Boolean.TRUE);
+	public XmlWriter(Writer writer) throws IOException {
+		this(writer, "1.0", "UTF-8", Boolean.TRUE);
 	}
 
 	/**
@@ -55,33 +55,34 @@ public class XmlWriter {
 	 * beginning of
 	 * the file.
 	 *
-	 * @param rWriter     The writer instance to write the XML to
-	 * @param sVersion    The XML version used by the file
-	 * @param sEncoding   The character encoding used for the content or NULL
-	 *                    for no value
-	 * @param rStandalone TRUE for a file with internal DTD, FALSE for a file
-	 *                    with a separate DTD or other external references or
-	 *                    NULL for no value
+	 * @param writer     The writer instance to write the XML to
+	 * @param version    The XML version used by the file
+	 * @param encoding   The character encoding used for the content or NULL
+	 *                     for
+	 *                   no value
+	 * @param standalone TRUE for a file with internal DTD, FALSE for a file
+	 *                   with a separate DTD or other external references or
+	 *                   NULL for no value
 	 * @throws IOException If writing the XML header fails
 	 */
-	public XmlWriter(Writer rWriter, String sVersion, String sEncoding,
-		Boolean rStandalone) throws IOException {
-		this.rWriter = rWriter;
+	public XmlWriter(Writer writer, String version, String encoding,
+		Boolean standalone) throws IOException {
+		this.writer = writer;
 
-		rWriter.write("<?xml version=\"");
-		rWriter.write(sVersion);
+		writer.write("<?xml version=\"");
+		writer.write(version);
 
-		if (sEncoding != null) {
-			rWriter.write("\" encoding=\"");
-			rWriter.write(sEncoding);
+		if (encoding != null) {
+			writer.write("\" encoding=\"");
+			writer.write(encoding);
 		}
 
-		if (rStandalone != null) {
-			rWriter.write("\" standalone=\"");
-			rWriter.write(rStandalone.booleanValue() ? "yes" : "no");
+		if (standalone != null) {
+			writer.write("\" standalone=\"");
+			writer.write(standalone.booleanValue() ? "yes" : "no");
 		}
 
-		rWriter.write("\"?>\n");
+		writer.write("\"?>\n");
 	}
 
 	/**
@@ -95,15 +96,15 @@ public class XmlWriter {
 	 *                     closing
 	 */
 	public void close() throws IOException {
-		if (!aElementStack.isEmpty()) {
+		if (!elementStack.isEmpty()) {
 			throw new IOException(
-				"XML file contains unclosed elements: " + aElementStack);
+				"XML file contains unclosed elements: " + elementStack);
 		}
 
-		rWriter.flush();
+		writer.flush();
 
-		rWriter = null;
-		aElementStack = null;
+		writer = null;
+		elementStack = null;
 	}
 
 	/**
@@ -118,22 +119,22 @@ public class XmlWriter {
 	 * @throws IOException If writing to the output writer fails
 	 */
 	public XmlWriter endElement() throws IOException {
-		if (aElementStack.isEmpty()) {
+		if (elementStack.isEmpty()) {
 			throw new IOException("No open element");
 		}
 
-		String sElement = aElementStack.pop();
+		String element = elementStack.pop();
 
-		if (bTagOpen) {
-			rWriter.write("/>\n");
-			bTagOpen = false;
+		if (tagOpen) {
+			writer.write("/>\n");
+			tagOpen = false;
 		} else {
-			rWriter.write("</");
-			rWriter.write(sElement);
-			rWriter.write(">\n");
+			writer.write("</");
+			writer.write(element);
+			writer.write(">\n");
 		}
 
-		indent(aElementStack.size() - 1);
+		indent(elementStack.size() - 1);
 
 		return this;
 	}
@@ -144,7 +145,7 @@ public class XmlWriter {
 	 * @return The indentation string
 	 */
 	public final String getIndentation() {
-		return sIndentation;
+		return indentation;
 	}
 
 	/**
@@ -153,7 +154,7 @@ public class XmlWriter {
 	 * @return The namespace
 	 */
 	public String getNamespace() {
-		return sNamespace;
+		return namespace;
 	}
 
 	/**
@@ -162,7 +163,7 @@ public class XmlWriter {
 	 * @return The output writer
 	 */
 	public Writer getWriter() {
-		return rWriter;
+		return writer;
 	}
 
 	/**
@@ -170,20 +171,19 @@ public class XmlWriter {
 	 * string will be added to the output of each line. The default value is a
 	 * tabulator character.
 	 *
-	 * @param rIndentation The indentation string or NULL to disable
-	 *                     indentation
+	 * @param indentation The indentation string or NULL to disable indentation
 	 */
-	public final void setIndentation(String rIndentation) {
-		sIndentation = rIndentation;
+	public final void setIndentation(String indentation) {
+		indentation = indentation;
 	}
 
 	/**
 	 * Sets the namespace for all subsequent element creations.
 	 *
-	 * @param sNamespace The namespace
+	 * @param namespace The namespace
 	 */
-	public void setNamespace(String sNamespace) {
-		this.sNamespace = sNamespace;
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
 	}
 
 	/**
@@ -201,26 +201,26 @@ public class XmlWriter {
 	 * the added elements and will throw an exception if the element hierarchy
 	 * becomes inconsistent.</p>
 	 *
-	 * @param sName The element name that will appear in the start and end tags
+	 * @param name The element name that will appear in the start and end tags
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails
 	 */
-	public XmlWriter startElement(String sName) throws IOException {
-		if (sNamespace != null && sNamespace.length() > 0) {
-			sName = sNamespace + ":" + sName;
+	public XmlWriter startElement(String name) throws IOException {
+		if (namespace != null && namespace.length() > 0) {
+			name = namespace + ":" + name;
 		}
 
-		if (bTagOpen) {
-			rWriter.write(">\n");
-			indent(aElementStack.size());
+		if (tagOpen) {
+			writer.write(">\n");
+			indent(elementStack.size());
 		} else {
-			bTagOpen = true;
+			tagOpen = true;
 			indent(1);
 		}
 
-		rWriter.write("<");
-		rWriter.write(sName);
-		aElementStack.push(sName);
+		writer.write("<");
+		writer.write(name);
+		elementStack.push(name);
 
 		return this;
 	}
@@ -231,7 +231,7 @@ public class XmlWriter {
 	@Override
 	public String toString() {
 		return String.format("%s[%s]", getClass().getSimpleName(),
-			rWriter.getClass().getSimpleName());
+			writer.getClass().getSimpleName());
 	}
 
 	/**
@@ -244,23 +244,23 @@ public class XmlWriter {
 	 * <p>Any reserved characters in the attribute value will be replaced with
 	 * the corresponding XML character entity.</p>
 	 *
-	 * @param sName  The attribute name
-	 * @param sValue The attribute value
+	 * @param name  The attribute name
+	 * @param value The attribute value
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails or if no
 	 *                     element tag is currently open
 	 */
-	public XmlWriter writeAttribute(String sName, String sValue)
+	public XmlWriter writeAttribute(String name, String value)
 		throws IOException {
-		if (!bTagOpen) {
+		if (!tagOpen) {
 			throw new IOException("No open element tag");
 		}
 
-		rWriter.write(" ");
-		rWriter.write(sName);
-		rWriter.write("=\"");
-		rWriter.write(escapeCharacterEntities(sValue));
-		rWriter.write("\"");
+		writer.write(" ");
+		writer.write(name);
+		writer.write("=\"");
+		writer.write(escapeCharacterEntities(value));
+		writer.write("\"");
 
 		return this;
 	}
@@ -272,20 +272,20 @@ public class XmlWriter {
 	 * string contains occurrences of the CDATA termination string ']]&gt;' it
 	 * will be split into multiple CDATA sections.
 	 *
-	 * @param sData The string containing the unparsed character data
+	 * @param data The string containing the unparsed character data
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails or if no
 	 *                     element is currently open
 	 */
-	public XmlWriter writeCharacterData(String sData) throws IOException {
-		int nCDataTerminator = sData.indexOf("]]>");
+	public XmlWriter writeCharacterData(String data) throws IOException {
+		int cDataTerminator = data.indexOf("]]>");
 
-		if (nCDataTerminator >= 0) {
-			nCDataTerminator += 2;
-			writeCharacterData(sData.substring(0, nCDataTerminator));
-			writeCharacterData(sData.substring(nCDataTerminator));
+		if (cDataTerminator >= 0) {
+			cDataTerminator += 2;
+			writeCharacterData(data.substring(0, cDataTerminator));
+			writeCharacterData(data.substring(cDataTerminator));
 		} else {
-			writeContent("<![CDATA[" + sData + "]]>", true);
+			writeContent("<![CDATA[" + data + "]]>", true);
 		}
 
 		return this;
@@ -295,13 +295,13 @@ public class XmlWriter {
 	 * Writes a string into an XML comment tag. Comments can be written
 	 * everywhere in an XML file, either outside of or in elements.
 	 *
-	 * @param sComment The comment string
+	 * @param comment The comment string
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails
 	 */
-	public XmlWriter writeComment(String sComment) throws IOException {
-		writeContent("<!--" + sComment + "-->\n", false);
-		indent(aElementStack.size());
+	public XmlWriter writeComment(String comment) throws IOException {
+		writeContent("<!--" + comment + "-->\n", false);
+		indent(elementStack.size());
 
 		return this;
 	}
@@ -313,17 +313,16 @@ public class XmlWriter {
 	 * will be
 	 * written.
 	 *
-	 * @param sName The element name
-	 * @param sText The element content or NULL for none
+	 * @param name The element name
+	 * @param text The element content or NULL for none
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails
 	 */
-	public XmlWriter writeElement(String sName, String sText)
-		throws IOException {
-		startElement(sName);
+	public XmlWriter writeElement(String name, String text) throws IOException {
+		startElement(name);
 
-		if (sText != null) {
-			writeText(sText);
+		if (text != null) {
+			writeText(text);
 		}
 
 		return endElement();
@@ -334,20 +333,20 @@ public class XmlWriter {
 	 * closes it immediately. If the text argument is NULL an empty-element tag
 	 * will be written.
 	 *
-	 * @param sName      The element name
-	 * @param sAttribute The attribute name
-	 * @param sValue     The attribute value
-	 * @param sText      The element content or NULL for none
+	 * @param name      The element name
+	 * @param attribute The attribute name
+	 * @param value     The attribute value
+	 * @param text      The element content or NULL for none
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails
 	 */
-	public XmlWriter writeElement(String sName, String sAttribute,
-		String sValue, String sText) throws IOException {
-		startElement(sName);
-		writeAttribute(sAttribute, sValue);
+	public XmlWriter writeElement(String name, String attribute, String value,
+		String text) throws IOException {
+		startElement(name);
+		writeAttribute(attribute, value);
 
-		if (sText != null) {
-			writeText(sText);
+		if (text != null) {
+			writeText(text);
 		}
 
 		return endElement();
@@ -356,42 +355,42 @@ public class XmlWriter {
 	/**
 	 * Writes a text string as the current element's content.
 	 *
-	 * @param sText The text to write
+	 * @param text The text to write
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails or if no
 	 *                     element is currently open
 	 */
-	public XmlWriter writeText(String sText) throws IOException {
-		return writeContent(escapeCharacterEntities(sText), true);
+	public XmlWriter writeText(String text) throws IOException {
+		return writeContent(escapeCharacterEntities(text), true);
 	}
 
 	/**
 	 * Escapes reserved characters in a text string with XML character
 	 * entities.
 	 *
-	 * @param sText The text to escape
+	 * @param text The text to escape
 	 * @return The resulting text
 	 */
-	private String escapeCharacterEntities(String sText) {
-		sText = sText.replaceAll("&", "&amp;");
-		sText = sText.replaceAll("<", "&lt;");
-		sText = sText.replaceAll(">", "&gt;");
-		sText = sText.replaceAll("\"", "&quot;");
-		sText = sText.replaceAll("'", "&apos;");
+	private String escapeCharacterEntities(String text) {
+		text = text.replaceAll("&", "&amp;");
+		text = text.replaceAll("<", "&lt;");
+		text = text.replaceAll(">", "&gt;");
+		text = text.replaceAll("\"", "&quot;");
+		text = text.replaceAll("'", "&apos;");
 
-		return sText;
+		return text;
 	}
 
 	/**
 	 * Writes tab characters for the current indentation level.
 	 *
-	 * @param nLevel The indentation level
+	 * @param level The indentation level
 	 * @throws IOException If writing to the output writer fails
 	 */
-	private void indent(int nLevel) throws IOException {
-		if (sIndentation != null) {
-			for (int i = nLevel; i > 0; i--) {
-				rWriter.write(sIndentation);
+	private void indent(int level) throws IOException {
+		if (indentation != null) {
+			for (int i = level; i > 0; i--) {
+				writer.write(indentation);
 			}
 		}
 	}
@@ -399,31 +398,30 @@ public class XmlWriter {
 	/**
 	 * Internal helper method to write element content.
 	 *
-	 * @param sContent     The content to write
-	 * @param bElementOnly TRUE to throw an exception if no element is
-	 *                        currently
-	 *                     open
+	 * @param content     The content to write
+	 * @param elementOnly TRUE to throw an exception if no element is currently
+	 *                    open
 	 * @return This instance for method concatenation
 	 * @throws IOException If writing to the output writer fails or if no
-	 *                     element is open and bElementOnly is TRUE
+	 *                     element is open and elementOnly is TRUE
 	 */
-	private XmlWriter writeContent(String sContent, boolean bElementOnly)
+	private XmlWriter writeContent(String content, boolean elementOnly)
 		throws IOException {
-		if (bElementOnly && aElementStack.isEmpty()) {
+		if (elementOnly && elementStack.isEmpty()) {
 			throw new IOException("No open element");
 		}
 
-		if (bTagOpen) {
-			bTagOpen = false;
-			rWriter.write(">");
+		if (tagOpen) {
+			tagOpen = false;
+			writer.write(">");
 
-			if (sContent.length() > 0 && sContent.charAt(0) == '<') {
-				rWriter.write("\n");
-				indent(aElementStack.size());
+			if (content.length() > 0 && content.charAt(0) == '<') {
+				writer.write("\n");
+				indent(elementStack.size());
 			}
 		}
 
-		rWriter.write(sContent);
+		writer.write(content);
 
 		return this;
 	}

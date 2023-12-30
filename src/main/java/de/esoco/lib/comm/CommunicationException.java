@@ -37,44 +37,43 @@ public class CommunicationException extends RuntimeException {
 	/**
 	 * @see RuntimeException#RuntimeException(String)
 	 */
-	public CommunicationException(String sMessage) {
-		super(sMessage);
+	public CommunicationException(String message) {
+		super(message);
 	}
 
 	/**
 	 * @see RuntimeException#RuntimeException(Throwable)
 	 */
-	public CommunicationException(Throwable eCause) {
-		super(eCause);
+	public CommunicationException(Throwable cause) {
+		super(cause);
 	}
 
 	/**
 	 * Creates a new instance with a formatted message.
 	 *
-	 * @param sMessageFormat The message format
-	 * @param rFormatArgs    The format arguments
+	 * @param messageFormat The message format
+	 * @param formatArgs    The format arguments
 	 */
-	public CommunicationException(String sMessageFormat,
-		Object... rFormatArgs) {
-		this(String.format(sMessageFormat, rFormatArgs));
+	public CommunicationException(String messageFormat, Object... formatArgs) {
+		this(String.format(messageFormat, formatArgs));
 	}
 
 	/**
 	 * @see RuntimeException#RuntimeException(String, Throwable)
 	 */
-	public CommunicationException(String sMessage, Throwable eCause) {
-		super(sMessage, eCause);
+	public CommunicationException(String message, Throwable cause) {
+		super(message, cause);
 	}
 
 	/**
 	 * Creates a new instance with a formatted message and a causing exception.
 	 *
-	 * @param eCause         The causing exception
-	 * @param sMessageFormat The message format
-	 * @param rFormatArgs    The format arguments
+	 * @param cause         The causing exception
+	 * @param messageFormat The message format
+	 * @param formatArgs    The format arguments
 	 */
-	public CommunicationException(Throwable eCause, String sMessageFormat,
-		Object... rFormatArgs) {
-		this(String.format(sMessageFormat, rFormatArgs), eCause);
+	public CommunicationException(Throwable cause, String messageFormat,
+		Object... formatArgs) {
+		this(String.format(messageFormat, formatArgs), cause);
 	}
 }

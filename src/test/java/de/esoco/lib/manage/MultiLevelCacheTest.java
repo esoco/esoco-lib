@@ -16,10 +16,11 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.manage;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Test of {@link MultiLevelCache}.
@@ -28,14 +29,14 @@ import static org.junit.Assert.assertEquals;
  */
 public class MultiLevelCacheTest {
 
-	private MultiLevelCache<Integer, String> aCache;
+	private MultiLevelCache<Integer, String> cache;
 
 	/**
 	 * Creates a new instance.
 	 */
-	@Before
+	@BeforeEach
 	public void setup() {
-		aCache = new MultiLevelCache<Integer, String>(2, 2, 2);
+		cache = new MultiLevelCache<Integer, String>(2, 2, 2);
 
 		putTestEntries(1, 6);
 	}
@@ -47,11 +48,11 @@ public class MultiLevelCacheTest {
 	@Test
 	public void testMultiLevel() {
 		putTestEntries(7, 8);
-		assertEquals(null, aCache.get(1));
-		assertEquals(null, aCache.get(2));
+		assertNull(cache.get(1));
+		assertNull(cache.get(2));
 
 		for (int i = 3; i <= 8; i++) {
-			assertEquals("Test" + i, aCache.get(i));
+			assertEquals("Test" + i, cache.get(i));
 		}
 	}
 
@@ -61,26 +62,26 @@ public class MultiLevelCacheTest {
 	@SuppressWarnings("boxing")
 	@Test
 	public void testRemove() {
-		aCache.remove(1);
-		aCache.remove(3);
-		aCache.remove(5);
-		assertEquals(null, aCache.get(1));
-		assertEquals(null, aCache.get(3));
-		assertEquals(null, aCache.get(5));
-		assertEquals("Test2", aCache.get(2));
-		assertEquals("Test4", aCache.get(4));
+		cache.remove(1);
+		cache.remove(3);
+		cache.remove(5);
+		assertNull(cache.get(1));
+		assertNull(cache.get(3));
+		assertNull(cache.get(5));
+		assertEquals("Test2", cache.get(2));
+		assertEquals("Test4", cache.get(4));
 	}
 
 	/**
 	 * Puts test entries into the cache.
 	 *
-	 * @param nStart The start index
-	 * @param nEnd   The end index
+	 * @param start The start index
+	 * @param end   The end index
 	 */
 	@SuppressWarnings("boxing")
-	private void putTestEntries(int nStart, int nEnd) {
-		for (int i = nStart; i <= nEnd; i++) {
-			aCache.put(i, "Test" + i);
+	private void putTestEntries(int start, int end) {
+		for (int i = start; i <= end; i++) {
+			cache.put(i, "Test" + i);
 		}
 	}
 }

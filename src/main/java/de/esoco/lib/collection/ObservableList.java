@@ -52,18 +52,18 @@ public class ObservableList<E>
 	/**
 	 * Creates a new instance that observes a certain list instance.
 	 *
-	 * @param rObservedList The list to be observed
+	 * @param observedList The list to be observed
 	 */
-	public ObservableList(List<E> rObservedList) {
-		super(rObservedList);
+	public ObservableList(List<E> observedList) {
+		super(observedList);
 	}
 
 	/**
 	 * @see List#add(Object)
 	 */
 	@Override
-	public boolean add(E rElement) {
-		add(size(), rElement);
+	public boolean add(E element) {
+		add(size(), element);
 
 		return true;
 	}
@@ -72,29 +72,29 @@ public class ObservableList<E>
 	 * @see List#add(int, Object)
 	 */
 	@Override
-	public void add(int nIndex, E rElement) {
-		notifyListeners(ADD, rElement, null, nIndex);
-		getObservedCollection().add(nIndex, rElement);
+	public void add(int index, E element) {
+		notifyListeners(ADD, element, null, index);
+		getObservedCollection().add(index, element);
 	}
 
 	/**
 	 * @see List#addAll(int, Collection)
 	 */
 	@Override
-	public boolean addAll(int nIndex, Collection<? extends E> rCollection) {
-		for (E rObject : rCollection) {
-			add(nIndex++, rObject);
+	public boolean addAll(int index, Collection<? extends E> collection) {
+		for (E object : collection) {
+			add(index++, object);
 		}
 
-		return !rCollection.isEmpty();
+		return !collection.isEmpty();
 	}
 
 	/**
 	 * @see List#get(int)
 	 */
 	@Override
-	public E get(int rIndex) {
-		return getObservedCollection().get(rIndex);
+	public E get(int index) {
+		return getObservedCollection().get(index);
 	}
 
 	/**
@@ -111,8 +111,8 @@ public class ObservableList<E>
 	 * @see List#indexOf(Object)
 	 */
 	@Override
-	public int indexOf(Object rObject) {
-		return getObservedCollection().indexOf(rObject);
+	public int indexOf(Object object) {
+		return getObservedCollection().indexOf(object);
 	}
 
 	/**
@@ -130,8 +130,8 @@ public class ObservableList<E>
 	 * @see List#lastIndexOf(Object)
 	 */
 	@Override
-	public int lastIndexOf(Object rObject) {
-		return getObservedCollection().lastIndexOf(rObject);
+	public int lastIndexOf(Object object) {
+		return getObservedCollection().lastIndexOf(object);
 	}
 
 	/**
@@ -147,49 +147,49 @@ public class ObservableList<E>
 	 * @see List#listIterator(int)
 	 */
 	@Override
-	public ListIterator<E> listIterator(int nIndex) {
+	public ListIterator<E> listIterator(int index) {
 		return new ObservableListIterator(
-			getObservedCollection().listIterator(nIndex));
+			getObservedCollection().listIterator(index));
 	}
 
 	/**
 	 * @see List#remove(int)
 	 */
 	@Override
-	public E remove(int nIndex) {
-		notifyListeners(REMOVE, get(nIndex), null, nIndex);
+	public E remove(int index) {
+		notifyListeners(REMOVE, get(index), null, index);
 
-		return getObservedCollection().remove(nIndex);
+		return getObservedCollection().remove(index);
 	}
 
 	/**
 	 * @see List#set(int, Object)
 	 */
 	@Override
-	public E set(int nIndex, E rElement) {
-		notifyListeners(UPDATE, get(nIndex), rElement, nIndex);
+	public E set(int index, E element) {
+		notifyListeners(UPDATE, get(index), element, index);
 
-		return getObservedCollection().set(nIndex, rElement);
+		return getObservedCollection().set(index, element);
 	}
 
 	/**
 	 * @see List#subList(int, int)
 	 */
 	@Override
-	public List<E> subList(int nFromIndex, int nToIndex) {
-		List<E> rSubList =
-			getObservedCollection().subList(nFromIndex, nToIndex);
+	public List<E> subList(int fromIndex, int toIndex) {
+		List<E> subList = getObservedCollection().subList(fromIndex, toIndex);
 
-		return new ObservableSubList(rSubList, nFromIndex);
+		return new ObservableSubList(subList, fromIndex);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected ListEvent<E> createEvent(EventType rType, E rElement,
-		E rUpdateValue, int nIndex) {
-		return new ListEvent<E>(rType, this, rElement, rUpdateValue, nIndex);
+	protected ListEvent<E> createEvent(EventType type, E element,
+		E updateValue,
+		int index) {
+		return new ListEvent<E>(type, this, element, updateValue, index);
 	}
 
 	/**
@@ -201,30 +201,30 @@ public class ObservableList<E>
 		extends ObservableCollectionIterator<ListIterator<E>>
 		implements ListIterator<E> {
 
-		boolean bForward = true;
+		boolean forward = true;
 
-		private int nCurrent = -1;
+		private int current = -1;
 
 		/**
 		 * Creates a new instance that wraps an iterator of the observed
 		 * collection.
 		 *
-		 * @param rIterator The iterator to wrap
+		 * @param iterator The iterator to wrap
 		 */
-		ObservableListIterator(ListIterator<E> rIterator) {
-			super(rIterator);
+		ObservableListIterator(ListIterator<E> iterator) {
+			super(iterator);
 		}
 
 		/**
 		 * @see ListIterator#add(Object)
 		 */
 		@Override
-		public void add(E rObject) {
-			notifyListeners(ADD, rObject, null,
-				bForward ? nCurrent + 1 : nCurrent);
+		public void add(E object) {
+			notifyListeners(ADD, object, null, forward ? current + 1 :
+			                                   current);
 
-			getIterator().add(rObject);
-			nCurrent++;
+			getIterator().add(object);
+			current++;
 			// setCurrent() is not necessary because by specification the add
 			// method inserts between current and next element
 		}
@@ -244,15 +244,15 @@ public class ObservableList<E>
 		 */
 		@Override
 		public E next() {
-			E rNext = super.next();
+			E next = super.next();
 
-			if (bForward) {
-				nCurrent++;
+			if (forward) {
+				current++;
 			} else {
-				bForward = true;
+				forward = true;
 			}
 
-			return rNext;
+			return next;
 		}
 
 		/**
@@ -268,17 +268,17 @@ public class ObservableList<E>
 		 */
 		@Override
 		public E previous() {
-			E rPrevious = getIterator().previous();
+			E previous = getIterator().previous();
 
-			setCurrentElement(rPrevious);
+			setCurrentElement(previous);
 
-			if (bForward) {
-				bForward = false;
+			if (forward) {
+				forward = false;
 			} else {
-				nCurrent--;
+				current--;
 			}
 
-			return rPrevious;
+			return previous;
 		}
 
 		/**
@@ -294,11 +294,11 @@ public class ObservableList<E>
 		 */
 		@Override
 		public void remove() {
-			notifyListeners(REMOVE, getCurrentElement(), null, nCurrent);
+			notifyListeners(REMOVE, getCurrentElement(), null, current);
 			getIterator().remove();
 
-			if (bForward) {
-				nCurrent--;
+			if (forward) {
+				current--;
 			}
 		}
 
@@ -306,10 +306,10 @@ public class ObservableList<E>
 		 * @see ListIterator#set(Object)
 		 */
 		@Override
-		public void set(E rObject) {
-			notifyListeners(UPDATE, getCurrentElement(), rObject, nCurrent);
-			getIterator().set(rObject);
-			setCurrentElement(rObject);
+		public void set(E object) {
+			notifyListeners(UPDATE, getCurrentElement(), object, current);
+			getIterator().set(object);
+			setCurrentElement(object);
 		}
 	}
 
@@ -322,18 +322,18 @@ public class ObservableList<E>
 
 		private static final long serialVersionUID = 1L;
 
-		private final int nStart;
+		private final int start;
 
 		/**
 		 * Creates a new instance that wraps a certain sub-list of the observed
 		 * collection.
 		 *
-		 * @param rSubList The sub-list to wrap
-		 * @param nStart   The starting index of the sub-list
+		 * @param subList The sub-list to wrap
+		 * @param start   The starting index of the sub-list
 		 */
-		public ObservableSubList(List<E> rSubList, int nStart) {
-			super(rSubList);
-			this.nStart = nStart;
+		public ObservableSubList(List<E> subList, int start) {
+			super(subList);
+			this.start = start;
 		}
 
 		/**
@@ -345,11 +345,12 @@ public class ObservableList<E>
 		 * Object, int)
 		 */
 		@Override
-		protected void notifyListeners(EventType rType, E rElement,
-			E rUpdateValue, int nIndex) {
-			super.notifyListeners(rType, rElement, rUpdateValue, nIndex);
-			ObservableList.this.notifyListeners(rType, rElement, rUpdateValue,
-				nIndex + nStart);
+		protected void notifyListeners(EventType type, E element,
+			E updateValue,
+			int index) {
+			super.notifyListeners(type, element, updateValue, index);
+			ObservableList.this.notifyListeners(type, element, updateValue,
+				index + start);
 		}
 	}
 }

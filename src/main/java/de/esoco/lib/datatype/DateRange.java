@@ -64,19 +64,19 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 		CURRENT_HALF_YEAR(Period.HALF_YEARLY, 0), LAST_YEAR(Period.YEARLY, -1),
 		CURRENT_YEAR(Period.YEARLY, 0);
 
-		private final Period rPeriod;
+		private final Period period;
 
-		private final int nFieldAddition;
+		private final int fieldAddition;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rPeriod        The period of this standard date range
-		 * @param nFieldAddition The value to add to the calendar field
+		 * @param period        The period of this standard date range
+		 * @param fieldAddition The value to add to the calendar field
 		 */
-		StandardDateRange(Period rPeriod, int nFieldAddition) {
-			this.rPeriod = rPeriod;
-			this.nFieldAddition = nFieldAddition;
+		StandardDateRange(Period period, int fieldAddition) {
+			this.period = period;
+			this.fieldAddition = fieldAddition;
 		}
 
 		/**
@@ -86,7 +86,7 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 		 * @return The calendar field addition
 		 */
 		public final int getFieldAddition() {
-			return nFieldAddition;
+			return fieldAddition;
 		}
 
 		/**
@@ -95,18 +95,18 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 		 * @return The period
 		 */
 		public final Period getPeriod() {
-			return rPeriod;
+			return period;
 		}
 	}
 
 	static final long serialVersionUID = 3730180974383009738L;
 
-	private final long nStart;
+	private final long start;
 
-	private final long nEnd;
+	private final long end;
 
 	// Lazily initialized variable; volatile to ensure thread safety
-	private volatile int nHashCode = 0;
+	private volatile int hashCode = 0;
 
 	/**
 	 * Creates a new DateRange object that is valid from a certain start date
@@ -119,12 +119,11 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * state of
 	 * this instance.</p>
 	 *
-	 * @param rStart The start date of the range (inclusive)
-	 * @param rEnd   The end date of the range (inclusive) or NULL for no end
+	 * @param start The start date of the range (inclusive)
+	 * @param end   The end date of the range (inclusive) or NULL for no end
 	 */
-	public DateRange(Date rStart, Date rEnd) {
-		this(rStart.getTime(),
-			(rEnd != null) ? rEnd.getTime() : Long.MAX_VALUE);
+	public DateRange(Date start, Date end) {
+		this(start.getTime(), (end != null) ? end.getTime() : Long.MAX_VALUE);
 	}
 
 	/**
@@ -134,26 +133,26 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * end date is NULL the range will be open, i.e. the method isValid() will
 	 * not check against an end date.
 	 *
-	 * @param rStart A Calendar instance containing the start date of the range
-	 *               (inclusive)
-	 * @param rEnd   A Calendar instance containing the end date of the range
-	 *               (inclusive) or NULL for no end
+	 * @param start A Calendar instance containing the start date of the range
+	 *              (inclusive)
+	 * @param end   A Calendar instance containing the end date of the range
+	 *              (inclusive) or NULL for no end
 	 * @see #DateRange(Date, Date)
 	 */
-	public DateRange(Calendar rStart, Calendar rEnd) {
-		this(rStart.getTimeInMillis(),
-			(rEnd != null) ? rEnd.getTimeInMillis() : Long.MAX_VALUE);
+	public DateRange(Calendar start, Calendar end) {
+		this(start.getTimeInMillis(),
+			(end != null) ? end.getTimeInMillis() : Long.MAX_VALUE);
 	}
 
 	/**
 	 * Creates a new instance from {@link Instant Instants}.
 	 *
-	 * @param rStart The start instant
-	 * @param rEnd   The end instant (exclusive)
+	 * @param start The start instant
+	 * @param end   The end instant (exclusive)
 	 */
-	public DateRange(Instant rStart, Instant rEnd) {
-		this(rStart.toEpochMilli(),
-			(rEnd != null) ? rEnd.toEpochMilli() : Long.MAX_VALUE);
+	public DateRange(Instant start, Instant end) {
+		this(start.toEpochMilli(),
+			(end != null) ? end.toEpochMilli() : Long.MAX_VALUE);
 	}
 
 	/**
@@ -161,19 +160,19 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * end dates. The milliseconds are counted from the start date January 1,
 	 * 1970, 00:00:00 GMT.
 	 *
-	 * @param nStartMillis The milliseconds of the start time
-	 * @param nEndMillis   The milliseconds of the end time
+	 * @param startMillis The milliseconds of the start time
+	 * @param endMillis   The milliseconds of the end time
 	 * @throws IllegalArgumentException If start &gt; end
 	 */
-	public DateRange(long nStartMillis, long nEndMillis) {
-		if (nStartMillis > nEndMillis) {
+	public DateRange(long startMillis, long endMillis) {
+		if (startMillis > endMillis) {
 			throw new IllegalArgumentException(
-				String.format("Start > End: %s > %s", new Date(nStartMillis),
-					new Date(nEndMillis)));
+				String.format("Start > End: %s > %s", new Date(startMillis),
+					new Date(endMillis)));
 		}
 
-		nStart = nStartMillis;
-		nEnd = nEndMillis;
+		start = startMillis;
+		end = endMillis;
 	}
 
 	/**
@@ -181,79 +180,79 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * current
 	 * date.
 	 *
-	 * @param eStandardRange The standard date range definition
+	 * @param standardRange The standard date range definition
 	 * @return The resulting date range
 	 */
-	public static DateRange calculateFor(StandardDateRange eStandardRange) {
-		return calculateFor(new Date(), eStandardRange);
+	public static DateRange calculateFor(StandardDateRange standardRange) {
+		return calculateFor(new Date(), standardRange);
 	}
 
 	/**
 	 * Calculates a date range for a standard date range relative to a given
 	 * date.
 	 *
-	 * @param rDate          The date to calculate the standard date range for
-	 * @param eStandardRange The standard date range definition
+	 * @param date          The date to calculate the standard date range for
+	 * @param standardRange The standard date range definition
 	 * @return The resulting date range
 	 */
-	public static DateRange calculateFor(Date rDate,
-		StandardDateRange eStandardRange) {
-		if (eStandardRange.nFieldAddition != 0) {
-			Calendar aRangeDate = Calendar.getInstance();
+	public static DateRange calculateFor(Date date,
+		StandardDateRange standardRange) {
+		if (standardRange.fieldAddition != 0) {
+			Calendar rangeDate = Calendar.getInstance();
 
-			aRangeDate.setTime(rDate);
-			aRangeDate.add(eStandardRange.rPeriod.getUnit().getCalendarField(),
-				eStandardRange.nFieldAddition);
-			rDate = aRangeDate.getTime();
+			rangeDate.setTime(date);
+			rangeDate.add(standardRange.period.getUnit().getCalendarField(),
+				standardRange.fieldAddition);
+			date = rangeDate.getTime();
 		}
 
-		return calculateFor(rDate, eStandardRange.rPeriod);
+		return calculateFor(date, standardRange.period);
 	}
 
 	/**
 	 * Calculates a date range for a certain period relative to a given date.
 	 *
-	 * @param rDate   The date to place the date range around
-	 * @param rPeriod The period to calculate
+	 * @param date   The date to place the date range around
+	 * @param period The period to calculate
 	 * @return The resulting date range
 	 */
-	public static DateRange calculateFor(Date rDate, Period rPeriod) {
-		Calendar aStart = Calendar.getInstance();
-		Calendar aEnd = Calendar.getInstance();
-		int nField = rPeriod.getUnit().getCalendarField();
-		int nRangeSize = rPeriod.getCount();
+	public static DateRange calculateFor(Date date, Period period) {
+		Calendar start = Calendar.getInstance();
+		Calendar end = Calendar.getInstance();
+		int field = period.getUnit().getCalendarField();
+		int rangeSize = period.getCount();
 
-		aStart.setTime(rDate);
+		start.setTime(date);
 
-		int nRangeStart = aStart.get(nField);
+		int rangeStart = start.get(field);
 
-		if (nRangeSize > 1) {
-			boolean bZeroBased = CalendarFunctions.isZeroBased(nField);
+		if (rangeSize > 1) {
+			boolean zeroBased = CalendarFunctions.isZeroBased(field);
 
-			if (!bZeroBased) {
-				nRangeStart -= 1;
+			if (!zeroBased) {
+				rangeStart -= 1;
 			}
 
-			nRangeStart = nRangeStart / nRangeSize * nRangeSize;
+			rangeStart = rangeStart / rangeSize * rangeSize;
 
-			if (!bZeroBased) {
-				nRangeStart += 1;
+			if (!zeroBased) {
+				rangeStart += 1;
 			}
 		}
 
-		aStart.set(nField, nRangeStart);
+		start.set(field, rangeStart);
 
-		if (nField == Calendar.WEEK_OF_YEAR) {
-			CalendarFunctions.resetBelow(Calendar.DAY_OF_MONTH, aStart, false);
-			aStart.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+		if (field == Calendar.WEEK_OF_YEAR) {
+			CalendarFunctions.resetBelow(Calendar.DAY_OF_MONTH, start, false);
+			start.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 		} else {
-			CalendarFunctions.resetBelow(nField, aStart, false);
+			CalendarFunctions.resetBelow(field, start, false);
 		}
 
-		aEnd.setTime(aStart.getTime());
-		aEnd.add(nField, nRangeSize);
+		end.setTime(start.getTime());
+		end.add(field, rangeSize);
 
-		return new DateRange(aStart, aEnd);
+		return new DateRange(start, end);
 	}
 
 	/**
@@ -269,17 +268,17 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 *   <li>Else return the comparison of the start dates</li>
 	 * </ol>
 	 *
-	 * @param rOther The other DateRange object to compare with
+	 * @param other The other DateRange object to compare with
 	 * @see Comparable#compareTo(Object)
 	 */
 	@Override
-	public int compareTo(DateRange rOther) {
-		if (nEnd != rOther.nEnd) {
-			return (nEnd < rOther.nEnd) ? -1 : 1;
+	public int compareTo(DateRange other) {
+		if (end != other.end) {
+			return (end < other.end) ? -1 : 1;
 		}
 
-		if (nStart != rOther.nStart) {
-			return (nStart < rOther.nStart) ? -1 : 1;
+		if (start != other.start) {
+			return (start < other.start) ? -1 : 1;
 		}
 
 		return 0;
@@ -292,13 +291,13 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * date
 	 * range and on the first millisecond of the adjacent range.
 	 *
-	 * @param rDate The date to test against this range
-	 * @return TRUE, if start &lt;= rDate &lt;= end
+	 * @param date The date to test against this range
+	 * @return TRUE, if start &lt;= date &lt;= end
 	 */
-	public boolean contains(Date rDate) {
-		long t = rDate.getTime();
+	public boolean contains(Date date) {
+		long t = date.getTime();
 
-		return nStart <= t && t < nEnd;
+		return start <= t && t < end;
 	}
 
 	/**
@@ -308,28 +307,28 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * AFTER the end of the date range and on the first millisecond of the
 	 * adjacent range.
 	 *
-	 * @param rRange The range to test against this range
-	 * @return TRUE, if start &lt;= rRange.start and end &gt;= rRange.end
+	 * @param range The range to test against this range
+	 * @return TRUE, if start &lt;= range.start and end &gt;= range.end
 	 */
-	public boolean contains(DateRange rRange) {
-		return rRange.nStart >= nStart && rRange.nEnd <= nEnd;
+	public boolean contains(DateRange range) {
+		return range.start >= start && range.end <= end;
 	}
 
 	/**
 	 * Test for equality with another object. Returns true if the argument is
-	 * also a DateRange object and compareTo(rObj) returns 0.
+	 * also a DateRange object and compareTo(obj) returns 0.
 	 *
-	 * @param rObj The object to compare with for equality
+	 * @param obj The object to compare with for equality
 	 * @return TRUE if the objects are equal
 	 */
 	@Override
-	public boolean equals(Object rObj) {
-		if (rObj == this) {
+	public boolean equals(Object obj) {
+		if (obj == this) {
 			return true;
 		}
 
-		if (rObj instanceof DateRange) {
-			return compareTo((DateRange) rObj) == 0;
+		if (obj instanceof DateRange) {
+			return compareTo((DateRange) obj) == 0;
 		}
 
 		return false;
@@ -341,7 +340,7 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * @return A new instance of java.util.Date containing the end date
 	 */
 	public Date getEnd() {
-		return new Date(nEnd);
+		return new Date(end);
 	}
 
 	/**
@@ -350,7 +349,7 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * @return A new instance of java.util.Date containing the start date
 	 */
 	public Date getStart() {
-		return new Date(nStart);
+		return new Date(start);
 	}
 
 	/**
@@ -360,11 +359,11 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 */
 	@Override
 	public int hashCode() {
-		if (nHashCode == 0) {
-			nHashCode = (int) (((37L + nStart) * 37L) + nEnd);
+		if (hashCode == 0) {
+			hashCode = (int) (((37L + start) * 37L) + end);
 		}
 
-		return nHashCode;
+		return hashCode;
 	}
 
 	/**
@@ -375,12 +374,12 @@ public class DateRange implements Comparable<DateRange>, Serializable {
 	 * millisecond AFTER the end of the date range and on the first millisecond
 	 * of the adjacent range.
 	 *
-	 * @param rOther The range to test against this range
-	 * @return TRUE, if NOT (rRange.end &lt; start OR rRange.start &gt; end)
+	 * @param other The range to test against this range
+	 * @return TRUE, if NOT (range.end &lt; start OR range.start &gt; end)
 	 * @see #contains(DateRange)
 	 */
-	public boolean overlaps(DateRange rOther) {
-		return rOther.nEnd > nStart && rOther.nStart < nEnd;
+	public boolean overlaps(DateRange other) {
+		return other.end > start && other.start < end;
 	}
 
 	/**

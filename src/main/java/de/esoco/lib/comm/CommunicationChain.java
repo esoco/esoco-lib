@@ -27,33 +27,34 @@ import de.esoco.lib.expression.Function;
  */
 public class CommunicationChain<I, V, O> extends CommunicationMethod<I, O> {
 
-	private final CommunicationMethod<I, V> fMethod;
+	private final CommunicationMethod<I, V> communicationMethod;
 
-	private final Function<? super V, O> fValue;
+	private final Function<? super V, O> processValue;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param fMethod The communication method to evaluate
-	 * @param fValue  The function to evaluate the communication result with
+	 * @param communicationMethod The communication method to evaluate
+	 * @param processValue        The function to evaluate the communication
+	 *                            result with
 	 */
-	CommunicationChain(CommunicationMethod<I, V> fMethod,
-		Function<? super V, O> fValue) {
-		super(fValue.getToken() + "(" + fMethod.getToken() + ")", null);
+	CommunicationChain(CommunicationMethod<I, V> communicationMethod,
+		Function<? super V, O> processValue) {
+		super(processValue.getToken() + "(" + communicationMethod.getToken() +
+			")", null);
 
-		this.fMethod = fMethod;
-		this.fValue = fValue;
+		this.communicationMethod = communicationMethod;
+		this.processValue = processValue;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public O doOn(Connection rConnection, I rInput) {
-		V rValue = fMethod.evaluate(rInput, rConnection);
-		O rResult = fValue.evaluate(rValue);
+	public O doOn(Connection connection, I input) {
+		V value = communicationMethod.evaluate(input, connection);
 
-		return rResult;
+		return processValue.evaluate(value);
 	}
 
 	/**
@@ -62,7 +63,7 @@ public class CommunicationChain<I, V, O> extends CommunicationMethod<I, O> {
 	 * @return The communication method
 	 */
 	public final CommunicationMethod<I, V> getCommunicationMethod() {
-		return fMethod;
+		return communicationMethod;
 	}
 
 	/**
@@ -71,6 +72,6 @@ public class CommunicationChain<I, V, O> extends CommunicationMethod<I, O> {
 	 * @return The value function
 	 */
 	public final Function<? super V, O> getValueFunction() {
-		return fValue;
+		return processValue;
 	}
 }

@@ -34,7 +34,7 @@ import de.esoco.lib.manage.Stoppable;
 public abstract class StoppableRunner extends CheckableRunner
 	implements Stoppable {
 
-	private volatile boolean bStopRequest = false;
+	private volatile boolean stopRequest = false;
 
 	/**
 	 * Request to stop the execution. If an implementation cannot stop
@@ -43,7 +43,7 @@ public abstract class StoppableRunner extends CheckableRunner
 	 */
 	@Override
 	public final void stop() {
-		bStopRequest = true;
+		stopRequest = true;
 		Log.trace("Stop request: " + this + "[" + Thread.currentThread() +
 			"]");
 	}
@@ -59,6 +59,6 @@ public abstract class StoppableRunner extends CheckableRunner
 	 * @return TRUE if the execution should be stopped
 	 */
 	public final boolean stopRequested() {
-		return bStopRequest;
+		return stopRequest;
 	}
 }

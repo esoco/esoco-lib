@@ -55,23 +55,23 @@ public class LogRecordFormat extends TokenStringFormat<LogRecord> {
 		"{package}.{class}.{method}({file}:{line})";
 
 	static {
-		PropertyToken aToken;
+		PropertyToken token;
 
-		aToken = new PropertyToken("getLevel");
-		registerToken("l", aToken);
-		registerToken("level", aToken);
+		token = new PropertyToken("getLevel");
+		registerToken("l", token);
+		registerToken("level", token);
 
-		aToken = new PropertyToken("getMessage");
-		registerToken("m", aToken);
-		registerToken("message", aToken);
+		token = new PropertyToken("getMessage");
+		registerToken("m", token);
+		registerToken("message", token);
 
-		aToken = new PropertyToken("getTime");
-		registerToken("t", aToken);
-		registerToken("time", aToken);
+		token = new PropertyToken("getTime");
+		registerToken("t", token);
+		registerToken("time", token);
 
-		aToken = new PropertyToken("getCause");
-		registerToken("c", aToken);
-		registerToken("cause", aToken);
+		token = new PropertyToken("getCause");
+		registerToken("c", token);
+		registerToken("cause", token);
 		registerToken("package", new PropertyToken("getLogPackage"));
 		registerToken("class", new PropertyToken("getLogClassName"));
 		registerToken("method", new PropertyToken("getLogMethod"));
@@ -86,9 +86,9 @@ public class LogRecordFormat extends TokenStringFormat<LogRecord> {
 	/**
 	 * Creates a new instance for a certain log format string.
 	 *
-	 * @param sLogFormat The log format pattern
+	 * @param logFormat The log format pattern
 	 */
-	public LogRecordFormat(String sLogFormat) {
-		super(sLogFormat);
+	public LogRecordFormat(String logFormat) {
+		super(logFormat);
 	}
 }

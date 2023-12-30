@@ -34,20 +34,20 @@ public class ReferenceCacheMap<K, V>
 
 	private static final long serialVersionUID = 1L;
 
-	private final ReferenceQueue<V> aQueue = new ReferenceQueue<V>();
+	private final ReferenceQueue<V> queue = new ReferenceQueue<V>();
 
-	private final boolean bSoftReferences;
+	private final boolean softReferences;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param bSoft TRUE for soft and FALSE for weak references
+	 * @param soft TRUE for soft and FALSE for weak references
 	 * @see CacheMap#CacheMap(int)
 	 */
-	public ReferenceCacheMap(int nCapacity, boolean bSoft) {
-		super(nCapacity);
+	public ReferenceCacheMap(int capacity, boolean soft) {
+		super(capacity);
 
-		bSoftReferences = bSoft;
+		softReferences = soft;
 	}
 
 	/**
@@ -57,7 +57,7 @@ public class ReferenceCacheMap<K, V>
 	 */
 	@Override
 	public void clear() {
-		while (aQueue.poll() != null) {
+		while (queue.poll() != null) {
 		}
 
 		super.clear();
@@ -69,22 +69,22 @@ public class ReferenceCacheMap<K, V>
 	 * @see CacheMap#get(Object)
 	 */
 	@Override
-	public MappedReference<K, V> get(Object rKey) {
+	public MappedReference<K, V> get(Object key) {
 		cleanup();
 
-		return super.get(rKey);
+		return super.get(key);
 	}
 
 	/**
 	 * Returns the value for a certain key.
 	 *
-	 * @param rKey The key
+	 * @param key The key
 	 * @return The value
 	 */
-	public V getValue(Object rKey) {
-		MappedReference<K, V> rReference = get(rKey);
+	public V getValue(Object key) {
+		MappedReference<K, V> reference = get(key);
 
-		return rReference != null ? rReference.get() : null;
+		return reference != null ? reference.get() : null;
 	}
 
 	/**
@@ -94,8 +94,7 @@ public class ReferenceCacheMap<K, V>
 	 * @see #put(Object, MappedReference)
 	 */
 	@Override
-	public MappedReference<K, V> put(K rKey,
-		MappedReference<K, V> rReference) {
+	public MappedReference<K, V> put(K key, MappedReference<K, V> reference) {
 		throw new UnsupportedOperationException(
 			"Use putValue(key, value) instead");
 	}
@@ -103,31 +102,29 @@ public class ReferenceCacheMap<K, V>
 	/**
 	 * Adds a new reference mapping into this map.
 	 *
-	 * @param rKey   The key that identifies the value
-	 * @param rValue The value to reference
+	 * @param key   The key that identifies the value
+	 * @param value The value to reference
 	 */
-	public void putValue(K rKey, V rValue) {
+	public void putValue(K key, V value) {
 		cleanup();
 
-		MappedReference<K, V> aRef = bSoftReferences ?
-		                             new MappedSoftReference<K, V>(rKey,
-			                             rValue,
-			                             aQueue) :
-		                             new MappedWeakReference<K, V>(rKey,
-			                             rValue,
-			                             aQueue);
+		MappedReference<K, V> ref = softReferences ?
+		                            new MappedSoftReference<K, V>(key, value,
+			                            queue) :
+		                            new MappedWeakReference<K, V>(key, value,
+			                            queue);
 
-		super.put(rKey, aRef);
+		super.put(key, ref);
 	}
 
 	/**
 	 * @see CacheMap#remove(Object)
 	 */
 	@Override
-	public MappedReference<K, V> remove(Object rKey) {
+	public MappedReference<K, V> remove(Object key) {
 		cleanup();
 
-		return super.remove(rKey);
+		return super.remove(key);
 	}
 
 	/**
@@ -145,10 +142,10 @@ public class ReferenceCacheMap<K, V>
 	 */
 	@SuppressWarnings("unchecked")
 	private void cleanup() {
-		MappedReference<K, V> rReference;
+		MappedReference<K, V> reference;
 
-		while ((rReference = (MappedReference<K, V>) aQueue.poll()) != null) {
-			super.remove(rReference.getKey());
+		while ((reference = (MappedReference<K, V>) queue.poll()) != null) {
+			super.remove(reference.getKey());
 		}
 	}
 
@@ -182,21 +179,21 @@ public class ReferenceCacheMap<K, V>
 	public static class MappedSoftReference<K, V> extends SoftReference<V>
 		implements MappedReference<K, V> {
 
-		private final K rKey;
+		private final K key;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rKey             The key of the mapping
-		 * @param rReferencedValue The mapped value that is referenced by this
-		 *                         instance
-		 * @param rQueue           The reference queue
+		 * @param key             The key of the mapping
+		 * @param referencedValue The mapped value that is referenced by this
+		 *                        instance
+		 * @param queue           The reference queue
 		 */
-		public MappedSoftReference(K rKey, V rReferencedValue,
-			ReferenceQueue<V> rQueue) {
-			super(rReferencedValue, rQueue);
+		public MappedSoftReference(K key, V referencedValue,
+			ReferenceQueue<V> queue) {
+			super(referencedValue, queue);
 
-			this.rKey = rKey;
+			this.key = key;
 		}
 
 		/**
@@ -207,7 +204,7 @@ public class ReferenceCacheMap<K, V>
 		 */
 		@Override
 		public final K getKey() {
-			return rKey;
+			return key;
 		}
 	}
 
@@ -220,21 +217,21 @@ public class ReferenceCacheMap<K, V>
 	public static class MappedWeakReference<K, V> extends WeakReference<V>
 		implements MappedReference<K, V> {
 
-		private final K rKey;
+		private final K key;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rKey             The key of the mapping
-		 * @param rReferencedValue The mapped value that is referenced by this
-		 *                         instance
-		 * @param rQueue           The reference queue
+		 * @param key             The key of the mapping
+		 * @param referencedValue The mapped value that is referenced by this
+		 *                        instance
+		 * @param queue           The reference queue
 		 */
-		public MappedWeakReference(K rKey, V rReferencedValue,
-			ReferenceQueue<V> rQueue) {
-			super(rReferencedValue, rQueue);
+		public MappedWeakReference(K key, V referencedValue,
+			ReferenceQueue<V> queue) {
+			super(referencedValue, queue);
 
-			this.rKey = rKey;
+			this.key = key;
 		}
 
 		/**
@@ -245,7 +242,7 @@ public class ReferenceCacheMap<K, V>
 		 */
 		@Override
 		public final K getKey() {
-			return rKey;
+			return key;
 		}
 	}
 }

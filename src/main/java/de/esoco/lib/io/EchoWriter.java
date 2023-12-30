@@ -28,18 +28,18 @@ import java.io.Writer;
  */
 public class EchoWriter extends FilterWriter {
 
-	private final Writer rEchoWriter;
+	private final Writer echoWriter;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWrappedWriter The wrapped writer
-	 * @param rEchoWriter    The writer to echo the output to
+	 * @param wrappedWriter The wrapped writer
+	 * @param echoWriter    The writer to echo the output to
 	 */
-	public EchoWriter(Writer rWrappedWriter, Writer rEchoWriter) {
-		super(rWrappedWriter);
+	public EchoWriter(Writer wrappedWriter, Writer echoWriter) {
+		super(wrappedWriter);
 
-		this.rEchoWriter = rEchoWriter;
+		this.echoWriter = echoWriter;
 	}
 
 	/**
@@ -48,16 +48,15 @@ public class EchoWriter extends FilterWriter {
 	@Override
 	public void flush() throws IOException {
 		super.flush();
-		rEchoWriter.flush();
+		echoWriter.flush();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException {
-		super.write(nByte);
-
-		rEchoWriter.write(nByte);
+	public void write(int b) throws IOException {
+		super.write(b);
+		echoWriter.write(b);
 	}
 }

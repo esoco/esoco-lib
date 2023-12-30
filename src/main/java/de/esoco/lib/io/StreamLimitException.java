@@ -24,34 +24,23 @@ import java.io.IOException;
  * @author eso
  */
 public class StreamLimitException extends IOException {
-	
-	-------------------------------------------
 
 	private static final long serialVersionUID = 1L;
 
-	
-	
-
-	private final boolean bOnInput;
-
-	
-	
+	private final boolean onInput;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param sMessage An error message
-	 * @param bOnInput TRUE if the limit was reached on an input stream, FALSE
-	 *                 for an output stream
+	 * @param message An error message
+	 * @param onInput TRUE if the limit was reached on an input stream, FALSE
+	 *                for an output stream
 	 */
-	public StreamLimitException(String sMessage, boolean bOnInput) {
-		super(sMessage);
+	public StreamLimitException(String message, boolean onInput) {
+		super(message);
 
-		this.bOnInput = bOnInput;
+		this.onInput = onInput;
 	}
-
-	
-	
 
 	/**
 	 * Checks whether the limit was reached on an input stream or on an output
@@ -61,6 +50,6 @@ public class StreamLimitException extends IOException {
 	 * output stream
 	 */
 	public final boolean onInput() {
-		return bOnInput;
+		return onInput;
 	}
 }

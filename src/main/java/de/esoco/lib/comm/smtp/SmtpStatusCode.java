@@ -25,15 +25,15 @@ public enum SmtpStatusCode {
 	READY("220"), CLOSING("221"), AUTH_SUCCESS("235"), OK("250"),
 	START_MAIL("354");
 
-	private final String sCode;
+	private final String code;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param sCode The status code (three-digit number as a decimal string)
+	 * @param code The status code (three-digit number as a decimal string)
 	 */
-	SmtpStatusCode(String sCode) {
-		this.sCode = sCode;
+	SmtpStatusCode(String code) {
+		this.code = code;
 	}
 
 	/**
@@ -42,7 +42,7 @@ public enum SmtpStatusCode {
 	 * @return The status code
 	 */
 	public String getCode() {
-		return sCode;
+		return code;
 	}
 
 	/**
@@ -50,7 +50,7 @@ public enum SmtpStatusCode {
 	 */
 	@Override
 	public String toString() {
-		return String.format("%s (%s)", sCode,
+		return String.format("%s (%s)", code,
 			TextConvert.capitalize(name(), " "));
 	}
 }

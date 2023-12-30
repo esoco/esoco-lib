@@ -74,115 +74,112 @@ public class JsonRpcEndpoint extends Endpoint {
 	 * Creates a new JSON RPC batch call that invokes an RPC method multiple
 	 * times with different call parameters.
 	 *
-	 * @param rMethod        The RPC methods to call
-	 * @param rDefaultParams The default call parameters
+	 * @param method        The RPC methods to call
+	 * @param defaultParams The default call parameters
 	 * @return The new JSON RPC batch request object
 	 */
 	@SafeVarargs
 	public static <P, R> JsonRpcBatchMethod<P, R> batchCall(
-		JsonRpcMethod<P, R> rMethod, P... rDefaultParams) {
-		return new JsonRpcBatchMethod<>(rMethod,
-			Arrays.asList(rDefaultParams));
+		JsonRpcMethod<P, R> method, P... defaultParams) {
+		return new JsonRpcBatchMethod<>(method, Arrays.asList(defaultParams));
 	}
 
 	/**
 	 * Returns a new {@link JsonRpcMethod} for a generic RPC invocation.
 	 *
-	 * @param sMethod The name of the method to invoke
+	 * @param method The name of the method to invoke
 	 * @return The new method
 	 */
-	public static JsonRpcMethod<Object, Object> call(String sMethod) {
-		return call(sMethod, null, sJson -> Json.parse(sJson));
+	public static JsonRpcMethod<Object, Object> call(String method) {
+		return call(method, null, json -> Json.parse(json));
 	}
 
 	/**
 	 * Returns a new {@link JsonRpcMethod} with a generic parameters argument
 	 * and a specific result datatype.
 	 *
-	 * @param sMethod     The name of the method to invoke
-	 * @param rResultType The datatype to parse the result field of responses
-	 *                    with
+	 * @param method     The name of the method to invoke
+	 * @param resultType The datatype to parse the result field of responses
+	 *                   with
 	 * @return The new method
 	 */
-	public static <R> JsonRpcMethod<Object, R> call(String sMethod,
-		Class<R> rResultType) {
-		return call(sMethod, null, rResultType);
+	public static <R> JsonRpcMethod<Object, R> call(String method,
+		Class<R> resultType) {
+		return call(method, null, resultType);
 	}
 
 	/**
 	 * Returns a new {@link JsonRpcMethod} with specific datatypes for the
 	 * method parameters and the call result.
 	 *
-	 * @param sMethod        The name of the method to invoke
-	 * @param rDefaultParams Default parameters for the call (can be NULL)
-	 * @param rResultType    The datatype to parse the result field of
-	 *                          responses
-	 *                       with
+	 * @param method        The name of the method to invoke
+	 * @param defaultParams Default parameters for the call (can be NULL)
+	 * @param resultType    The datatype to parse the result field of responses
+	 *                      with
 	 * @return The new method
 	 */
-	public static <P, R> JsonRpcMethod<P, R> call(String sMethod,
-		P rDefaultParams, Class<R> rResultType) {
-		return new JsonRpcMethod<P, R>(sMethod, rDefaultParams, rResultType);
+	public static <P, R> JsonRpcMethod<P, R> call(String method,
+		P defaultParams, Class<R> resultType) {
+		return new JsonRpcMethod<P, R>(method, defaultParams, resultType);
 	}
 
 	/**
 	 * Returns a new {@link JsonRpcMethod} with specific datatypes for the
 	 * method parameters and a parse function for the response.
 	 *
-	 * @param sMethod        The name of the method to invoke
-	 * @param rDefaultParams Default parameters for the call (can be NULL)
-	 * @param fParseResponse A function that parses the JSON response string
-	 *                       into the result type
+	 * @param method        The name of the method to invoke
+	 * @param defaultParams Default parameters for the call (can be NULL)
+	 * @param parseResponse A function that parses the JSON response string
+	 *                         into
+	 *                      the result type
 	 * @return The new method
 	 */
-	public static <P, R> JsonRpcMethod<P, R> call(String sMethod,
-		P rDefaultParams, Function<String, R> fParseResponse) {
-		return new JsonRpcMethod<P, R>(sMethod, rDefaultParams,
-			fParseResponse);
+	public static <P, R> JsonRpcMethod<P, R> call(String method,
+		P defaultParams, Function<String, R> parseResponse) {
+		return new JsonRpcMethod<P, R>(method, defaultParams, parseResponse);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void closeConnection(Connection rConnection) throws Exception {
-		rConnection.get(RPC_SERVER_CONNECTION).close();
+	protected void closeConnection(Connection connection) throws Exception {
+		connection.get(RPC_SERVER_CONNECTION).close();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void initConnection(Connection rConnection) throws Exception {
-		URI rUri = rConnection.getUri();
-		String sTargetUrl = rUri.getSchemeSpecificPart();
+	protected void initConnection(Connection connection) throws Exception {
+		URI uri = connection.getUri();
+		String targetUrl = uri.getSchemeSpecificPart();
 
-		Endpoint rTransportEndpoint;
-		CommunicationMethod<String, String> rTransportMethod;
+		Endpoint transportEndpoint;
+		CommunicationMethod<String, String> transportMethod;
 
-		if (sTargetUrl.startsWith("http")) {
-			URL aUrl = new URL(sTargetUrl);
+		if (targetUrl.startsWith("http")) {
+			URL url = new URL(targetUrl);
 
 			// create endpoint from URL without path
-			rTransportEndpoint = Endpoint.at(
-				HttpEndpoint.url(aUrl.getHost(), aUrl.getPort(),
-					aUrl.getProtocol().endsWith("s")));
-			rTransportMethod = HttpEndpoint.httpPost(aUrl.getPath(), null);
-		} else if (sTargetUrl.startsWith("pipe")) {
-			rTransportEndpoint = Endpoint.at(sTargetUrl);
-			rTransportMethod = PipeEndpoint.textRequest(null);
+			transportEndpoint = Endpoint.at(
+				HttpEndpoint.url(url.getHost(), url.getPort(),
+					url.getProtocol().endsWith("s")));
+			transportMethod = HttpEndpoint.httpPost(url.getPath(), null);
+		} else if (targetUrl.startsWith("pipe")) {
+			transportEndpoint = Endpoint.at(targetUrl);
+			transportMethod = PipeEndpoint.textRequest(null);
 		} else {
 			throw new CommunicationException(
-				"Unsupported JSON RPC transport: " + sTargetUrl);
+				"Unsupported JSON RPC transport: " + targetUrl);
 		}
 
-		Connection rTransportConnection =
-			rTransportEndpoint.connect(rConnection);
+		Connection transportConnection = transportEndpoint.connect(connection);
 
-		rConnection.set(RPC_SERVER_CONNECTION, rTransportConnection);
-		rConnection.set(RPC_SERVER_METHOD, rTransportMethod);
+		connection.set(RPC_SERVER_CONNECTION, transportConnection);
+		connection.set(RPC_SERVER_METHOD, transportMethod);
 
-		rTransportConnection
+		transportConnection
 			.get(HTTP_REQUEST_HEADERS)
 			.put("Content-Type", Collections.singletonList("application/json"
 			));
@@ -199,11 +196,11 @@ public class JsonRpcEndpoint extends Endpoint {
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sName          The request name
-		 * @param rDefaultParams The default parameters
+		 * @param name          The request name
+		 * @param defaultParams The default parameters
 		 */
-		public JsonRpcBatch(String sName, Collection<P> rDefaultParams) {
-			super(sName, new ArrayList<>(rDefaultParams));
+		public JsonRpcBatch(String name, Collection<P> defaultParams) {
+			super(name, new ArrayList<>(defaultParams));
 		}
 
 		/**
@@ -228,25 +225,25 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * Parses the response for a single method invocation. Must be
 		 * implemented by subclasses.
 		 *
-		 * @param aResponse The JSON RPC response object for the method
-		 * @param rInputs   The method inputs
+		 * @param response The JSON RPC response object for the method
+		 * @param inputs   The method inputs
 		 * @return The parsed method response
 		 */
-		protected abstract R parseMethodResponse(JsonObject aResponse,
-			List<P> rInputs);
+		protected abstract R parseMethodResponse(JsonObject response,
+			List<P> inputs);
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected List<R> parseRawResponse(String sRawResponse,
-			List<P> rInputs) {
+		protected List<R> parseRawResponse(String rawResponse,
+			List<P> inputs) {
 			return Json
-				.parseArray(sRawResponse, 1)
+				.parseArray(rawResponse, 1)
 				.stream()
 				.map(o -> Json.parseObject(o.toString(), 1))
 				.sorted((j1, j2) -> j1.getInt("id", 0) - j2.getInt("id", 0))
-				.map(aResponse -> parseMethodResponse(aResponse, rInputs))
+				.map(response -> parseMethodResponse(response, inputs))
 				.collect(Collectors.toList());
 		}
 
@@ -254,7 +251,7 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected List<R> parseResult(String sRawResponse) {
+		protected List<R> parseResult(String rawResponse) {
 			// not used for batch calls
 			return null;
 		}
@@ -273,87 +270,86 @@ public class JsonRpcEndpoint extends Endpoint {
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sName          The name of the RPC method to invoke
-		 * @param rDefaultParams Default parameters for the method invocation
+		 * @param name          The name of the RPC method to invoke
+		 * @param defaultParams Default parameters for the method invocation
 		 */
-		public JsonRpcRequest(String sName, P rDefaultParams) {
-			super(sName, rDefaultParams);
+		public JsonRpcRequest(String name, P defaultParams) {
+			super(name, defaultParams);
 		}
 
 		/**
 		 * Builds the request for the default input of this instance. Used for
 		 * batch invocation.
 		 *
-		 * @param nId The request ID
+		 * @param id The request ID
 		 * @return The JSON RPC request object
 		 */
-		public Object buildDefaultRequest(int nId) {
-			return buildRequest(getDefaultInput(), nId);
+		public Object buildDefaultRequest(int id) {
+			return buildRequest(getDefaultInput(), id);
 		}
 
 		/**
 		 * Builds an object containing the JSON RPC request properties.
 		 *
-		 * @param rInput The input value to create the request parameters from
-		 * @param nId    The request ID
+		 * @param input The input value to create the request parameters from
+		 * @param id    The request ID
 		 * @return The JSON JPC request object
 		 */
-		public abstract Object buildRequest(P rInput, int nId);
+		public abstract Object buildRequest(P input, int id);
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public R doOn(Connection rConnection, P rInput) {
-			Connection rTransportConnection =
-				rConnection.get(RPC_SERVER_CONNECTION);
+		public R doOn(Connection connection, P input) {
+			Connection transportConnection =
+				connection.get(RPC_SERVER_CONNECTION);
 
-			CommunicationMethod<String, String> rTransportMethod =
-				rConnection.get(RPC_SERVER_METHOD);
+			CommunicationMethod<String, String> transportMethod =
+				connection.get(RPC_SERVER_METHOD);
 
-			Object aRequest = buildRequest(rInput, 1);
+			Object request = buildRequest(input, 1);
 
-			String sRawResponse =
-				rTransportMethod.evaluate(Json.toCompactJson(aRequest),
-					rTransportConnection);
+			String rawResponse =
+				transportMethod.evaluate(Json.toCompactJson(request),
+					transportConnection);
 
-			return parseRawResponse(sRawResponse, rInput);
+			return parseRawResponse(rawResponse, input);
 		}
 
 		/**
 		 * Parses the raw JSON response string.
 		 *
-		 * @param sRawResponse The raw JSON response
-		 * @param rInput       The input value for which the response has been
-		 *                     returned
+		 * @param rawResponse The raw JSON response
+		 * @param input       The input value for which the response has been
+		 *                    returned
 		 * @return The parsed result
 		 */
-		protected R parseRawResponse(String sRawResponse, P rInput) {
-			JsonObject aResponse = Json.parseObject(sRawResponse, 1);
+		protected R parseRawResponse(String rawResponse, P input) {
+			JsonObject response = Json.parseObject(rawResponse, 1);
 
-			return parseResponse(aResponse);
+			return parseResponse(response);
 		}
 
 		/**
 		 * Parses the response to a method call and returns the raw result
 		 * value.
 		 *
-		 * @param rResponse The JSON response object received from the server
+		 * @param response The JSON response object received from the server
 		 * @return The parsed result
 		 * @throws CommunicationException If an error response has been
 		 *                                received
 		 */
-		protected R parseResponse(JsonObject rResponse) {
-			rResponse.getString("error").ifExists(sError -> {
-				JsonObject aError = Json.parseObject(sError);
+		protected R parseResponse(JsonObject response) {
+			response.getString("error").ifExists(err -> {
+				JsonObject error = Json.parseObject(err);
 
 				throw new CommunicationException(
 					String.format("JSON RPC Error %s: %s",
-						aError.getString("code"),
-						aError.getString("message")));
+						error.getString("code"), error.getString("message")));
 			});
 
-			return parseResult(rResponse.getString("result").orFail());
+			return parseResult(response.getString("result").orFail());
 		}
 
 		/**
@@ -361,10 +357,10 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * The default implementation invokes
 		 * {@link Json#parse(String, Class)}.
 		 *
-		 * @param sJsonResult The raw JSON result field of the request
+		 * @param jsonResult The raw JSON result field of the request
 		 * @return The parsed value
 		 */
-		protected abstract R parseResult(String sJsonResult);
+		protected abstract R parseResult(String jsonResult);
 	}
 
 	/**
@@ -379,7 +375,7 @@ public class JsonRpcEndpoint extends Endpoint {
 	public static class JsonRpcBatchCall extends JsonRpcBatch<Call<?>,
 		Object> {
 
-		private int nFirstId;
+		private int firstId;
 
 		/**
 		 * Creates a new instance without default calls. The calls must either
@@ -395,30 +391,30 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * {@inheritDoc}
 		 */
 		@Override
-		public Object buildRequest(List<Call<?>> rCalls, int nId) {
-			nFirstId = nId;
+		public Object buildRequest(List<Call<?>> calls, int id) {
+			firstId = id;
 
-			List<Object> aCallRequests = new ArrayList<>(rCalls.size());
+			List<Object> callRequests = new ArrayList<>(calls.size());
 
-			for (Call<?> rCall : rCalls) {
-				Object aRequest = rCall.rRequest.buildDefaultRequest(nId);
+			for (Call<?> call : calls) {
+				Object request = call.request.buildDefaultRequest(id);
 
-				if (aRequest instanceof JsonObject) {
-					aCallRequests.add(aRequest);
-					nId += 1;
-				} else if (aRequest instanceof Collection) {
-					Collection<?> rBatchRequests = (Collection<?>) aRequest;
+				if (request instanceof JsonObject) {
+					callRequests.add(request);
+					id += 1;
+				} else if (request instanceof Collection) {
+					Collection<?> batchRequests = (Collection<?>) request;
 
-					aCallRequests.addAll(rBatchRequests);
-					nId += rBatchRequests.size();
+					callRequests.addAll(batchRequests);
+					id += batchRequests.size();
 				} else {
 					throw new IllegalArgumentException(
 						"Unsupported batch " + "request data from " +
-							rCall.rRequest);
+							call.request);
 				}
 			}
 
-			return aCallRequests;
+			return callRequests;
 		}
 
 		/**
@@ -426,17 +422,16 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * process the result upon receiving. The return value of the function
 		 * will be available in the result of the batch call evaluation.
 		 *
-		 * @param rRequest         The JSON RPC request to be invoked
-		 * @param fResponseHandler A function that handles the response
-		 *                               received
-		 *                         by the call
+		 * @param request         The JSON RPC request to be invoked
+		 * @param responseHandler A function that handles the response received
+		 *                        by the call
 		 * @return This instance for call concatenation
 		 */
-		public <R> JsonRpcBatchCall call(JsonRpcRequest<?, R> rRequest,
-			Consumer<? super R> fResponseHandler) {
-			Call<R> aCall = new Call<>(rRequest, fResponseHandler);
+		public <R> JsonRpcBatchCall call(JsonRpcRequest<?, R> request,
+			Consumer<? super R> responseHandler) {
+			Call<R> call = new Call<>(request, responseHandler);
 
-			getDefaultInput().add(aCall);
+			getDefaultInput().add(call);
 
 			return this;
 		}
@@ -455,34 +450,34 @@ public class JsonRpcEndpoint extends Endpoint {
 		 */
 		@Override
 		public String toString() {
-			StringBuilder aResult =
+			StringBuilder result =
 				new StringBuilder(getClass().getSimpleName());
 
-			int nId = 1;
+			int id = 1;
 
-			for (Call<?> rCall : getDefaultInput()) {
-				aResult.append("\n");
-				aResult.append(rCall.rRequest.buildDefaultRequest(nId++));
+			for (Call<?> call : getDefaultInput()) {
+				result.append("\n");
+				result.append(call.request.buildDefaultRequest(id++));
 			}
 
-			return aResult.toString();
+			return result.toString();
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected Object parseMethodResponse(JsonObject aResponse,
-			List<Call<?>> rCalls) {
-			int nId = aResponse.getInt("id", 0) - nFirstId;
+		protected Object parseMethodResponse(JsonObject response,
+			List<Call<?>> calls) {
+			int id = response.getInt("id", 0) - firstId;
 
-			if (nId >= 0 && nId < rCalls.size()) {
-				Call<?> rCall = rCalls.get(nId);
+			if (id >= 0 && id < calls.size()) {
+				Call<?> call = calls.get(id);
 
-				return rCall.processResponse(aResponse);
+				return call.processResponse(response);
 			} else {
 				throw new CommunicationException(
-					"No method to parse response ID" + nId);
+					"No method to parse response ID" + id);
 			}
 		}
 	}
@@ -495,42 +490,42 @@ public class JsonRpcEndpoint extends Endpoint {
 	 */
 	public static class JsonRpcBatchMethod<P, R> extends JsonRpcBatch<P, R> {
 
-		private final JsonRpcMethod<P, ? extends R> rRpcMethod;
+		private final JsonRpcMethod<P, ? extends R> rpcMethod;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rRpcMethod     The methods to call
-		 * @param rDefaultInputs The default method input
+		 * @param rpcMethod     The methods to call
+		 * @param defaultInputs The default method input
 		 */
-		public JsonRpcBatchMethod(JsonRpcMethod<P, R> rRpcMethod,
-			Collection<P> rDefaultInputs) {
-			super(JsonRpcBatchMethod.class.getSimpleName(), rDefaultInputs);
+		public JsonRpcBatchMethod(JsonRpcMethod<P, R> rpcMethod,
+			Collection<P> defaultInputs) {
+			super(JsonRpcBatchMethod.class.getSimpleName(), defaultInputs);
 
-			this.rRpcMethod = rRpcMethod;
+			this.rpcMethod = rpcMethod;
 		}
 
 		/**
 		 * Adds a new method parameter to be requested by this instance.
 		 *
-		 * @param rCallParam rRequest The JSON RPC request
+		 * @param callParam request The JSON RPC request
 		 */
-		public void add(P rCallParam) {
-			getDefaultInput().add(rCallParam);
+		public void add(P callParam) {
+			getDefaultInput().add(callParam);
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public Collection<JsonObject> buildRequest(List<P> rInputs, int nId) {
-			List<JsonObject> aMethodRequests = new ArrayList<>(rInputs.size());
+		public Collection<JsonObject> buildRequest(List<P> inputs, int id) {
+			List<JsonObject> methodRequests = new ArrayList<>(inputs.size());
 
-			for (P rParams : rInputs) {
-				aMethodRequests.add(rRpcMethod.buildRequest(rParams, nId++));
+			for (P params : inputs) {
+				methodRequests.add(rpcMethod.buildRequest(params, id++));
 			}
 
-			return aMethodRequests;
+			return methodRequests;
 		}
 
 		/**
@@ -545,8 +540,8 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected R parseMethodResponse(JsonObject aResponse, List<P> rInput) {
-			return rRpcMethod.parseResponse(aResponse);
+		protected R parseMethodResponse(JsonObject response, List<P> input) {
+			return rpcMethod.parseResponse(response);
 		}
 	}
 
@@ -557,71 +552,69 @@ public class JsonRpcEndpoint extends Endpoint {
 	 */
 	public static class JsonRpcMethod<P, R> extends JsonRpcRequest<P, R> {
 
-		private final String sMethod;
+		private final String method;
 
-		private final Function<String, R> fParseResponse;
+		private final Function<String, R> parseResponse;
 
-		private final Function<? super P, ?> fConvertInput;
+		private final Function<? super P, ?> convertInput;
 
 		/**
 		 * Creates a new instance that uses input values directly as RPC call
 		 * parameters.
 		 *
-		 * @param sMethod        The name of the RPC method to invoke
-		 * @param rDefaultParams Default parameters for the method invocation
-		 * @param rResponseType  The target datatype to parse the response with
+		 * @param method        The name of the RPC method to invoke
+		 * @param defaultParams Default parameters for the method invocation
+		 * @param responseType  The target datatype to parse the response with
 		 */
-		public JsonRpcMethod(String sMethod, P rDefaultParams,
-			Class<R> rResponseType) {
-			this(sMethod, rDefaultParams, Functions.identity(),
-				JsonParser.parseJson(rResponseType));
+		public JsonRpcMethod(String method, P defaultParams,
+			Class<R> responseType) {
+			this(method, defaultParams, Functions.identity(),
+				JsonParser.parseJson(responseType));
 		}
 
 		/**
 		 * Creates a new instance that uses input values directly as RPC call
 		 * parameters.
 		 *
-		 * @param sMethod        The name of the RPC method to invoke
-		 * @param rDefaultParams Default parameters for the method invocation
-		 * @param fParseResponse A function that parses the JSON response
-		 *                             string
-		 *                       into the result type
+		 * @param method        The name of the RPC method to invoke
+		 * @param defaultParams Default parameters for the method invocation
+		 * @param parseResponse A function that parses the JSON response string
+		 *                      into the result type
 		 */
-		public JsonRpcMethod(String sMethod, P rDefaultParams,
-			Function<String, R> fParseResponse) {
-			this(sMethod, rDefaultParams, Functions.identity(),
-				fParseResponse);
+		public JsonRpcMethod(String method, P defaultParams,
+			Function<String, R> parseResponse) {
+			this(method, defaultParams, Functions.identity(), parseResponse);
 		}
 
 		/**
 		 * Creates a new instance that converts input values into the actual
 		 * input value before using them as RPC call parameters.
 		 *
-		 * @param sMethod        The name of the RPC method to invoke
-		 * @param rDefaultParams Default parameters for the method invocation
-		 * @param fConvertInput  A function that converts input parameters to
-		 *                       the actual value to be used in the request
-		 * @param fParseResponse A function that parses the JSON response
-		 *                             string
-		 *                       into the result type
+		 * @param method        The name of the RPC method to invoke
+		 * @param defaultParams Default parameters for the method invocation
+		 * @param convertInput  A function that converts input parameters to
+		 *                           the
+		 *                      actual value to be used in the request
+		 * @param parseResponse A function that parses the JSON response string
+		 *                      into the result type
 		 */
-		public JsonRpcMethod(String sMethod, P rDefaultParams,
-			Function<? super P, ?> fConvertInput,
-			Function<String, R> fParseResponse) {
-			super(sMethod, rDefaultParams);
+		public JsonRpcMethod(String method, P defaultParams,
+			Function<? super P, ?> convertInput,
+			Function<String, R> parseResponse) {
+			super(method, defaultParams);
 
-			this.sMethod = sMethod;
-			this.fParseResponse = fParseResponse;
-			this.fConvertInput = fConvertInput;
+			this.method = method;
+			this.parseResponse = parseResponse;
+			this.convertInput = convertInput;
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public JsonObject buildRequest(P rInput, int nId) {
-			return new JsonRpcRequestData(nId, sMethod).withParams(
-				getRequestParams(rInput));
+		public JsonObject buildRequest(P input, int id) {
+			return new JsonRpcRequestData(id, method).withParams(
+				getRequestParams(input));
 		}
 
 		/**
@@ -633,7 +626,7 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * @return The input conversion function
 		 */
 		public Function<? super P, ?> getInputConversion() {
-			return fConvertInput;
+			return convertInput;
 		}
 
 		/**
@@ -642,19 +635,19 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * implementation just returns the input value. Subclasses can override
 		 * this to extend or modify the method input.
 		 *
-		 * @param rInput The method input
+		 * @param input The method input
 		 * @return The actual request params
 		 */
-		protected Object getRequestParams(P rInput) {
-			return fConvertInput.apply(rInput);
+		protected Object getRequestParams(P input) {
+			return convertInput.apply(input);
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected R parseResult(String sJsonResult) {
-			return fParseResponse.apply(sJsonResult);
+		protected R parseResult(String jsonResult) {
+			return parseResponse.apply(jsonResult);
 		}
 	}
 
@@ -665,22 +658,21 @@ public class JsonRpcEndpoint extends Endpoint {
 	 */
 	static class Call<R> {
 
-		private final JsonRpcRequest<?, R> rRequest;
+		private final JsonRpcRequest<?, R> request;
 
-		private final Consumer<? super R> fResponseHandler;
+		private final Consumer<? super R> responseHandler;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rRequest         The request for the method to be called
-		 * @param fResponseHandler A function that handles the response
-		 *                               received
-		 *                         by the call
+		 * @param request         The request for the method to be called
+		 * @param responseHandler A function that handles the response received
+		 *                        by the call
 		 */
-		Call(JsonRpcRequest<?, R> rRequest,
-			Consumer<? super R> fResponseHandler) {
-			this.rRequest = rRequest;
-			this.fResponseHandler = fResponseHandler;
+		Call(JsonRpcRequest<?, R> request,
+			Consumer<? super R> responseHandler) {
+			this.request = request;
+			this.responseHandler = responseHandler;
 		}
 
 		/**
@@ -688,17 +680,16 @@ public class JsonRpcEndpoint extends Endpoint {
 		 * response
 		 * handler if available.
 		 *
-		 * @param rResponse The response to parse
+		 * @param response The response to parse
 		 * @return The parsed result
 		 */
-		public R processResponse(JsonObject rResponse) {
-			R aResponse = rRequest.parseResponse(rResponse);
+		public R processResponse(JsonObject response) {
+			R result = request.parseResponse(response);
 
-			if (fResponseHandler != null) {
-				fResponseHandler.accept(aResponse);
+			if (responseHandler != null) {
+				responseHandler.accept(result);
 			}
-
-			return aResponse;
+			return result;
 		}
 
 		/**
@@ -706,7 +697,7 @@ public class JsonRpcEndpoint extends Endpoint {
 		 */
 		@Override
 		public String toString() {
-			return String.format("Call(%s)", rRequest);
+			return String.format("Call(%s)", request);
 		}
 	}
 }

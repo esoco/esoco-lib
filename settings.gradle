@@ -1,5 +1,5 @@
 rootProject.name = "esoco-lib"
 
 ['esoco-common', 'esoco-monads', 'objectrelations'].each {
-	project -> if (new File("$rootDir/../$project").exists()) includeBuild "../$project"
+    project -> if (new File("$rootDir/../$project").exists()) includeBuild "../$project"
 }

@@ -82,26 +82,26 @@ public class Security {
 	 * Creates a Java security key store containing a certain certificate chain
 	 * and it's private key.
 	 *
-	 * @param sAlias      The alias name for the certificate and key
-	 * @param sPassword   The password for the private key
-	 * @param rPrivateKey The private key of the first certificate in the chain
-	 * @param rCertChain  The certificate chain which must contain at least one
-	 *                    certificate
+	 * @param alias      The alias name for the certificate and key
+	 * @param password   The password for the private key
+	 * @param privateKey The private key of the first certificate in the chain
+	 * @param certChain  The certificate chain which must contain at least one
+	 *                   certificate
 	 * @return A new key store with the certificate chain and key
 	 * @throws IllegalStateException If the certificate generation fails
 	 * because
 	 *                               of unavailable algorithms
 	 */
-	public static KeyStore createKeyStore(String sAlias, String sPassword,
-		PrivateKey rPrivateKey, X509Certificate[] rCertChain) {
+	public static KeyStore createKeyStore(String alias, String password,
+		PrivateKey privateKey, X509Certificate[] certChain) {
 		try {
-			KeyStore aKeyStore = KeyStore.getInstance("JKS");
+			KeyStore keyStore = KeyStore.getInstance("JKS");
 
-			aKeyStore.load(null);
-			aKeyStore.setKeyEntry(sAlias, rPrivateKey, sPassword.toCharArray(),
-				rCertChain);
+			keyStore.load(null);
+			keyStore.setKeyEntry(alias, privateKey, password.toCharArray(),
+				certChain);
 
-			return aKeyStore;
+			return keyStore;
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
@@ -116,32 +116,32 @@ public class Security {
 	 * CERTIFICATE-----') according to <a
 	 * href="https://tools.ietf.org/html/rfc7468">RFC 7468</a>.
 	 *
-	 * @param sBase64 A string containing the Base64 encoded data
+	 * @param base64 A string containing the Base64 encoded data
 	 * @return The decoded binary data
 	 */
-	public static byte[] decodeBase64(String sBase64) {
-		sBase64 =
-			sBase64.replaceAll("-----.*\n", "").replaceAll("\n", "").trim();
+	public static byte[] decodeBase64(String base64) {
+		base64 =
+			base64.replaceAll("-----.*\n", "").replaceAll("\n", "").trim();
 
 		return Base64
 			.getDecoder()
-			.decode(sBase64.getBytes(StandardCharsets.UTF_8));
+			.decode(base64.getBytes(StandardCharsets.UTF_8));
 	}
 
 	/**
 	 * Reads an X509 certificate from an input stream.
 	 *
-	 * @param rCertData The input stream containing the certificate data
+	 * @param certData The input stream containing the certificate data
 	 * @return The X509 certificate
 	 * @throws IllegalArgumentException If the certificate creation fails
 	 */
-	public static X509Certificate decodeCertificate(byte[] rCertData) {
+	public static X509Certificate decodeCertificate(byte[] certData) {
 		try {
-			ByteArrayInputStream aData = new ByteArrayInputStream(rCertData);
+			ByteArrayInputStream data = new ByteArrayInputStream(certData);
 
 			return (X509Certificate) CertificateFactory
 				.getInstance("X.509")
-				.generateCertificate(aData);
+				.generateCertificate(data);
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -150,16 +150,16 @@ public class Security {
 	/**
 	 * Reads the binary data of a private key in PKCS8 format.
 	 *
-	 * @param rPkcs8Key An input stream providing the PKCS8 key data
+	 * @param pkcs8Key An input stream providing the PKCS8 key data
 	 * @return A new private key instance
 	 * @throws IllegalArgumentException If the key cannot be created from the
 	 *                                  input
 	 */
-	public static PrivateKey decodePrivateKey(byte[] rPkcs8Key) {
+	public static PrivateKey decodePrivateKey(byte[] pkcs8Key) {
 		try {
-			PKCS8EncodedKeySpec aKeySpec = new PKCS8EncodedKeySpec(rPkcs8Key);
+			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pkcs8Key);
 
-			return KeyFactory.getInstance("RSA").generatePrivate(aKeySpec);
+			return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -170,18 +170,18 @@ public class Security {
 	 * algorithm. The passphrase will be converted into a 128 bit AES key by
 	 * applying the method {@link #deriveKey(String, String, int)}.
 	 *
-	 * @param rData       The data to decrypt
-	 * @param sPassphrase The passphrase
+	 * @param data       The data to decrypt
+	 * @param passphrase The passphrase
 	 * @return The decrypted data
 	 */
-	public static String decrypt(byte[] rData, String sPassphrase) {
+	public static String decrypt(byte[] data, String passphrase) {
 		try {
-			Cipher aCipher = Cipher.getInstance("AES");
-			Key aKey = deriveKey(sPassphrase, "AES", 128);
+			Cipher cipher = Cipher.getInstance("AES");
+			Key key = deriveKey(passphrase, "AES", 128);
 
-			aCipher.init(Cipher.DECRYPT_MODE, aKey);
+			cipher.init(Cipher.DECRYPT_MODE, key);
 
-			return new String(aCipher.doFinal(rData), StandardCharsets.UTF_8);
+			return new String(cipher.doFinal(data), StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -194,21 +194,21 @@ public class Security {
 	 * then
 	 * be reduced to the requested bit length.
 	 *
-	 * @param sPassphrase The passphrase
-	 * @param sAlgorithm  The algorithm of the returned key
-	 * @param nBitLength  The bit length of the returned key
+	 * @param passphrase The passphrase
+	 * @param algorithm  The algorithm of the returned key
+	 * @param bitLength  The bit length of the returned key
 	 * @return The resulting key
 	 * @throws SecurityException If deriving the key fails
 	 */
-	public static Key deriveKey(String sPassphrase, String sAlgorithm,
-		int nBitLength) {
+	public static Key deriveKey(String passphrase, String algorithm,
+		int bitLength) {
 		try {
-			byte[] aKeyHash = Arrays.copyOf(MessageDigest
+			byte[] keyHash = Arrays.copyOf(MessageDigest
 					.getInstance("SHA-256")
-					.digest(sPassphrase.getBytes(StandardCharsets.UTF_8)),
-				nBitLength / 8);
+					.digest(passphrase.getBytes(StandardCharsets.UTF_8)),
+				bitLength / 8);
 
-			return new SecretKeySpec(aKeyHash, sAlgorithm);
+			return new SecretKeySpec(keyHash, algorithm);
 		} catch (Exception e) {
 			throw new SecurityException(e);
 		}
@@ -229,19 +229,19 @@ public class Security {
 	 */
 	public static void enableJavaCryptographicExtensions() {
 		try {
-			Field rField = Class
+			Field field = Class
 				.forName("javax.crypto.JceSecurity")
 				.getDeclaredField("isRestricted");
 
-			rField.setAccessible(true);
+			field.setAccessible(true);
 
-			Field rModifiersField = Field.class.getDeclaredField("modifiers");
+			Field modifiersField = Field.class.getDeclaredField("modifiers");
 
-			rModifiersField.setAccessible(true);
-			rModifiersField.setInt(rField,
-				rField.getModifiers() & ~Modifier.FINAL);
+			modifiersField.setAccessible(true);
+			modifiersField.setInt(field,
+				field.getModifiers() & ~Modifier.FINAL);
 
-			rField.set(null, Boolean.FALSE);
+			field.set(null, Boolean.FALSE);
 		} catch (Exception e) {
 			Log.error("Unable to enable Java Cryptographic Extensions. " +
 				"Some ciphers may be unavailable in the current JRE.", e);
@@ -252,29 +252,30 @@ public class Security {
 	 * Encodes binary cryptographic data into base64 in PEM format according to
 	 * <a href="https://tools.ietf.org/html/rfc7468">RFC 7468</a>.
 	 *
-	 * @param rData  The binary data to encode
-	 * @param sToken The token for the PEM delimiters describing the encoded
-	 *               data (will be converted to uppercase)
+	 * @param data  The binary data to encode
+	 * @param token The token for the PEM delimiters describing the encoded
+	 *                 data
+	 *              (will be converted to uppercase)
 	 * @return An ASCII string containing the encoded data
 	 */
-	public static String encodeBase64(byte[] rData, String sToken) {
-		String sBase64 = Base64.getEncoder().encodeToString(rData);
-		StringBuilder aEncoded = new StringBuilder("-----BEGIN ");
-		int nMax = sBase64.length();
+	public static String encodeBase64(byte[] data, String token) {
+		String base64 = Base64.getEncoder().encodeToString(data);
+		StringBuilder encoded = new StringBuilder("-----BEGIN ");
+		int max = base64.length();
 
-		sToken = sToken.toUpperCase();
-		aEncoded.append(sToken).append("-----\n");
+		token = token.toUpperCase();
+		encoded.append(token).append("-----\n");
 
-		for (int i = 0; i < nMax; i += 64) {
-			int l = nMax - i;
+		for (int i = 0; i < max; i += 64) {
+			int l = max - i;
 
-			aEncoded.append(sBase64, i, i + (l > 64 ? 64 : l));
-			aEncoded.append('\n');
+			encoded.append(base64, i, i + (l > 64 ? 64 : l));
+			encoded.append('\n');
 		}
 
-		aEncoded.append("-----END ").append(sToken).append("-----\n");
+		encoded.append("-----END ").append(token).append("-----\n");
 
-		return aEncoded.toString();
+		return encoded.toString();
 	}
 
 	/**
@@ -282,18 +283,18 @@ public class Security {
 	 * algorithm. The passphrase will be converted into a 128 bit AES key by
 	 * applying the method {@link #deriveKey(String, String, int)}.
 	 *
-	 * @param sValue      The value to encrypt
-	 * @param sPassphrase The passphrase
+	 * @param value      The value to encrypt
+	 * @param passphrase The passphrase
 	 * @return The encrypted data
 	 */
-	public static byte[] encrypt(String sValue, String sPassphrase) {
+	public static byte[] encrypt(String value, String passphrase) {
 		try {
-			Cipher aCipher = Cipher.getInstance("AES");
-			Key aKey = deriveKey(sPassphrase, "AES", 128);
+			Cipher cipher = Cipher.getInstance("AES");
+			Key key = deriveKey(passphrase, "AES", 128);
 
-			aCipher.init(Cipher.ENCRYPT_MODE, aKey);
+			cipher.init(Cipher.ENCRYPT_MODE, key);
 
-			return aCipher.doFinal(sValue.getBytes());
+			return cipher.doFinal(value.getBytes());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -308,34 +309,34 @@ public class Security {
 	 * the
 	 * SHA-256 algorithm).
 	 *
-	 * @param sAlgorithm The name of the hash algorithm to apply
+	 * @param algorithm The name of the hash algorithm to apply
 	 * @return The random hash ID
 	 * @throws IllegalArgumentException If the hash algorithm cannot be found
 	 */
-	public static String generateHashId(String sAlgorithm) {
-		return hash(sAlgorithm, UUID.randomUUID().toString().getBytes());
+	public static String generateHashId(String algorithm) {
+		return hash(algorithm, UUID.randomUUID().toString().getBytes());
 	}
 
 	/**
 	 * Generates a key pair with the given algorithm and key size.
 	 *
-	 * @param sAlgorithm The algorithm name as defined in the Java cryptography
-	 *                   packages
-	 * @param nKeySize   The number of bits in the key
+	 * @param algorithm The algorithm name as defined in the Java cryptography
+	 *                  packages
+	 * @param keySize   The number of bits in the key
 	 * @return The generated key pair
 	 * @throws IllegalArgumentException If the given algorithm could not be
 	 *                                  found (mapped from
 	 *                                  {@link NoSuchAlgorithmException})
 	 */
-	public static KeyPair generateKeyPair(String sAlgorithm, int nKeySize) {
+	public static KeyPair generateKeyPair(String algorithm, int keySize) {
 		try {
-			SecureRandom aRandom = new SecureRandom();
-			KeyPairGenerator rGenerator =
-				KeyPairGenerator.getInstance(sAlgorithm);
+			SecureRandom random = new SecureRandom();
+			KeyPairGenerator generator =
+				KeyPairGenerator.getInstance(algorithm);
 
-			rGenerator.initialize(nKeySize, aRandom);
+			generator.initialize(keySize, random);
 
-			return rGenerator.generateKeyPair();
+			return generator.generateKeyPair();
 		} catch (NoSuchAlgorithmException e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -357,32 +358,31 @@ public class Security {
 	 * Initializes an SSL context from a key store so that it will use the
 	 * certificates from the key store for SSL/TLS connections.
 	 *
-	 * @param rKeyStore         The key store to initialize the context from
-	 * @param sKeyStorePassword The key store password
+	 * @param keyStore         The key store to initialize the context from
+	 * @param keyStorePassword The key store password
 	 * @return A new SSL context initialized to use the given key store
 	 * @throws IllegalArgumentException If the parameters are invalid or refer
 	 *                                  to unavailable security algorithms
 	 */
-	public static SSLContext getSslContext(KeyStore rKeyStore,
-		String sKeyStorePassword) {
+	public static SSLContext getSslContext(KeyStore keyStore,
+		String keyStorePassword) {
 		try {
-			KeyManagerFactory aKeyManagerFactory =
+			KeyManagerFactory keyManagerFactory =
 				KeyManagerFactory.getInstance("SunX509");
-			TrustManagerFactory aTrustManagerFactory =
+			TrustManagerFactory trustManagerFactory =
 				TrustManagerFactory.getInstance("SunX509");
 
-			aKeyManagerFactory.init(rKeyStore,
-				sKeyStorePassword.toCharArray());
-			aTrustManagerFactory.init(rKeyStore);
+			keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());
+			trustManagerFactory.init(keyStore);
 
-			SSLContext aSslContext = SSLContext.getInstance("TLS");
-			TrustManager[] rTrustManagers =
-				aTrustManagerFactory.getTrustManagers();
+			SSLContext sslContext = SSLContext.getInstance("TLS");
+			TrustManager[] trustManagers =
+				trustManagerFactory.getTrustManagers();
 
-			aSslContext.init(aKeyManagerFactory.getKeyManagers(),
-				rTrustManagers, null);
+			sslContext.init(keyManagerFactory.getKeyManagers(), trustManagers,
+				null);
 
-			return aSslContext;
+			return sslContext;
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e);
 		}
@@ -393,18 +393,18 @@ public class Security {
 	 * returned value is an uppercase hexadecimal string of the resulting hash
 	 * value.
 	 *
-	 * @param sAlgorithm The name of the hash algorithm to apply
-	 * @param rData      The data to hash
+	 * @param algorithm The name of the hash algorithm to apply
+	 * @param data      The data to hash
 	 * @return The hexadecimal hash value (uppercase)
 	 * @throws IllegalArgumentException If the hash algorithm cannot be found
 	 */
-	public static String hash(String sAlgorithm, byte[] rData) {
+	public static String hash(String algorithm, byte[] data) {
 		try {
 			return TextUtil.hexString(
-				MessageDigest.getInstance(sAlgorithm).digest(rData), "");
+				MessageDigest.getInstance(algorithm).digest(data), "");
 		} catch (NoSuchAlgorithmException e) {
 			throw new IllegalArgumentException(
-				"Unkown hash algorithm: " + sAlgorithm, e);
+				"Unkown hash algorithm: " + algorithm, e);
 		}
 	}
 }

@@ -33,9 +33,9 @@ public interface Factory<T, D extends ElementDefinition<T>,
 	 * Creates and returns a new element that corresponds to the given element
 	 * definition.
 	 *
-	 * @param rDefinition The definition of the element to create
+	 * @param definition The definition of the element to create
 	 * @return The new element instance
 	 * @throws E Any kind of exception may be thrown by factory implementations
 	 */
-	T create(D rDefinition) throws E;
+	T create(D definition) throws E;
 }

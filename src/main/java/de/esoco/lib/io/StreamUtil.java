@@ -40,9 +40,9 @@ public final class StreamUtil {
 	 *
 	 * @see #find(InputStream, byte[], int, ReadHandler)
 	 */
-	public static boolean find(InputStream rIn, byte[] rToken, int nMax)
+	public static boolean find(InputStream in, byte[] token, int max)
 		throws IOException {
-		return find(rIn, rToken, nMax, null);
+		return find(in, token, max, null);
 	}
 
 	/**
@@ -51,9 +51,9 @@ public final class StreamUtil {
 	 *
 	 * @see #find(Reader, String, int, boolean, ReadHandler)
 	 */
-	public static boolean find(Reader rReader, String sToken, int nMax,
-		boolean bIgnoreCase) throws IOException {
-		return find(rReader, sToken, nMax, bIgnoreCase, null);
+	public static boolean find(Reader reader, String token, int max,
+		boolean ignoreCase) throws IOException {
+		return find(reader, token, max, ignoreCase, null);
 	}
 
 	/**
@@ -67,44 +67,43 @@ public final class StreamUtil {
 	 * ByteHandler will be invoked for each byte that is read from the stream
 	 * (including the search token).</p>
 	 *
-	 * @param rIn      The input stream to read from
-	 * @param rToken   The token to search for; tokens of type byte[] are used
-	 *                 directly
-	 * @param nMax     The maximum number of bytes to read
-	 * @param rHandler A handler to be invoked for values read or NULL for none
+	 * @param in      The input stream to read from
+	 * @param token   The token to search for; tokens of type byte[] are used
+	 *                directly
+	 * @param max     The maximum number of bytes to read
+	 * @param handler A handler to be invoked for values read or NULL for none
 	 * @return TRUE if the token has been found, FALSE if the end of the stream
 	 * has been reached
 	 * @throws IOException              If reading from the stream fails
 	 * @throws IllegalArgumentException If the search token is empty
 	 */
-	public static boolean find(InputStream rIn, byte[] rToken, int nMax,
-		ReadHandler rHandler) throws IOException {
-		int nTokenLength = rToken.length;
-		int nRead = 0;
-		int nPos = 0;
+	public static boolean find(InputStream in, byte[] token, int max,
+		ReadHandler handler) throws IOException {
+		int tokenLength = token.length;
+		int read = 0;
+		int pos = 0;
 
-		if (nTokenLength == 0) {
+		if (tokenLength == 0) {
 			throw new IllegalArgumentException("Invalid search token");
 		}
 
-		while (nRead != -1 && nMax-- > 0) {
-			nRead = rIn.read();
+		while (read != -1 && max-- > 0) {
+			read = in.read();
 
-			if (nRead != -1) {
-				byte nByte = (byte) nRead;
+			if (read != -1) {
+				byte b = (byte) read;
 
-				if (rHandler != null) {
-					rHandler.valueRead(nByte);
+				if (handler != null) {
+					handler.valueRead(b);
 				}
 
-				if (nByte != rToken[nPos++]) {
-					nPos = 0;
-				} else if (nPos == nTokenLength) {
+				if (b != token[pos++]) {
+					pos = 0;
+				} else if (pos == tokenLength) {
 					return true;
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -113,47 +112,47 @@ public final class StreamUtil {
 	 * returns TRUE the input stream reader will be positioned directly after
 	 * the found token.
 	 *
-	 * @param rInput      The input stream reader to read from
-	 * @param sToken      The token to search
-	 * @param nMax        The maximum number of characters that should be read
-	 * @param bIgnoreCase TRUE if the case of the token should be ignored
-	 * @param rHandler    A handler to be invoked for values read or NULL for
-	 *                    none
+	 * @param input      The input stream reader to read from
+	 * @param token      The token to search
+	 * @param max        The maximum number of characters that should be read
+	 * @param ignoreCase TRUE if the case of the token should be ignored
+	 * @param handler    A handler to be invoked for values read or NULL for
+	 *                   none
 	 * @return TRUE if the token has been found, FALSE if not
 	 * @throws IOException              If accessing the stream fails
 	 * @throws IllegalArgumentException If the search token is empty
 	 */
-	public static boolean find(Reader rInput, String sToken, int nMax,
-		boolean bIgnoreCase, ReadHandler rHandler) throws IOException {
-		if (bIgnoreCase) {
-			sToken = sToken.toLowerCase();
+	public static boolean find(Reader input, String token, int max,
+		boolean ignoreCase, ReadHandler handler) throws IOException {
+		if (ignoreCase) {
+			token = token.toLowerCase();
 		}
 
-		int nTokenLength = sToken.length();
-		int nRead = 0;
-		int nPos = 0;
+		int tokenLength = token.length();
+		int read = 0;
+		int pos = 0;
 
-		if (nTokenLength == 0) {
+		if (tokenLength == 0) {
 			throw new IllegalArgumentException("Invalid search token");
 		}
 
-		while (nRead != -1 && nMax-- > 0) {
-			nRead = rInput.read();
+		while (read != -1 && max-- > 0) {
+			read = input.read();
 
-			if (nRead != -1) {
-				char cSearch = sToken.charAt(nPos++);
+			if (read != -1) {
+				char search = token.charAt(pos++);
 
-				if (rHandler != null) {
-					rHandler.valueRead(nRead);
+				if (handler != null) {
+					handler.valueRead(read);
 				}
 
-				if (bIgnoreCase) {
-					nRead = Character.toLowerCase((char) nRead);
+				if (ignoreCase) {
+					read = Character.toLowerCase((char) read);
 				}
 
-				if (nRead != cSearch) {
-					nPos = 0;
-				} else if (nPos == nTokenLength) {
+				if (read != search) {
+					pos = 0;
+				} else if (pos == tokenLength) {
 					return true;
 				}
 			}
@@ -168,31 +167,31 @@ public final class StreamUtil {
 	 * will be read or a reasonable fraction of the expected size to prevent
 	 * unnecessary buffer allocations.
 	 *
-	 * @param rIn         The input stream to read from
-	 * @param nBufferSize The initial buffer size
-	 * @param nMax        The maximum number of bytes to read
+	 * @param in         The input stream to read from
+	 * @param bufferSize The initial buffer size
+	 * @param max        The maximum number of bytes to read
 	 * @return A byte array containing the bytes read
 	 * @throws IOException              In case of IO errors
 	 * @throws IllegalArgumentException If the buffer size is invalid
 	 */
-	public static byte[] readAll(InputStream rIn, int nBufferSize, int nMax)
+	public static byte[] readAll(InputStream in, int bufferSize, int max)
 		throws IOException, IllegalArgumentException {
-		if (nBufferSize <= 0) {
+		if (bufferSize <= 0) {
 			throw new IllegalArgumentException("Buffer size must be > 0");
 		}
 
-		ByteArray aReadBuffer = new ByteArray(nBufferSize);
-		byte[] aBytes = new byte[nBufferSize];
-		int nReadMax = Math.min(nMax, nBufferSize);
-		int nCount;
+		ByteArray readBuffer = new ByteArray(bufferSize);
+		byte[] bytes = new byte[bufferSize];
+		int readMax = Math.min(max, bufferSize);
+		int count;
 
-		while (nMax > 0 && (nCount = rIn.read(aBytes, 0, nReadMax)) != -1) {
-			aReadBuffer.add(aBytes, 0, nCount);
-			nMax -= nCount;
-			nReadMax = Math.min(nMax, nBufferSize);
+		while (max > 0 && (count = in.read(bytes, 0, readMax)) != -1) {
+			readBuffer.add(bytes, 0, count);
+			max -= count;
+			readMax = Math.min(max, bufferSize);
 		}
 
-		return aReadBuffer.toByteArray();
+		return readBuffer.toByteArray();
 	}
 
 	/**
@@ -202,31 +201,31 @@ public final class StreamUtil {
 	 * that will be read or a reasonable fraction of the expected size to
 	 * prevent unnecessary buffer allocations.
 	 *
-	 * @param rIn         The reader to read from
-	 * @param nBufferSize The initial buffer size
-	 * @param nMax        The maximum number of bytes to read
+	 * @param in         The reader to read from
+	 * @param bufferSize The initial buffer size
+	 * @param max        The maximum number of bytes to read
 	 * @return A byte array containing the bytes read
 	 * @throws IOException              In case of IO errors
 	 * @throws IllegalArgumentException If the buffer size is invalid
 	 */
-	public static String readAll(Reader rIn, int nBufferSize, int nMax)
+	public static String readAll(Reader in, int bufferSize, int max)
 		throws IOException, IllegalArgumentException {
-		if (nBufferSize <= 0) {
+		if (bufferSize <= 0) {
 			throw new IllegalArgumentException("Buffer size must be > 0");
 		}
 
-		StringBuilder aResult = new StringBuilder(nBufferSize);
-		char[] aBuffer = new char[nBufferSize];
-		int nReadMax = Math.min(nMax, nBufferSize);
-		int nCount;
+		StringBuilder result = new StringBuilder(bufferSize);
+		char[] buffer = new char[bufferSize];
+		int readMax = Math.min(max, bufferSize);
+		int count;
 
-		while (nMax > 0 && (nCount = rIn.read(aBuffer, 0, nReadMax)) != -1) {
-			aResult.append(aBuffer, 0, nCount);
-			nMax -= nCount;
-			nReadMax = Math.min(nMax, nBufferSize);
+		while (max > 0 && (count = in.read(buffer, 0, readMax)) != -1) {
+			result.append(buffer, 0, count);
+			max -= count;
+			readMax = Math.min(max, bufferSize);
 		}
 
-		return aResult.toString();
+		return result.toString();
 	}
 
 	/**
@@ -241,10 +240,10 @@ public final class StreamUtil {
 	 * <p>Invokes {@link #find(InputStream, byte[], int, ReadHandler)} to
 	 * perform the actual search.</p>
 	 *
-	 * @param rIn    The input stream to read from
-	 * @param rOut   The output stream to write data to
-	 * @param rToken The token to read up to
-	 * @param nMax   The maximum number of bytes to read
+	 * @param in    The input stream to read from
+	 * @param out   The output stream to write data to
+	 * @param token The token to read up to
+	 * @param max   The maximum number of bytes to read
 	 * @return A byte array containing the bytes read from the stream up to the
 	 * search token or NULL if the token couldn't be found.
 	 * @throws EOFException             If the stream ends before the string
@@ -254,13 +253,13 @@ public final class StreamUtil {
 	 * @throws IllegalStateException    If writing to the output stream fails
 	 *                                  (wraps the IO exception that occurred)
 	 */
-	public static boolean readUntil(InputStream rIn, OutputStream rOut,
-		byte[] rToken, int nMax) throws IOException {
-		return find(rIn, rToken, nMax, new ReadHandler() {
+	public static boolean readUntil(InputStream in, OutputStream out,
+		byte[] token, int max) throws IOException {
+		return find(in, token, max, new ReadHandler() {
 			@Override
-			public void valueRead(int nByte) {
+			public void valueRead(int b) {
 				try {
-					rOut.write(nByte);
+					out.write(b);
 				} catch (IOException e) {
 					throw new IllegalStateException(e);
 				}
@@ -280,11 +279,11 @@ public final class StreamUtil {
 	 * <p>Invokes {@link #find(Reader, String, int, boolean, ReadHandler)} to
 	 * perform the actual search.</p>
 	 *
-	 * @param rIn         The reader to read the data from
-	 * @param rOut        A writer to write the characters that have been to
-	 * @param sToken      The token to read up to
-	 * @param nMax        The maximum number of characters to read
-	 * @param bIgnoreCase TRUE if the case of the token should be ignored
+	 * @param in         The reader to read the data from
+	 * @param out        A writer to write the characters that have been to
+	 * @param token      The token to read up to
+	 * @param max        The maximum number of characters to read
+	 * @param ignoreCase TRUE if the case of the token should be ignored
 	 * @return The string read from the stream up to but excluding the search
 	 * token or NULL if the token couldn't be found
 	 * @throws IOException              If reading from the stream fails
@@ -293,13 +292,13 @@ public final class StreamUtil {
 	 * @throws IllegalStateException    If writing to the output stream fails
 	 *                                  (wraps the IO exception that occurred)
 	 */
-	public static boolean readUntil(Reader rIn, Writer rOut, String sToken,
-		int nMax, boolean bIgnoreCase) throws IOException {
-		return find(rIn, sToken, nMax, bIgnoreCase, new ReadHandler() {
+	public static boolean readUntil(Reader in, Writer out, String token,
+		int max, boolean ignoreCase) throws IOException {
+		return find(in, token, max, ignoreCase, new ReadHandler() {
 			@Override
-			public void valueRead(int nValue) {
+			public void valueRead(int value) {
 				try {
-					rOut.write(nValue);
+					out.write(value);
 				} catch (IOException e) {
 					throw new IllegalStateException(e);
 				}
@@ -310,21 +309,22 @@ public final class StreamUtil {
 	/**
 	 * Reads bytes from an input stream and saves them into a file.
 	 *
-	 * @param rStream     The input stream to read data from
-	 * @param sOutputFile The name of the file to write the data into
-	 * @param nMax        The maximum number of bytes to read from the stream;
-	 *                    if the stream contains less bytes only these will be
-	 *                    written
+	 * @param stream     The input stream to read data from
+	 * @param outputFile The name of the file to write the data into
+	 * @param max        The maximum number of bytes to read from the
+	 *                      stream; if
+	 *                   the stream contains less bytes only these will be
+	 *                   written
 	 * @throws IOException If accessing the stream or the file fails
 	 */
-	public static void saveStream(InputStream rStream, String sOutputFile,
-		int nMax) throws IOException {
-		FileOutputStream fo = new FileOutputStream(sOutputFile);
+	public static void saveStream(InputStream stream, String outputFile,
+		int max) throws IOException {
+		FileOutputStream fo = new FileOutputStream(outputFile);
 		int rd;
 
-		while ((nMax > 0) && ((rd = rStream.read()) >= 0)) {
+		while ((max > 0) && ((rd = stream.read()) >= 0)) {
 			fo.write(rd);
-			nMax--;
+			max--;
 		}
 
 		fo.close();
@@ -336,23 +336,23 @@ public final class StreamUtil {
 	 * a buffer of 8K for the transfer so it is not necessary to wrap the
 	 * streams in buffered streams.
 	 *
-	 * @param rInput  The input stream to read the data to send from
-	 * @param rOutput The target output stream
+	 * @param input  The input stream to read the data to send from
+	 * @param output The target output stream
 	 * @return The number of bytes sent
 	 * @throws IOException If a stream access fails
 	 */
-	public static long send(InputStream rInput, OutputStream rOutput)
+	public static long send(InputStream input, OutputStream output)
 		throws IOException {
-		byte[] aBuffer = new byte[1024 * 8];
-		long nCount = 0;
-		int nRead = 0;
+		byte[] buffer = new byte[1024 * 8];
+		long count = 0;
+		int read = 0;
 
-		while ((nRead = rInput.read(aBuffer)) != -1) {
-			rOutput.write(aBuffer, 0, nRead);
-			nCount += nRead;
+		while ((read = input.read(buffer)) != -1) {
+			output.write(buffer, 0, read);
+			count += read;
 		}
 
-		return nCount;
+		return count;
 	}
 
 	/**
@@ -361,22 +361,22 @@ public final class StreamUtil {
 	 * for the transfer so it is not necessary to wrap the streams in buffered
 	 * streams.
 	 *
-	 * @param rInput  The reader to read the data to send from
-	 * @param rOutput The target writer
+	 * @param input  The reader to read the data to send from
+	 * @param output The target writer
 	 * @return The number of characters sent
 	 * @throws IOException If a stream access fails
 	 */
-	public static long send(Reader rInput, Writer rOutput) throws IOException {
-		char[] aBuffer = new char[1024 * 8];
-		long nCount = 0;
-		int nRead = 0;
+	public static long send(Reader input, Writer output) throws IOException {
+		char[] buffer = new char[1024 * 8];
+		long count = 0;
+		int read = 0;
 
-		while ((nRead = rInput.read(aBuffer)) != -1) {
-			rOutput.write(aBuffer, 0, nRead);
-			nCount += nRead;
+		while ((read = input.read(buffer)) != -1) {
+			output.write(buffer, 0, read);
+			count += read;
 		}
 
-		return nCount;
+		return count;
 	}
 
 	/**
@@ -389,8 +389,8 @@ public final class StreamUtil {
 		 * This method will be invoked for each single value that has been read
 		 * from the stream.
 		 *
-		 * @param nValue The value read from the stream
+		 * @param value The value read from the stream
 		 */
-		public abstract void valueRead(int nValue);
+		public abstract void valueRead(int value);
 	}
 }

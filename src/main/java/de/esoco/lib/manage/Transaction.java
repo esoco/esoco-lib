@@ -46,19 +46,19 @@ import java.util.Queue;
  */
 public class Transaction implements Transactional {
 
-	private static int nNextTransactionId = 1;
+	private static int nextTransactionId = 1;
 
-	private final int nId = nNextTransactionId++;
+	private final int id = nextTransactionId++;
 
-	private Queue<Transactional> aTransactionElements =
+	private Queue<Transactional> transactionElements =
 		new LinkedList<Transactional>();
 
-	private Queue<Releasable> aReleasableElements =
+	private Queue<Releasable> releasableElements =
 		new LinkedList<Releasable>();
 
-	private int nLevel = 1;
+	private int level = 1;
 
-	private boolean bCommitting = false;
+	private boolean committing = false;
 
 	/**
 	 * Package-internal constructor.
@@ -70,22 +70,22 @@ public class Transaction implements Transactional {
 	 * Adds a certain transactional element to this transaction. If the element
 	 * is already part of this transaction it will be ignored.
 	 *
-	 * @param rElement The element to add
+	 * @param element The element to add
 	 * @throws IllegalStateException If this transaction is no longer active
 	 */
-	public final void addElement(Transactional rElement) {
+	public final void addElement(Transactional element) {
 		checkActive();
 
-		if (rElement == null) {
+		if (element == null) {
 			throw new IllegalArgumentException("Element must not be NULL");
 		}
 
-		if (!aTransactionElements.contains(rElement)) {
-			aTransactionElements.add(rElement);
+		if (!transactionElements.contains(element)) {
+			transactionElements.add(element);
 		}
 
-		if (rElement instanceof Releasable) {
-			aReleasableElements.add((Releasable) rElement);
+		if (element instanceof Releasable) {
+			releasableElements.add((Releasable) element);
 		}
 	}
 
@@ -100,13 +100,13 @@ public class Transaction implements Transactional {
 	 */
 	@Override
 	public final void commit() throws TransactionException {
-		assert nLevel >= 0 : "Invalid transaction level: " + nLevel;
+		assert level >= 0 : "Invalid transaction level: " + level;
 
-		// bCommitting will safeguard against re-commits caused by transactions
+		// committing will safeguard against re-commits caused by transactions
 		// that are started from transaction elements that are currently
 		// committed by the method endTransaction()
-		if (--nLevel == 0 && !bCommitting) {
-			bCommitting = true;
+		if (--level == 0 && !committing) {
+			committing = true;
 			endTransaction(true);
 		}
 	}
@@ -121,8 +121,8 @@ public class Transaction implements Transactional {
 	 * @return The list of transaction elements
 	 */
 	public final Collection<Transactional> getElements() {
-		if (aTransactionElements != null) {
-			return Collections.unmodifiableCollection(aTransactionElements);
+		if (transactionElements != null) {
+			return Collections.unmodifiableCollection(transactionElements);
 		} else {
 			return Collections.emptyList();
 		}
@@ -136,7 +136,7 @@ public class Transaction implements Transactional {
 	 * @return The current transaction level
 	 */
 	public final int getLevel() {
-		return nLevel;
+		return level;
 	}
 
 	/**
@@ -145,7 +145,7 @@ public class Transaction implements Transactional {
 	 * @return TRUE if this transaction has been finished
 	 */
 	public final boolean isFinished() {
-		return nLevel == 0 && !hasActiveElements();
+		return level == 0 && !hasActiveElements();
 	}
 
 	/**
@@ -157,18 +157,18 @@ public class Transaction implements Transactional {
 	 * method. It is the responsibility of the calling context to handle the
 	 * removed element as necessary.
 	 *
-	 * @param rElement The element to remove from the thread's current
-	 *                 transaction
+	 * @param element The element to remove from the thread's current
+	 *                transaction
 	 * @throws IllegalStateException If this transaction is no longer active
 	 */
-	public final void removeElement(Transactional rElement) {
+	public final void removeElement(Transactional element) {
 		checkActive();
 
-		if (rElement == null) {
+		if (element == null) {
 			throw new IllegalArgumentException("Element must not be NULL");
 		}
 
-		aTransactionElements.remove(rElement);
+		transactionElements.remove(element);
 	}
 
 	/**
@@ -181,14 +181,14 @@ public class Transaction implements Transactional {
 	 */
 	@Override
 	public final void rollback() throws TransactionException {
-		assert nLevel >= 0 : "Invalid transaction level: " + nLevel;
+		assert level >= 0 : "Invalid transaction level: " + level;
 
-		if (nLevel == 0) {
+		if (level == 0) {
 			throw new IllegalStateException(
 				"Transaction already rolled back completely");
 		}
 
-		nLevel -= 1;
+		level -= 1;
 
 		if (hasActiveElements()) {
 			endTransaction(false);
@@ -203,8 +203,8 @@ public class Transaction implements Transactional {
 	@Override
 	@SuppressWarnings("boxing")
 	public String toString() {
-		return String.format("Transaction-%d[%d, %s]", nId, nLevel,
-			aTransactionElements);
+		return String.format("Transaction-%d[%d, %s]", id, level,
+			transactionElements);
 	}
 
 	/**
@@ -215,7 +215,7 @@ public class Transaction implements Transactional {
 	 * @return The active state of this transaction
 	 */
 	final boolean hasActiveElements() {
-		return aTransactionElements != null;
+		return transactionElements != null;
 	}
 
 	/**
@@ -223,7 +223,7 @@ public class Transaction implements Transactional {
 	 */
 	final void incrementLevel() {
 		checkActive();
-		nLevel += 1;
+		level += 1;
 	}
 
 	/**
@@ -242,34 +242,34 @@ public class Transaction implements Transactional {
 	 * Internal method to finish the current thread's transaction either by
 	 * committing or by performing a rollback for all transaction elements.
 	 *
-	 * @param bCommit TRUE to commit, FALSE to rollback
+	 * @param commit TRUE to commit, FALSE to rollback
 	 * @throws IllegalStateException If this transaction is no longer active
 	 * @throws TransactionException  If finishing a certain transaction element
 	 *                               fails
 	 */
-	private void endTransaction(boolean bCommit) throws TransactionException {
+	private void endTransaction(boolean commit) throws TransactionException {
 		checkActive();
 
 		try {
-			while (!aTransactionElements.isEmpty()) {
-				Transactional rElement = aTransactionElements.poll();
+			while (!transactionElements.isEmpty()) {
+				Transactional element = transactionElements.poll();
 
-				if (bCommit) {
-					rElement.commit();
+				if (commit) {
+					element.commit();
 				} else {
-					rElement.rollback();
+					element.rollback();
 				}
 			}
 		} catch (Exception e) {
 			rollbackRemainingElements();
 
 			throw new TransactionException(
-				(bCommit ? "Commit" : "Rollback") + " failed", e);
+				(commit ? "Commit" : "Rollback") + " failed", e);
 		} finally {
 			releaseElements();
 
 			// mark this transaction as inactive
-			aTransactionElements = null;
+			transactionElements = null;
 		}
 	}
 
@@ -278,17 +278,17 @@ public class Transaction implements Transactional {
 	 * interface.
 	 */
 	private void releaseElements() {
-		while (!aReleasableElements.isEmpty()) {
-			Releasable rElement = aReleasableElements.poll();
+		while (!releasableElements.isEmpty()) {
+			Releasable element = releasableElements.poll();
 
 			try {
-				rElement.release();
+				element.release();
 			} catch (Exception e) {
-				Log.warn("Error on release of " + rElement, e);
+				Log.warn("Error on release of " + element, e);
 			}
 		}
 
-		aReleasableElements = null;
+		releasableElements = null;
 	}
 
 	/**
@@ -297,14 +297,14 @@ public class Transaction implements Transactional {
 	 * ignored. Releasable elements will be released.
 	 */
 	private void rollbackRemainingElements() {
-		if (aTransactionElements != null) {
-			while (!aTransactionElements.isEmpty()) {
-				Transactional rElement = aTransactionElements.poll();
+		if (transactionElements != null) {
+			while (!transactionElements.isEmpty()) {
+				Transactional element = transactionElements.poll();
 
 				try {
-					rElement.rollback();
+					element.rollback();
 				} catch (Exception e) {
-					Log.error("Error on cleanup rollback of " + rElement, e);
+					Log.error("Error on cleanup rollback of " + element, e);
 				}
 			}
 		}

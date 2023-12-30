@@ -31,15 +31,15 @@ import java.io.RandomAccessFile;
  */
 public class RandomAccessFileInputStream extends InputStream {
 
-	private final RandomAccessFile rRandomAccessFile;
+	private final RandomAccessFile randomAccessFile;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rFile The wrapped file
+	 * @param file The wrapped file
 	 */
-	public RandomAccessFileInputStream(RandomAccessFile rFile) {
-		this.rRandomAccessFile = rFile;
+	public RandomAccessFileInputStream(RandomAccessFile file) {
+		this.randomAccessFile = file;
 	}
 
 	/**
@@ -47,23 +47,22 @@ public class RandomAccessFileInputStream extends InputStream {
 	 */
 	@Override
 	public int read() throws IOException {
-		return rRandomAccessFile.read();
+		return randomAccessFile.read();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBytes) throws IOException {
-		return rRandomAccessFile.read(rBytes);
+	public int read(byte[] bytes) throws IOException {
+		return randomAccessFile.read(bytes);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int read(byte[] rBytes, int nOffset, int nLength)
-		throws IOException {
-		return rRandomAccessFile.read(rBytes, nOffset, nLength);
+	public int read(byte[] bytes, int offset, int length) throws IOException {
+		return randomAccessFile.read(bytes, offset, length);
 	}
 }

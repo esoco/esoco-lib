@@ -18,18 +18,19 @@ package de.esoco.lib.collection;
 
 import de.esoco.lib.event.ElementEvent.EventType;
 import de.esoco.lib.event.EventHandler;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test of observable collection functionality.
@@ -39,48 +40,48 @@ import static org.junit.Assert.assertTrue;
 public class ObservableCollectionTest
 	implements EventHandler<CollectionEvent<String, ?>> {
 
-	private ObservableSet<String> aObservableCollection;
+	private ObservableSet<String> observableCollection;
 
-	private EventType rExpectedEventType = EventType.ADD;
+	private EventType expectedEventType = EventType.ADD;
 
-	private String sTestValue;
+	private String testValue;
 
 	/**
 	 * Handles collection events.
 	 *
-	 * @param rEvent The event
+	 * @param event The event
 	 */
 	@Override
-	public void handleEvent(CollectionEvent<String, ?> rEvent) {
-		EventType rType = rEvent.getType();
+	public void handleEvent(CollectionEvent<String, ?> event) {
+		EventType type = event.getType();
 
-		assertEquals(rExpectedEventType, rType);
+		assertEquals(expectedEventType, type);
 
-		switch (rEvent.getType()) {
+		switch (event.getType()) {
 			case ADD:
 			case REMOVE:
 			case REMOVE_ALL:
-				sTestValue = rEvent.getElement();
+				testValue = event.getElement();
 				break;
 
 			case UPDATE:
-				sTestValue = rEvent.getUpdateValue();
+				testValue = event.getUpdateValue();
 				break;
 
 			default:
-				assertTrue("Unknown event type: " + rType, false);
+				fail("Unknown event type: " + type);
 		}
 	}
 
 	/**
 	 * Test setup.
 	 */
-	@Before
+	@BeforeEach
 	public void setup() {
-		aObservableCollection =
+		observableCollection =
 			new ObservableSet<String>(new LinkedHashSet<String>());
 
-		aObservableCollection.addListener(this);
+		observableCollection.addListener(this);
 	}
 
 	/**
@@ -88,23 +89,23 @@ public class ObservableCollectionTest
 	 */
 	@Test
 	public void testAdd() {
-		assertTrue(aObservableCollection.isEmpty());
+		assertTrue(observableCollection.isEmpty());
 
-		aObservableCollection.add("T1");
-		assertEquals("T1", sTestValue);
-		assertEquals(1, aObservableCollection.size());
+		observableCollection.add("T1");
+		assertEquals("T1", testValue);
+		assertEquals(1, observableCollection.size());
 
-		aObservableCollection.add("T2");
-		assertEquals("T2", sTestValue);
-		assertEquals(2, aObservableCollection.size());
+		observableCollection.add("T2");
+		assertEquals("T2", testValue);
+		assertEquals(2, observableCollection.size());
 
-		aObservableCollection.addAll(Arrays.asList("T3", "T4"));
-		assertEquals("T4", sTestValue);
-		assertEquals(4, aObservableCollection.size());
+		observableCollection.addAll(Arrays.asList("T3", "T4"));
+		assertEquals("T4", testValue);
+		assertEquals(4, observableCollection.size());
 
-		Collections.addAll(aObservableCollection, "T5", "T6");
-		assertEquals("T6", sTestValue);
-		assertEquals(6, aObservableCollection.size());
+		Collections.addAll(observableCollection, "T5", "T6");
+		assertEquals("T6", testValue);
+		assertEquals(6, observableCollection.size());
 	}
 
 	/**
@@ -114,9 +115,9 @@ public class ObservableCollectionTest
 	public void testClear() {
 		initCollection(EventType.REMOVE_ALL);
 
-		aObservableCollection.clear();
-		assertNull(sTestValue);
-		assertTrue(aObservableCollection.isEmpty());
+		observableCollection.clear();
+		assertNull(testValue);
+		assertTrue(observableCollection.isEmpty());
 	}
 
 	/**
@@ -128,25 +129,25 @@ public class ObservableCollectionTest
 
 		int i = 0;
 
-		for (String sTest : aObservableCollection) {
-			assertEquals("T" + ++i, sTest);
+		for (String test : observableCollection) {
+			assertEquals("T" + ++i, test);
 		}
 
 		assertEquals(3, i);
 
-		Iterator<String> rIterator = aObservableCollection.iterator();
+		Iterator<String> iterator = observableCollection.iterator();
 
 		i = 0;
 
-		while (rIterator.hasNext()) {
-			String sTest = "T" + ++i;
+		while (iterator.hasNext()) {
+			String test = "T" + ++i;
 
-			assertEquals(sTest, rIterator.next());
-			rIterator.remove();
-			assertEquals(sTest, sTestValue);
+			assertEquals(test, iterator.next());
+			iterator.remove();
+			assertEquals(test, testValue);
 		}
 
-		assertTrue(aObservableCollection.isEmpty());
+		assertTrue(observableCollection.isEmpty());
 	}
 
 	/**
@@ -156,25 +157,25 @@ public class ObservableCollectionTest
 	public void testRemove() {
 		initCollection(EventType.REMOVE);
 
-		aObservableCollection.remove("T2");
+		observableCollection.remove("T2");
 
-		assertEquals("T2", sTestValue);
-		assertEquals(2, aObservableCollection.size());
-		assertFalse(aObservableCollection.contains("T2"));
+		assertEquals("T2", testValue);
+		assertEquals(2, observableCollection.size());
+		assertFalse(observableCollection.contains("T2"));
 	}
 
 	/**
 	 * Initializes the test collection.
 	 *
-	 * @param rEventType The expected event type for subsequent changes
+	 * @param eventType The expected event type for subsequent changes
 	 */
-	void initCollection(EventType rEventType) {
-		assertTrue(aObservableCollection.isEmpty());
+	void initCollection(EventType eventType) {
+		assertTrue(observableCollection.isEmpty());
 
-		aObservableCollection.add("T1");
-		aObservableCollection.add("T2");
-		aObservableCollection.add("T3");
+		observableCollection.add("T1");
+		observableCollection.add("T2");
+		observableCollection.add("T3");
 
-		rExpectedEventType = rEventType;
+		expectedEventType = eventType;
 	}
 }

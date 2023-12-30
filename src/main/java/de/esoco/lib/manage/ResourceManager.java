@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public class ResourceManager implements Disposable {
 
-	Map<Object, ReferenceCount> aResourceMap =
+	Map<Object, ReferenceCount> resourceMap =
 		new HashMap<Object, ReferenceCount>();
 
 	/**
@@ -51,16 +51,16 @@ public class ResourceManager implements Disposable {
 	 * not already managed it will be added to the internal cache. Else only
 	 * it's reference count will be incremented.
 	 *
-	 * @param rID     The ID to register the object with
-	 * @param rObject The instance to add
+	 * @param iD     The ID to register the object with
+	 * @param object The instance to add
 	 */
-	public void add(Object rID, Object rObject) {
-		synchronized (aResourceMap) {
-			ReferenceCount rc = aResourceMap.get(rID);
+	public void add(Object iD, Object object) {
+		synchronized (resourceMap) {
+			ReferenceCount rc = resourceMap.get(iD);
 
 			if (rc == null) {
-				rc = new ReferenceCount(rObject);
-				aResourceMap.put(rID, rc);
+				rc = new ReferenceCount(object);
+				resourceMap.put(iD, rc);
 			} else {
 				rc.increment();
 			}
@@ -73,8 +73,8 @@ public class ResourceManager implements Disposable {
 	 */
 	@Override
 	public void dispose() {
-		synchronized (aResourceMap) {
-			Iterator<ReferenceCount> i = aResourceMap.values().iterator();
+		synchronized (resourceMap) {
+			Iterator<ReferenceCount> i = resourceMap.values().iterator();
 
 			while (i.hasNext()) {
 				ReferenceCount rc = i.next();
@@ -90,11 +90,11 @@ public class ResourceManager implements Disposable {
 	 * Neither the reference count nor the object state are changed by this
 	 * method.
 	 *
-	 * @param rID The ID of the managed object
+	 * @param iD The ID of the managed object
 	 * @return The object associated ID or NULL if no such object exists
 	 */
-	public Object get(Object rID) {
-		ReferenceCount rc = aResourceMap.get(rID);
+	public Object get(Object iD) {
+		ReferenceCount rc = resourceMap.get(iD);
 
 		if (rc != null) {
 			return rc.getObject();
@@ -108,19 +108,19 @@ public class ResourceManager implements Disposable {
 	 * reference count of the object is decremented and if it reaches zero, the
 	 * referenced object will be disposed and removed from the internal cache.
 	 *
-	 * @param rID The ID of the instance to be released from the manager
+	 * @param iD The ID of the instance to be released from the manager
 	 */
-	public void release(Object rID) {
-		synchronized (aResourceMap) {
-			ReferenceCount rc = aResourceMap.get(rID);
+	public void release(Object iD) {
+		synchronized (resourceMap) {
+			ReferenceCount rc = resourceMap.get(iD);
 
 			if (rc != null && rc.decrement()) {
-				Object rObject = aResourceMap.remove(rID).getObject();
+				Object object = resourceMap.remove(iD).getObject();
 
 				// disposing must me done AFTER removing because dispose may
 				// change the results of the hashCode() and equals() methods in
 				// some cases (e.g. SWT)
-				disposeObject(rObject);
+				disposeObject(object);
 			}
 		}
 	}
@@ -130,17 +130,17 @@ public class ResourceManager implements Disposable {
 	 * count of the object will be ignored and the referenced object will be
 	 * disposed and removed from the internal cache.
 	 *
-	 * @param rID The ID of the instance to be removed from the manager
+	 * @param iD The ID of the instance to be removed from the manager
 	 */
-	public void remove(Object rID) {
-		synchronized (aResourceMap) {
-			if (aResourceMap.containsKey(rID)) {
-				Object rObject = aResourceMap.remove(rID).getObject();
+	public void remove(Object iD) {
+		synchronized (resourceMap) {
+			if (resourceMap.containsKey(iD)) {
+				Object object = resourceMap.remove(iD).getObject();
 
 				// disposing must me done AFTER removing because dispose may
 				// change the results of the hashCode() and equals() methods in
 				// some cases (e.g. SWT)
-				disposeObject(rObject);
+				disposeObject(object);
 			}
 		}
 	}
@@ -152,21 +152,21 @@ public class ResourceManager implements Disposable {
 	 * {@link Closeable} interface it's close() method will be invoked before
 	 * disposing it.
 	 *
-	 * @param rObject The object to dispose
+	 * @param object The object to dispose
 	 * @throws RuntimeException If disposing the object fails
 	 */
-	private void disposeObject(Object rObject) {
-		if (rObject instanceof Closeable) {
-			((Closeable) rObject).close();
+	private void disposeObject(Object object) {
+		if (object instanceof Closeable) {
+			((Closeable) object).close();
 		}
 
-		if (rObject instanceof Disposable) {
-			((Disposable) rObject).dispose();
+		if (object instanceof Disposable) {
+			((Disposable) object).dispose();
 		} else {
 			try {
-				Method dispose = rObject.getClass().getMethod("dispose");
+				Method dispose = object.getClass().getMethod("dispose");
 
-				dispose.invoke(rObject);
+				dispose.invoke(object);
 			} catch (NoSuchMethodException e) {
 				// ok, we don't have a public dispose method, so we
 				// ignore the exception
@@ -182,19 +182,19 @@ public class ResourceManager implements Disposable {
 	 */
 	private static class ReferenceCount {
 
-		private final Object rObject;
+		private final Object object;
 
-		private int nCount = 0;
+		private int count = 0;
 
 		/**
 		 * Creates a new instance for a particular object and sets the
 		 * reference
 		 * count to 1.
 		 *
-		 * @param rObject The object the reference count is managed for
+		 * @param object The object the reference count is managed for
 		 */
-		public ReferenceCount(Object rObject) {
-			this.rObject = rObject;
+		public ReferenceCount(Object object) {
+			this.object = object;
 			increment();
 		}
 
@@ -206,7 +206,7 @@ public class ResourceManager implements Disposable {
 		 * @return TRUE if the reference count has reached zero
 		 */
 		public final boolean decrement() {
-			return (--nCount == 0);
+			return (--count == 0);
 		}
 
 		/**
@@ -215,14 +215,14 @@ public class ResourceManager implements Disposable {
 		 * @return The managed object
 		 */
 		public final Object getObject() {
-			return rObject;
+			return object;
 		}
 
 		/**
 		 * Increments the reference count by one.
 		 */
 		public final void increment() {
-			nCount++;
+			count++;
 		}
 
 		/**
@@ -232,7 +232,7 @@ public class ResourceManager implements Disposable {
 		 */
 		@Override
 		public String toString() {
-			return "ReferenceCount[" + nCount + "]";
+			return "ReferenceCount[" + count + "]";
 		}
 	}
 }

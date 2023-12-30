@@ -34,18 +34,18 @@ import static de.esoco.lib.logging.LogLevel.FATAL;
  */
 public class LogLevelFilter implements Predicate<LogRecord> {
 
-	private final Set<LogLevel> aLogLevels;
+	private final Set<LogLevel> logLevels;
 
 	/**
 	 * Private, use factory methods to create instances.
 	 *
-	 * @param rLevels The log levels that may pass through this instance
+	 * @param levels The log levels that may pass through this instance
 	 */
-	private LogLevelFilter(Set<LogLevel> rLevels) {
-		aLogLevels = rLevels;
+	private LogLevelFilter(Set<LogLevel> levels) {
+		logLevels = levels;
 
 		// always add FATAL log level
-		aLogLevels.add(FATAL);
+		logLevels.add(FATAL);
 	}
 
 	/**
@@ -53,12 +53,12 @@ public class LogLevelFilter implements Predicate<LogRecord> {
 	 * levels. Independent from the argument the {@link LogLevel#FATAL} log
 	 * level will always be part of the resulting filter.
 	 *
-	 * @param rLevels A collection containing the log levels to return a filter
-	 *                for
+	 * @param levels A collection containing the log levels to return a filter
+	 *               for
 	 * @return The log level filter for the given log levels
 	 */
-	public static LogLevelFilter isLevel(Collection<LogLevel> rLevels) {
-		return new LogLevelFilter(EnumSet.copyOf(rLevels));
+	public static LogLevelFilter isLevel(Collection<LogLevel> levels) {
+		return new LogLevelFilter(EnumSet.copyOf(levels));
 	}
 
 	/**
@@ -66,11 +66,11 @@ public class LogLevelFilter implements Predicate<LogRecord> {
 	 * Independent from the argument the {@link LogLevel#FATAL} log level will
 	 * always be part of the resulting filter.
 	 *
-	 * @param rLevels The log levels to return a filter for
+	 * @param levels The log levels to return a filter for
 	 * @return The log level filter for the given log levels
 	 */
-	public static LogLevelFilter isLevel(LogLevel... rLevels) {
-		return isLevel(Arrays.asList(rLevels));
+	public static LogLevelFilter isLevel(LogLevel... levels) {
+		return isLevel(Arrays.asList(levels));
 	}
 
 	/**
@@ -80,11 +80,11 @@ public class LogLevelFilter implements Predicate<LogRecord> {
 	 * levels from lower to higher severity is TRACE, DEBUG, INFO, WARN, ERROR,
 	 * FATAL. The ending log level is always the level FATAL.
 	 *
-	 * @param rLevel The starting (minimum) log level to return a filter for
+	 * @param level The starting (minimum) log level to return a filter for
 	 * @return The log level filter for the resulting log level range
 	 */
-	public static LogLevelFilter startingAt(LogLevel rLevel) {
-		return new LogLevelFilter(EnumSet.range(rLevel, FATAL));
+	public static LogLevelFilter startingAt(LogLevel level) {
+		return new LogLevelFilter(EnumSet.range(level, FATAL));
 	}
 
 	/**
@@ -95,8 +95,8 @@ public class LogLevelFilter implements Predicate<LogRecord> {
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	public Boolean evaluate(LogRecord rRecord) {
-		return isLevelEnabled(rRecord.getLevel());
+	public Boolean evaluate(LogRecord record) {
+		return isLevelEnabled(record.getLevel());
 	}
 
 	/**
@@ -105,16 +105,16 @@ public class LogLevelFilter implements Predicate<LogRecord> {
 	 * @return The minimum level
 	 */
 	public LogLevel getMinimumLevel() {
-		return CollectionUtil.firstElementOf(aLogLevels);
+		return CollectionUtil.firstElementOf(logLevels);
 	}
 
 	/**
 	 * Checks if the argument log level is enabled for logging.
 	 *
-	 * @param rLevel The log level to check
+	 * @param level The log level to check
 	 * @return TRUE if the level is enabled for logging
 	 */
-	public final boolean isLevelEnabled(LogLevel rLevel) {
-		return aLogLevels.contains(rLevel);
+	public final boolean isLevelEnabled(LogLevel level) {
+		return logLevels.contains(level);
 	}
 }

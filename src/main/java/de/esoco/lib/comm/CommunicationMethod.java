@@ -33,18 +33,18 @@ import java.util.function.Supplier;
 public abstract class CommunicationMethod<I, O>
 	extends AbstractBinaryFunction<I, Connection, O> {
 
-	private final I rDefaultInput;
+	private final I defaultInput;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param sMethodName   The name of this method
-	 * @param rDefaultInput The default input for this method
+	 * @param methodName   The name of this method
+	 * @param defaultInput The default input for this method
 	 */
-	public CommunicationMethod(String sMethodName, I rDefaultInput) {
-		super(null, sMethodName);
+	public CommunicationMethod(String methodName, I defaultInput) {
+		super(null, methodName);
 
-		this.rDefaultInput = rDefaultInput;
+		this.defaultInput = defaultInput;
 	}
 
 	/**
@@ -54,17 +54,16 @@ public abstract class CommunicationMethod<I, O>
 	 * communication methods that don't have different input values but should
 	 * always be invoked with their default input.
 	 *
-	 * @param fRequest The communication method that performs the actual
-	 *                    request
-	 *                 to receive data from the remote endpoint
+	 * @param request The communication method that performs the actual request
+	 *                to receive data from the remote endpoint
 	 * @return A new communication method with a void input
 	 */
 	public static <T> CommunicationMethod<Void, T> doReceive(
-		CommunicationMethod<?, T> fRequest) {
-		return new CommunicationMethod<Void, T>(fRequest.getToken(), null) {
+		CommunicationMethod<?, T> request) {
+		return new CommunicationMethod<Void, T>(request.getToken(), null) {
 			@Override
-			public T doOn(Connection rConnection, Void rInput) {
-				return fRequest.evaluate(null, rConnection);
+			public T doOn(Connection connection, Void input) {
+				return request.evaluate(null, connection);
 			}
 		};
 	}
@@ -76,17 +75,16 @@ public abstract class CommunicationMethod<I, O>
 	 * used to wrap communication methods that don't have a meaningful return
 	 * value and should only be invoked to send values to an endpoint.
 	 *
-	 * @param fRequest The communication method that performs the actual
-	 *                    request
-	 *                 to send data to the remote endpoint
+	 * @param request The communication method that performs the actual request
+	 *                to send data to the remote endpoint
 	 * @return A new communication method with a void return value
 	 */
 	public static <T> CommunicationMethod<T, Void> doSend(
-		CommunicationMethod<T, ?> fRequest) {
-		return new CommunicationMethod<T, Void>(fRequest.getToken(), null) {
+		CommunicationMethod<T, ?> request) {
+		return new CommunicationMethod<T, Void>(request.getToken(), null) {
 			@Override
-			public Void doOn(Connection rConnection, T rInput) {
-				fRequest.evaluate(rInput, rConnection);
+			public Void doOn(Connection connection, T input) {
+				request.evaluate(input, connection);
 
 				return null;
 			}
@@ -99,35 +97,35 @@ public abstract class CommunicationMethod<I, O>
 	 * invoked with explicit parameters. An implicit default input value will
 	 * only be considered by the standard method {@link #evaluate(Object)}.
 	 *
-	 * @param rConnection The connection to communicate over
-	 * @param rInput      The input value for this communication method
+	 * @param connection The connection to communicate over
+	 * @param input      The input value for this communication method
 	 * @return The output value according to this method's definition
 	 * @throws Exception Any kind of exception may be thrown to signal errors
 	 */
-	public abstract O doOn(Connection rConnection, I rInput) throws Exception;
+	public abstract O doOn(Connection connection, I input) throws Exception;
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final O evaluate(I rInput, Connection rConnection) {
-		LogExtent eLogExtent = rConnection.get(Log.LOG_EXTENT);
+	public final O evaluate(I input, Connection connection) {
+		LogExtent logExtent = connection.get(Log.LOG_EXTENT);
 
 		try {
-			if (rInput == null) {
-				rInput = rDefaultInput;
+			if (input == null) {
+				input = defaultInput;
 			}
 
-			O rResult = doOn(rConnection, rInput);
+			O result = doOn(connection, input);
 
-			if (eLogExtent.logs(LogExtent.SUCCESS)) {
-				Log.info(getLogMessage(rConnection, rInput, null));
+			if (logExtent.logs(LogExtent.SUCCESS)) {
+				Log.info(getLogMessage(connection, input, null));
 			}
 
-			return rResult;
+			return result;
 		} catch (Exception e) {
-			if (eLogExtent.logs(LogExtent.ERRORS)) {
-				Log.error(getLogMessage(rConnection, rInput, e), e);
+			if (logExtent.logs(LogExtent.ERRORS)) {
+				Log.error(getLogMessage(connection, input, e), e);
 			}
 
 			if (e instanceof RuntimeException) {
@@ -142,12 +140,12 @@ public abstract class CommunicationMethod<I, O>
 	 * Overloaded variant of {@link Function#from(Function)} that returns an
 	 * instance of {@link EndpointFunction}.
 	 *
-	 * @param rEndpoint The endpoint to return the chain for
+	 * @param endpoint The endpoint to return the chain for
 	 * @return A new endpoint chain that evaluates this method at the given
 	 * endpoint
 	 */
-	public EndpointFunction<I, O> from(Endpoint rEndpoint) {
-		return rEndpoint.then(this);
+	public EndpointFunction<I, O> from(Endpoint endpoint) {
+		return endpoint.then(this);
 	}
 
 	/**
@@ -156,7 +154,7 @@ public abstract class CommunicationMethod<I, O>
 	 * @return The default input value
 	 */
 	public final I getDefaultInput() {
-		return rDefaultInput;
+		return defaultInput;
 	}
 
 	/**
@@ -165,19 +163,19 @@ public abstract class CommunicationMethod<I, O>
 	 *
 	 * @see #evaluate(Object, Connection)
 	 */
-	public O getFrom(Connection rConnection, I rInput) {
-		return evaluate(rInput, rConnection);
+	public O getFrom(Connection connection, I input) {
+		return evaluate(input, connection);
 	}
 
 	/**
 	 * Semantic variant of {@link #from(Endpoint)} that indicates that a
 	 * communication method is executed at a certain endpoint.
 	 *
-	 * @param rEndpoint The endpoint
+	 * @param endpoint The endpoint
 	 * @return The endpoint chain of this method with the given endpoint
 	 */
-	public EndpointFunction<I, O> on(Endpoint rEndpoint) {
-		return from(rEndpoint);
+	public EndpointFunction<I, O> on(Endpoint endpoint) {
+		return from(endpoint);
 	}
 
 	/**
@@ -186,8 +184,8 @@ public abstract class CommunicationMethod<I, O>
 	 *
 	 * @see #evaluate(Object, Connection)
 	 */
-	public O sendTo(Connection rConnection, I rInput) {
-		return evaluate(rInput, rConnection);
+	public O sendTo(Connection connection, I input) {
+		return evaluate(input, connection);
 	}
 
 	/**
@@ -197,8 +195,8 @@ public abstract class CommunicationMethod<I, O>
 	 * @see AbstractBinaryFunction#then(Function)
 	 */
 	@Override
-	public <T> CommunicationMethod<I, T> then(Function<? super O, T> fOther) {
-		return new CommunicationChain<>(this, fOther);
+	public <T> CommunicationMethod<I, T> then(Function<? super O, T> other) {
+		return new CommunicationChain<>(this, other);
 	}
 
 	/**
@@ -209,26 +207,27 @@ public abstract class CommunicationMethod<I, O>
 	 * {@link #getMethodDescription(Connection, Object)} which will be invoked
 	 * to get a description of this method for the log message.
 	 *
-	 * @param rConnection The current connection
-	 * @param rInput      The input value for the method invocation
-	 * @param rException  In the case of an error logging the exception that
-	 *                    occurred or NULL for the (info) logging of a
-	 *                    successful request
+	 * @param connection The current connection
+	 * @param input      The input value for the method invocation
+	 * @param exception  In the case of an error logging the exception that
+	 *                   occurred or NULL for the (info) logging of a
+	 *                   successful
+	 *                   request
 	 * @return The log message
 	 */
-	protected String getLogMessage(Connection rConnection, I rInput,
-		Exception rException) {
-		String sMethodDescription = getMethodDescription(rConnection, rInput);
-		String sMessage;
+	protected String getLogMessage(Connection connection, I input,
+		Exception exception) {
+		String methodDescription = getMethodDescription(connection, input);
+		String message;
 
-		if (rException != null) {
-			sMessage = String.format("Failure: %s [%s]", sMethodDescription,
-				rException.getMessage());
+		if (exception != null) {
+			message = String.format("Failure: %s [%s]", methodDescription,
+				exception.getMessage());
 		} else {
-			sMessage = String.format("Success: %s", sMethodDescription);
+			message = String.format("Success: %s", methodDescription);
 		}
 
-		return sMessage;
+		return message;
 	}
 
 	/**
@@ -237,11 +236,11 @@ public abstract class CommunicationMethod<I, O>
 	 * description for log messages. It may be overridden to provide a more
 	 * specific description.
 	 *
-	 * @param rConnection The current connection
-	 * @param rInput      The input value for the method invocation
+	 * @param connection The current connection
+	 * @param input      The input value for the method invocation
 	 * @return The method description
 	 */
-	protected String getMethodDescription(Connection rConnection, I rInput) {
-		return String.format("%s(%s)", getToken(), rInput);
+	protected String getMethodDescription(Connection connection, I input) {
+		return String.format("%s(%s)", getToken(), input);
 	}
 }

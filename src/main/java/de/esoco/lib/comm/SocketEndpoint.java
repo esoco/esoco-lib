@@ -61,86 +61,88 @@ public class SocketEndpoint extends Endpoint {
 	 * Factory method that creates a new socket request for binary
 	 * communication.
 	 *
-	 * @param rDefaultCommand  The default command string to send to the
-	 *                         endpoint
-	 * @param fGetResponseSize A function that determines the response size to
-	 *                         be read from the endpoint socket after sending
-	 *                         the command string or NULL if no response needs
-	 *                         to be read
+	 * @param defaultCommand  The default command string to send to the
+	 *                        endpoint
+	 * @param getResponseSize A function that determines the response size
+	 *                           to be
+	 *                        read from the endpoint socket after sending the
+	 *                        command string or NULL if no response needs to be
+	 *                        read
 	 * @return The command function
 	 */
-	public static BinaryRequest binaryRequest(byte[] rDefaultCommand,
-		Function<InputStream, Integer> fGetResponseSize) {
-		return new BinaryRequest("BinaryRequest(%s)", rDefaultCommand,
-			fGetResponseSize);
+	public static BinaryRequest binaryRequest(byte[] defaultCommand,
+		Function<InputStream, Integer> getResponseSize) {
+		return new BinaryRequest("BinaryRequest(%s)", defaultCommand,
+			getResponseSize);
 	}
 
 	/**
 	 * Factory method that creates a new socket request for text-based
 	 * communication.
 	 *
-	 * @param sDefaultCommand  The default command string to send to the
-	 *                         endpoint
-	 * @param fGetResponseSize A function that determines the response size to
-	 *                         be read from the endpoint socket after sending
-	 *                         the command string or NULL if no response needs
-	 *                         to be read
+	 * @param defaultCommand  The default command string to send to the
+	 *                        endpoint
+	 * @param getResponseSize A function that determines the response size
+	 *                           to be
+	 *                        read from the endpoint socket after sending the
+	 *                        command string or NULL if no response needs to be
+	 *                        read
 	 * @return The command function
 	 */
-	public static TextRequest textRequest(String sDefaultCommand,
-		Function<Reader, Integer> fGetResponseSize) {
-		return new TextRequest("TextRequest(%s)", sDefaultCommand,
-			fGetResponseSize);
+	public static TextRequest textRequest(String defaultCommand,
+		Function<Reader, Integer> getResponseSize) {
+		return new TextRequest("TextRequest(%s)", defaultCommand,
+			getResponseSize);
 	}
 
 	/**
 	 * Builds a socket endpoint URL from the given parameters.
 	 *
-	 * @param sHost      The host name or address
-	 * @param nPort      The port to connect to
-	 * @param bEncrypted TRUE for an encrypted connection
+	 * @param host      The host name or address
+	 * @param port      The port to connect to
+	 * @param encrypted TRUE for an encrypted connection
 	 * @return The resulting endpoint URL
 	 */
 	@SuppressWarnings("boxing")
-	public static String url(String sHost, int nPort, boolean bEncrypted) {
-		String sUrl;
+	public static String url(String host, int port, boolean encrypted) {
+		String url;
 
-		String sScheme =
-			bEncrypted ? ENCRYPTED_SOCKET_URL_SCHEME : SOCKET_URL_SCHEME;
+		String scheme =
+			encrypted ? ENCRYPTED_SOCKET_URL_SCHEME : SOCKET_URL_SCHEME;
 
-		if (nPort > 0) {
-			sUrl = String.format("%s://%s:%d", sScheme, sHost, nPort);
+		if (port > 0) {
+			url = String.format("%s://%s:%d", scheme, host, port);
 		} else {
-			sUrl = String.format("%s://%s", sScheme, sHost);
+			url = String.format("%s://%s", scheme, host);
 		}
 
-		return sUrl;
+		return url;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void closeConnection(Connection rConnection) throws IOException {
-		Socket rSocket = rConnection.get(ENDPOINT_SOCKET);
+	protected void closeConnection(Connection connection) throws IOException {
+		Socket socket = connection.get(ENDPOINT_SOCKET);
 
-		if (rSocket != null) {
-			if (!rSocket.isClosed()) {
-				rSocket.close();
+		if (socket != null) {
+			if (!socket.isClosed()) {
+				socket.close();
 			}
 
-			rConnection.set(ENDPOINT_SOCKET, null);
+			connection.set(ENDPOINT_SOCKET, null);
 		}
 	}
 
 	/**
 	 * Returns the socket of a connection to a socket endpoint.
 	 *
-	 * @param rConnection The connection
+	 * @param connection The connection
 	 * @return The endpoint socket
 	 */
-	protected Socket getSocket(Connection rConnection) {
-		return rConnection.get(ENDPOINT_SOCKET);
+	protected Socket getSocket(Connection connection) {
+		return connection.get(ENDPOINT_SOCKET);
 	}
 
 	/**
@@ -148,24 +150,24 @@ public class SocketEndpoint extends Endpoint {
 	 */
 	@Override
 	@SuppressWarnings("boxing")
-	protected void initConnection(Connection rConnection) throws IOException {
-		URI rUri = rConnection.getUri();
-		SocketType eSocketType =
+	protected void initConnection(Connection connection) throws IOException {
+		URI uri = connection.getUri();
+		SocketType socketType =
 			hasFlag(ENCRYPTION) ? SocketType.SSL : SocketType.PLAIN;
 
-		if (eSocketType == SocketType.SSL &&
-			rConnection.hasFlag(TRUST_SELF_SIGNED_CERTIFICATES)) {
-			eSocketType = SocketType.SELF_SIGNED_SSL;
+		if (socketType == SocketType.SSL &&
+			connection.hasFlag(TRUST_SELF_SIGNED_CERTIFICATES)) {
+			socketType = SocketType.SELF_SIGNED_SSL;
 		}
 
-		Socket aSocket =
-			NetUtil.createSocket(rUri.getHost(), rUri.getPort(), eSocketType);
+		Socket socket =
+			NetUtil.createSocket(uri.getHost(), uri.getPort(), socketType);
 
-		aSocket.setSoTimeout(rConnection.get(CONNECTION_TIMEOUT));
-		rConnection.set(ENDPOINT_SOCKET, aSocket);
+		socket.setSoTimeout(connection.get(CONNECTION_TIMEOUT));
+		connection.set(ENDPOINT_SOCKET, socket);
 
-		if (eSocketType != SocketType.PLAIN && !hasRelation(ENCRYPTION)) {
-			rConnection.set(ENCRYPTION);
+		if (socketType != SocketType.PLAIN && !hasRelation(ENCRYPTION)) {
+			connection.set(ENCRYPTION);
 		}
 	}
 
@@ -186,27 +188,27 @@ public class SocketEndpoint extends Endpoint {
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sMethodName     The name of this method
-		 * @param rDefaultRequest rDefaultCommand The default command string to
-		 *                        send
+		 * @param methodName     The name of this method
+		 * @param defaultRequest rDefaultCommand The default command string to
+		 *                       send
 		 */
-		protected SocketRequest(String sMethodName, I rDefaultRequest) {
-			super(sMethodName, rDefaultRequest);
+		protected SocketRequest(String methodName, I defaultRequest) {
+			super(methodName, defaultRequest);
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public O doOn(Connection rConnection, I rRequest) throws Exception {
-			Socket aSocket = rConnection.get(ENDPOINT_SOCKET);
-			OutputStream rOutput = aSocket.getOutputStream();
-			InputStream rInput = aSocket.getInputStream();
+		public O doOn(Connection connection, I request) throws Exception {
+			Socket socket = connection.get(ENDPOINT_SOCKET);
+			OutputStream output = socket.getOutputStream();
+			InputStream input = socket.getInputStream();
 
-			rConnection.set(SOCKET_OUTPUT_STREAM, rOutput);
-			rConnection.set(SOCKET_INPUT_STREAM, rInput);
+			connection.set(SOCKET_OUTPUT_STREAM, output);
+			connection.set(SOCKET_INPUT_STREAM, input);
 
-			return sendRequest(rConnection, rOutput, rInput, rRequest);
+			return sendRequest(connection, output, input, request);
 		}
 
 		/**
@@ -216,13 +218,14 @@ public class SocketEndpoint extends Endpoint {
 		 * {@link #sendRequest(Connection, OutputStream, InputStream, Object)}.
 		 * The default implementation always returns NULL.
 		 *
-		 * @param rConnection  The connection to read the response from
-		 * @param rInputStream The socket input stream to read from
+		 * @param connection  The connection to read the response from
+		 * @param inputStream The socket input stream to read from
 		 * @return The processed response
 		 * @throws Exception Any exception may be thrown to indicate errors
 		 */
-		protected O readResponse(Connection rConnection,
-			InputStream rInputStream) throws Exception {
+		protected O readResponse(Connection connection,
+			InputStream inputStream)
+			throws Exception {
 			return null;
 		}
 
@@ -234,19 +237,19 @@ public class SocketEndpoint extends Endpoint {
 		 * alternatively override this method, e.g. for more complex requests
 		 * that need to perform some kind of handshake.
 		 *
-		 * @param rConnection The connection for the current request
-		 * @param rOutput     The output stream to send the request through
-		 * @param rInput      The input stream to read the response from
-		 * @param rData       The request data to send
+		 * @param connection The connection for the current request
+		 * @param output     The output stream to send the request through
+		 * @param input      The input stream to read the response from
+		 * @param data       The request data to send
 		 * @return The processed response
 		 * @throws Exception Any exception may be thrown to indicate errors
 		 */
-		protected O sendRequest(Connection rConnection, OutputStream rOutput,
-			InputStream rInput, I rData) throws Exception {
-			writeRequest(rConnection, rOutput, rData);
-			rOutput.flush();
+		protected O sendRequest(Connection connection, OutputStream output,
+			InputStream input, I data) throws Exception {
+			writeRequest(connection, output, data);
+			output.flush();
 
-			return readResponse(rConnection, rInput);
+			return readResponse(connection, input);
 		}
 
 		/**
@@ -260,13 +263,13 @@ public class SocketEndpoint extends Endpoint {
 		 *
 		 * <p>The default implementation does nothing.</p>
 		 *
-		 * @param rConnection   The connection to write the request to
-		 * @param rOutputStream The socket output stream to write to
-		 * @param rRequest      The request to write
+		 * @param connection   The connection to write the request to
+		 * @param outputStream The socket output stream to write to
+		 * @param request      The request to write
 		 * @throws Exception Any exception may be thrown to indicate errors
 		 */
-		protected void writeRequest(Connection rConnection,
-			OutputStream rOutputStream, I rRequest) throws Exception {
+		protected void writeRequest(Connection connection,
+			OutputStream outputStream, I request) throws Exception {
 		}
 	}
 
@@ -279,52 +282,50 @@ public class SocketEndpoint extends Endpoint {
 	 */
 	public static class BinaryRequest extends SocketRequest<byte[], byte[]> {
 
-		private final Function<InputStream, Integer> fGetResponseSize;
+		private final Function<InputStream, Integer> getResponseSize;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sMethodName      The name of this method
-		 * @param rDefaultRequest  The default request bytes to send
-		 * @param fGetResponseSize A function that determines the response size
-		 *                         to be read from the socket input stream
-		 *                         after
-		 *                         sending the command string or NULL if no
-		 *                         response needs to be read
+		 * @param methodName      The name of this method
+		 * @param defaultRequest  The default request bytes to send
+		 * @param getResponseSize A function that determines the response size
+		 *                        to be read from the socket input stream after
+		 *                        sending the command string or NULL if no
+		 *                        response needs to be read
 		 */
-		protected BinaryRequest(String sMethodName, byte[] rDefaultRequest,
-			Function<InputStream, Integer> fGetResponseSize) {
-			super(sMethodName, rDefaultRequest);
+		protected BinaryRequest(String methodName, byte[] defaultRequest,
+			Function<InputStream, Integer> getResponseSize) {
+			super(methodName, defaultRequest);
 
-			this.fGetResponseSize = fGetResponseSize;
+			this.getResponseSize = getResponseSize;
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected byte[] readResponse(Connection rConnection,
-			InputStream rInputStream) throws Exception {
-			byte[] rResult = null;
+		protected byte[] readResponse(Connection connection,
+			InputStream inputStream) throws Exception {
+			byte[] result = null;
 
-			if (fGetResponseSize != null) {
+			if (getResponseSize != null) {
 				@SuppressWarnings("boxing")
-				int nResponseSize = fGetResponseSize.evaluate(rInputStream);
+				int responseSize = getResponseSize.evaluate(inputStream);
 
-				rResult = StreamUtil.readAll(rInputStream, 1024,
-					nResponseSize);
+				result = StreamUtil.readAll(inputStream, 1024, responseSize);
 			}
 
-			return rResult;
+			return result;
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void writeRequest(Connection rConnection,
-			OutputStream rOutputStream, byte[] rRequest) throws Exception {
-			rOutputStream.write(rRequest);
+		protected void writeRequest(Connection connection,
+			OutputStream outputStream, byte[] request) throws Exception {
+			outputStream.write(request);
 		}
 	}
 
@@ -336,24 +337,23 @@ public class SocketEndpoint extends Endpoint {
 	 */
 	public static class TextRequest extends SocketRequest<String, String> {
 
-		private final Function<Reader, Integer> fGetResponseSize;
+		private final Function<Reader, Integer> getResponseSize;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sMethodName      The name of this method
-		 * @param sDefaultRequest  The default request string to send
-		 * @param fGetResponseSize A function that determines the response size
-		 *                         to be read from the socket input stream
-		 *                         after
-		 *                         sending the command string or NULL if no
-		 *                         response needs to be read
+		 * @param methodName      The name of this method
+		 * @param defaultRequest  The default request string to send
+		 * @param getResponseSize A function that determines the response size
+		 *                        to be read from the socket input stream after
+		 *                        sending the command string or NULL if no
+		 *                        response needs to be read
 		 */
-		public TextRequest(String sMethodName, String sDefaultRequest,
-			Function<Reader, Integer> fGetResponseSize) {
-			super(sMethodName, sDefaultRequest);
+		public TextRequest(String methodName, String defaultRequest,
+			Function<Reader, Integer> getResponseSize) {
+			super(methodName, defaultRequest);
 
-			this.fGetResponseSize = fGetResponseSize;
+			this.getResponseSize = getResponseSize;
 		}
 
 		/**
@@ -361,41 +361,41 @@ public class SocketEndpoint extends Endpoint {
 		 */
 		@Override
 		@SuppressWarnings("boxing")
-		protected String readResponse(Connection rConnection,
-			InputStream rInputStream) throws Exception {
-			String sResult = null;
+		protected String readResponse(Connection connection,
+			InputStream inputStream) throws Exception {
+			String result = null;
 
-			if (fGetResponseSize != null) {
-				Reader aReader = rConnection.get(SOCKET_READER);
+			if (getResponseSize != null) {
+				Reader reader = connection.get(SOCKET_READER);
 
-				if (aReader == null) {
-					aReader = new InputStreamReader(rInputStream);
-					rConnection.set(SOCKET_READER, aReader);
+				if (reader == null) {
+					reader = new InputStreamReader(inputStream);
+					connection.set(SOCKET_READER, reader);
 				}
 
-				int nResponseSize = fGetResponseSize.evaluate(aReader);
+				int responseSize = getResponseSize.evaluate(reader);
 
-				sResult = StreamUtil.readAll(aReader, 1024, nResponseSize);
+				result = StreamUtil.readAll(reader, 1024, responseSize);
 			}
 
-			return sResult;
+			return result;
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		protected void writeRequest(Connection rConnection,
-			OutputStream rOutputStream, String sRequest) throws Exception {
-			PrintWriter aWriter = rConnection.get(SOCKET_WRITER);
+		protected void writeRequest(Connection connection,
+			OutputStream outputStream, String request) throws Exception {
+			PrintWriter writer = connection.get(SOCKET_WRITER);
 
-			if (aWriter == null) {
-				aWriter = new PrintWriter(rOutputStream);
-				rConnection.set(SOCKET_WRITER, aWriter);
+			if (writer == null) {
+				writer = new PrintWriter(outputStream);
+				connection.set(SOCKET_WRITER, writer);
 			}
 
-			aWriter.println(sRequest);
-			aWriter.flush();
+			writer.println(request);
+			writer.flush();
 		}
 	}
 }

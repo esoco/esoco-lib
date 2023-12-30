@@ -16,7 +16,7 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 package de.esoco.lib.proxy.interception;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 import org.obrel.core.Relatable;
 import org.obrel.core.RelationType;
 import org.obrel.core.RelationTypes;
@@ -24,6 +24,8 @@ import org.obrel.core.RelationTypes;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.obrel.core.RelationTypes.newListType;
 
 /**
@@ -31,101 +33,103 @@ import static org.obrel.core.RelationTypes.newListType;
  *
  * @author eso
  */
-public class InterceptionProxyTest extends TestCase {
+class InterceptionProxyTest {
 
 	private static final RelationType<List<String>> TEST_STRINGS =
 		newListType();
 
-	int nLogCount = 0;
-
-	int nBeforeCount = 0;
-
-	int nReturnCount = 0;
-
-	int nThrowCount = 0;
-
-	{
+	static {
 		RelationTypes.init(InterceptionProxyTest.class);
 	}
+
+	int logCount = 0;
+
+	int beforeCount = 0;
+
+	int returnCount = 0;
+
+	int throwCount = 0;
 
 	/**
 	 * Method testNewProxyInstance.
 	 */
-	public final void testNewProxyInstance() {
+	@Test
+	final void testNewProxyInstance() {
 		InterceptionProxy<TestInterface> ip =
 			new InterceptionProxy<TestInterface>(TestInterface.class);
 
-		Object aTarget = new TestClass();
+		Object target = new TestClass();
 
 		ip.setDefaultInterception(InterceptionProxy.FORWARD);
 
 		ip.addAdvice(new InterceptionAdvice() {
 			@Override
-			public void before(Object rInvoked, Method rMethod, Object[] rArgs)
+			public void before(Object invoked, Method method, Object[] args)
 				throws Exception {
-				nBeforeCount++;
+				beforeCount++;
 			}
 		});
 
 		ip.addAdvice(new InterceptionAdvice() {
 			@Override
-			public void afterReturn(Object rReturn, Object rInvoked,
-				Method rMethod, Object[] rArgs) throws Exception {
-				nReturnCount++;
+			public void afterReturn(Object toReturn, Object invoked,
+				Method method, Object[] args) throws Exception {
+				returnCount++;
 			}
 
 			@Override
-			public void afterThrow(Throwable rThrown, Object rInvoked,
-				Method rMethod, Object[] rArgs) throws Exception {
-				nThrowCount++;
+			public void afterThrow(Throwable thrown, Object invoked,
+				Method method, Object[] args) throws Exception {
+				throwCount++;
 			}
 		});
 
 		ip.addAdvice(new InterceptionAdvice() {
 			@Override
-			public void after(Object rProxy, Method rMethod, Object[] rArgs)
+			public void after(Object proxy, Method method, Object[] args)
 				throws Exception {
-				nLogCount++;
+				logCount++;
 			}
 		});
 
-		TestInterface ti = ip.newProxyInstance(aTarget);
+		TestInterface ti = ip.newProxyInstance(target);
 
 		ti.open();
-		assertEquals(1, nBeforeCount);
-		assertEquals(1, nReturnCount);
-		assertEquals(0, nThrowCount);
-		assertEquals(1, nLogCount);
+		assertEquals(1, beforeCount);
+		assertEquals(1, returnCount);
+		assertEquals(0, throwCount);
+		assertEquals(1, logCount);
 		ti.other();
-		assertEquals(2, nBeforeCount);
-		assertEquals(2, nReturnCount);
-		assertEquals(0, nThrowCount);
-		assertEquals(2, nLogCount);
+		assertEquals(2, beforeCount);
+		assertEquals(2, returnCount);
+		assertEquals(0, throwCount);
+		assertEquals(2, logCount);
 
 		try {
 			ti.close();
-			assertFalse(true);
+			fail();
 		} catch (Exception e) {
 			// expected
 		}
 
-		assertEquals(3, nBeforeCount);
-		assertEquals(2, nReturnCount);
-		assertEquals(1, nThrowCount);
-		assertEquals(3, nLogCount);
+		assertEquals(3, beforeCount);
+		assertEquals(2, returnCount);
+		assertEquals(1, throwCount);
+		assertEquals(3, logCount);
 	}
 
 	/**
 	 * Test proxies with explicit relation support.
 	 */
-	public void testRelationsExplicit() {
+	@Test
+	void testRelationsExplicit() {
 		// DirectRelationInterface extends RelationEnabled
 		InterceptionProxy<RelationInterface> ip =
 			new InterceptionProxy<RelationInterface>(RelationInterface.class,
 				true);
 
-		Object aTarget = new TestClass();
-		Relatable ti = ip.newProxyInstance(aTarget);
+		Object target = new TestClass();
+		Relatable ti = ip.newProxyInstance(target);
 
 		ti.get(TEST_STRINGS).add("TEST1");
 		ti.get(TEST_STRINGS).add("TEST2");
@@ -136,11 +140,11 @@ public class InterceptionProxyTest extends TestCase {
 		// try again without relation support enabled
 		ip = new InterceptionProxy<RelationInterface>(RelationInterface.class,
 			false);
-		ti = ip.newProxyInstance(aTarget);
+		ti = ip.newProxyInstance(target);
 
 		try {
 			ti.get(TEST_STRINGS).add("TEST1");
-			assertFalse(true);
+			fail();
 		} catch (Exception e) {
 			// this is the correct execution path
 		}

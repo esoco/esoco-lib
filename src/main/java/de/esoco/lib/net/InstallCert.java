@@ -155,7 +155,7 @@ public class InstallCert {
 			e.printStackTrace(System.out);
 		}
 
-		X509Certificate[] chain = tm.rCertificateChain;
+		X509Certificate[] chain = tm.certificateChain;
 
 		if (chain == null) {
 			System.out.println("Could not obtain server certificate chain");
@@ -228,17 +228,17 @@ public class InstallCert {
 	 */
 	private static class SavingTrustManager implements X509TrustManager {
 
-		final X509TrustManager rTrustManager;
+		final X509TrustManager trustManager;
 
-		X509Certificate[] rCertificateChain;
+		X509Certificate[] certificateChain;
 
 		/**
 		 * Creates a new instance that wraps another trust manager.
 		 *
-		 * @param rTrustManager The trust manager
+		 * @param trustManager The trust manager
 		 */
-		SavingTrustManager(X509TrustManager rTrustManager) {
-			this.rTrustManager = rTrustManager;
+		SavingTrustManager(X509TrustManager trustManager) {
+			this.trustManager = trustManager;
 		}
 
 		/**
@@ -257,10 +257,10 @@ public class InstallCert {
 		 * @see X509TrustManager#checkServerTrusted(X509Certificate[], String)
 		 */
 		@Override
-		public void checkServerTrusted(X509Certificate[] rCertificateChain,
-			String sAuthType) throws CertificateException {
-			this.rCertificateChain = rCertificateChain;
-			rTrustManager.checkServerTrusted(rCertificateChain, sAuthType);
+		public void checkServerTrusted(X509Certificate[] certificateChain,
+			String authType) throws CertificateException {
+			this.certificateChain = certificateChain;
+			trustManager.checkServerTrusted(certificateChain, authType);
 		}
 
 		/**

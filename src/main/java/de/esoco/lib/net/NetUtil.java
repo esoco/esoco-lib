@@ -96,12 +96,12 @@ public class NetUtil {
 	 * Appends a path element to an URL string and adds a separating '/' if
 	 * necessary.
 	 *
-	 * @param sBaseUrl rUrlBuilder The string build containing the base URL
-	 * @param sPath    The URL path to append
+	 * @param baseUrl rUrlBuilder The string build containing the base URL
+	 * @param path    The URL path to append
 	 * @return The resulting URL string
 	 */
-	public static String appendUrlPath(String sBaseUrl, String sPath) {
-		return appendUrlPath(new StringBuilder(sBaseUrl), sPath).toString();
+	public static String appendUrlPath(String baseUrl, String path) {
+		return appendUrlPath(new StringBuilder(baseUrl), path).toString();
 	}
 
 	/**
@@ -109,140 +109,138 @@ public class NetUtil {
 	 * '/'
 	 * if necessary.
 	 *
-	 * @param rUrlBuilder The string build containing the base URL
-	 * @param sPath       The URL path to append
+	 * @param urlBuilder The string build containing the base URL
+	 * @param path       The URL path to append
 	 * @return The input URL builder to allow concatenation
 	 */
-	public static StringBuilder appendUrlPath(StringBuilder rUrlBuilder,
-		String sPath) {
-		if (sPath != null && sPath.length() > 0) {
-			if (rUrlBuilder.charAt(rUrlBuilder.length() - 1) != '/') {
-				if (sPath.charAt(0) != '/') {
-					rUrlBuilder.append('/');
+	public static StringBuilder appendUrlPath(StringBuilder urlBuilder,
+		String path) {
+		if (path != null && path.length() > 0) {
+			if (urlBuilder.charAt(urlBuilder.length() - 1) != '/') {
+				if (path.charAt(0) != '/') {
+					urlBuilder.append('/');
 				}
-			} else if (sPath.charAt(0) == '/') {
-				sPath = sPath.substring(1);
+			} else if (path.charAt(0) == '/') {
+				path = path.substring(1);
 			}
 
-			rUrlBuilder.append(sPath);
+			urlBuilder.append(path);
 		}
 
-		return rUrlBuilder;
+		return urlBuilder;
 	}
 
 	/**
 	 * Creates a new socket for the connection to a certain host and port. This
 	 * method takes into account any system properties for a connection proxy.
 	 *
-	 * @param sHost       The host to connect the socket to
-	 * @param nPort       The port to connect the socket to
-	 * @param eSocketType The type of socket connection to create
+	 * @param host       The host to connect the socket to
+	 * @param port       The port to connect the socket to
+	 * @param socketType The type of socket connection to create
 	 * @return A new socket that is connected to the given host and port
 	 * @throws IOException If creating the socket fails
 	 */
-	public static Socket createSocket(String sHost, int nPort,
-		SocketType eSocketType) throws IOException {
-		boolean bSSL = (eSocketType != SocketType.PLAIN);
-		String sProxyHost =
-			System.getProperty(bSSL ? "https.proxyHost" : "http.proxyHost");
+	public static Socket createSocket(String host, int port,
+		SocketType socketType) throws IOException {
+		boolean sSL = (socketType != SocketType.PLAIN);
+		String proxyHost =
+			System.getProperty(sSL ? "https.proxyHost" : "http.proxyHost");
 
-		Socket aSocket;
-		int nProxyPort = 0;
+		Socket socket;
+		int proxyPort = 0;
 
-		if (sProxyHost != null) {
-			nProxyPort = Integer.parseInt(System.getProperty(
-				bSSL ? "https.proxyPort" : "http.proxyPort"));
+		if (proxyHost != null) {
+			proxyPort = Integer.parseInt(
+				System.getProperty(sSL ? "https.proxyPort" : "http.proxyPort"
+				));
 
-			String sNonProxyHosts = System.getProperty("http.nonProxyHosts");
+			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
 
-			if (sNonProxyHosts != null) {
-				sNonProxyHosts = sNonProxyHosts.replaceAll("\\.", "\\.");
-				sNonProxyHosts = sNonProxyHosts.replaceAll("\\*", ".*");
+			if (nonProxyHosts != null) {
+				nonProxyHosts = nonProxyHosts.replaceAll("\\.", "\\.");
+				nonProxyHosts = nonProxyHosts.replaceAll("\\*", ".*");
 
-				if (Pattern.matches(sNonProxyHosts, sHost)) {
-					sProxyHost = null;
-					nProxyPort = 0;
+				if (Pattern.matches(nonProxyHosts, host)) {
+					proxyHost = null;
+					proxyPort = 0;
 				}
 			}
 		}
 
-		if (bSSL) {
-			SSLSocketFactory rFactory;
+		if (sSL) {
+			SSLSocketFactory factory;
 
-			if (eSocketType == SocketType.SSL) {
-				rFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+			if (socketType == SocketType.SSL) {
+				factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 			} else {
-				rFactory = getTrustingSocketFactory();
+				factory = getTrustingSocketFactory();
 			}
 
-			if (sProxyHost != null) {
-				aSocket =
-					createTunnelingSslSocket(rFactory, sHost, nPort,
-						sProxyHost,
-						nProxyPort);
+			if (proxyHost != null) {
+				socket =
+					createTunnelingSslSocket(factory, host, port, proxyHost,
+						proxyPort);
 			} else {
-				aSocket = rFactory.createSocket(sHost, nPort);
+				socket = factory.createSocket(host, port);
 			}
 		} else {
-			if (sProxyHost != null) {
-				Proxy aProxy = new Proxy(Proxy.Type.HTTP,
-					new InetSocketAddress(sProxyHost, nProxyPort));
+			if (proxyHost != null) {
+				Proxy proxy = new Proxy(Proxy.Type.HTTP,
+					new InetSocketAddress(proxyHost, proxyPort));
 
-				aSocket = new Socket(aProxy);
+				socket = new Socket(proxy);
 
-				aSocket.connect(new InetSocketAddress(sHost, nPort));
+				socket.connect(new InetSocketAddress(host, port));
 			} else {
-				aSocket = SocketFactory.getDefault().createSocket(sHost,
-					nPort);
+				socket = SocketFactory.getDefault().createSocket(host, port);
 			}
 		}
 
-		return aSocket;
+		return socket;
 	}
 
 	/**
 	 * Creates a new SSL {@link Socket} that tunnels it's communication through
 	 * a proxy.
 	 *
-	 * @param rFactory   The factory to create the socket with
-	 * @param sHost      The host to connect the socket to
-	 * @param nPort      The port to connect the socket to
-	 * @param sProxyHost The host of the proxy to tunnel through
-	 * @param nProxyPort The port of the proxy to tunnel through
+	 * @param factory   The factory to create the socket with
+	 * @param host      The host to connect the socket to
+	 * @param port      The port to connect the socket to
+	 * @param proxyHost The host of the proxy to tunnel through
+	 * @param proxyPort The port of the proxy to tunnel through
 	 * @return The new tunneling SSL socket, initialized and connected to the
 	 * given host and port
 	 * @throws IOException If creating or initializing the socket fails
 	 */
-	public static Socket createTunnelingSslSocket(SSLSocketFactory rFactory,
-		String sHost, int nPort, String sProxyHost, int nProxyPort)
+	public static Socket createTunnelingSslSocket(SSLSocketFactory factory,
+		String host, int port, String proxyHost, int proxyPort)
 		throws IOException {
-		Socket aTunnelSocket = new Socket(sProxyHost, nProxyPort);
+		Socket tunnelSocket = new Socket(proxyHost, proxyPort);
 
-		initTunneling(aTunnelSocket, sHost, nPort);
+		initTunneling(tunnelSocket, host, port);
 
-		SSLSocket aSocket =
-			(SSLSocket) rFactory.createSocket(aTunnelSocket, sHost, nPort,
-				true);
+		SSLSocket socket =
+			(SSLSocket) factory.createSocket(tunnelSocket, host, port, true);
 
-		aSocket.startHandshake();
+		socket.startHandshake();
 
-		return aSocket;
+		return socket;
 	}
 
 	/**
 	 * Enables HTTP basic authentication for a certain {@link URLConnection}.
 	 *
-	 * @param rUrlConnection The URL connection
-	 * @param sUserName      The user name to perform the authentication with
-	 * @param sPassword      The password to perform the authentication with
+	 * @param urlConnection The URL connection
+	 * @param userName      The user name to perform the authentication with
+	 * @param password      The password to perform the authentication with
 	 */
-	public static void enableHttpBasicAuth(URLConnection rUrlConnection,
-		String sUserName, String sPassword) {
-		String sAuth = sUserName + ":" + sPassword;
+	public static void enableHttpBasicAuth(URLConnection urlConnection,
+		String userName, String password) {
+		String auth = userName + ":" + password;
 
-		sAuth = Base64.getEncoder().encodeToString(sAuth.getBytes());
+		auth = Base64.getEncoder().encodeToString(auth.getBytes());
 
-		rUrlConnection.setRequestProperty("Authorization", "Basic " + sAuth);
+		urlConnection.setRequestProperty("Authorization", "Basic " + auth);
 	}
 
 	/**
@@ -250,12 +248,12 @@ public class NetUtil {
 	 * applying the method {@link URLEncoder#encode(String, String)} with the
 	 * recommended default encoding UTF-8.
 	 *
-	 * @param sElement sName The name of the URL parameter
+	 * @param element sName The name of the URL parameter
 	 * @return A string containing the encoded parameter assignment
 	 */
-	public static String encodeUrlElement(String sElement) {
+	public static String encodeUrlElement(String element) {
 		try {
-			return URLEncoder.encode(sElement, URL_ENCODING);
+			return URLEncoder.encode(element, URL_ENCODING);
 		} catch (UnsupportedEncodingException e) {
 			// UTF-8 needs to be available for URL encoding
 			throw new IllegalStateException(e);
@@ -267,12 +265,12 @@ public class NetUtil {
 	 * method {@link #encodeUrlElement(String)} to each and concatenating them
 	 * with '='.
 	 *
-	 * @param sName  The name of the URL parameter
-	 * @param sValue The value of the URL parameter
+	 * @param name  The name of the URL parameter
+	 * @param value The value of the URL parameter
 	 * @return A string containing the encoded parameter assignment
 	 */
-	public static String encodeUrlParameter(String sName, String sValue) {
-		return encodeUrlElement(sName) + "=" + encodeUrlElement(sValue);
+	public static String encodeUrlParameter(String name, String value) {
+		return encodeUrlElement(name) + "=" + encodeUrlElement(value);
 	}
 
 	/**
@@ -280,25 +278,25 @@ public class NetUtil {
 	 * been encoded with {@link #encodeUrlParameter(String, String)}. The
 	 * concatenation character is '&amp;', the encoding UTF-8.
 	 *
-	 * @param rParams A mapping from HTTP URL parameter names to values
+	 * @param params A mapping from HTTP URL parameter names to values
 	 * @return The encoded parameters (may be empty but will never be NULL)
 	 */
-	public static String encodeUrlParameters(Map<String, String> rParams) {
-		StringBuilder aParams = new StringBuilder();
+	public static String encodeUrlParameters(Map<String, String> params) {
+		StringBuilder result = new StringBuilder();
 
-		for (Entry<String, String> rParam : rParams.entrySet()) {
-			aParams.append(
-				encodeUrlParameter(rParam.getKey(), rParam.getValue()));
-			aParams.append('&');
+		for (Entry<String, String> param : params.entrySet()) {
+			result.append(encodeUrlParameter(param.getKey(),
+				param.getValue()));
+			result.append('&');
 		}
 
-		int nLength = aParams.length();
+		int length = result.length();
 
-		if (nLength > 0) {
-			aParams.setLength(nLength - 1);
+		if (length > 0) {
+			result.setLength(length - 1);
 		}
 
-		return aParams.toString();
+		return result.toString();
 	}
 
 	/**
@@ -310,62 +308,62 @@ public class NetUtil {
 	 * @return The trusting socket factory
 	 */
 	public static final SSLSocketFactory getTrustingSocketFactory() {
-		SSLSocketFactory aSslSocketFactory;
+		SSLSocketFactory sslSocketFactory;
 
 		try {
-			TrustManager[] aTrustManagers =
+			TrustManager[] trustManagers =
 				new TrustManager[] { new SelfSignedCertificateTrustManager() };
 
-			SSLContext aSslContext = SSLContext.getInstance("SSL");
+			SSLContext sslContext = SSLContext.getInstance("SSL");
 
-			aSslContext.init(null, aTrustManagers, new SecureRandom());
+			sslContext.init(null, trustManagers, new SecureRandom());
 
-			aSslSocketFactory = aSslContext.getSocketFactory();
+			sslSocketFactory = sslContext.getSocketFactory();
 		} catch (Exception e) {
 			throw new SecurityException(e);
 		}
 
-		return aSslSocketFactory;
+		return sslSocketFactory;
 	}
 
 	/**
 	 * Initializes the tunneling of communication through a proxy.
 	 *
-	 * @param rProxySocket The socket that is connected to the tunneling proxy
-	 * @param sHost        The host to connect the tunnel to
-	 * @param nPort        The port to connect the tunnel to
+	 * @param proxySocket The socket that is connected to the tunneling proxy
+	 * @param host        The host to connect the tunnel to
+	 * @param port        The port to connect the tunnel to
 	 * @throws IOException If the initialization fails
 	 */
 	@SuppressWarnings("boxing")
-	public static void initTunneling(Socket rProxySocket, String sHost,
-		int nPort) throws IOException {
-		String sRequest = String.format(
+	public static void initTunneling(Socket proxySocket, String host, int port)
+		throws IOException {
+		String request = String.format(
 			"CONNECT %s:%d HTTP/1.0\nUser-Agent: " + JAVA_USER_AGENT +
-				"\r\n\r\n", sHost, nPort);
+				"\r\n\r\n", host, port);
 
-		OutputStream rOutputStream = rProxySocket.getOutputStream();
-		byte[] aRequestBytes = sRequest.getBytes(TUNNELING_CHARSET);
-		String sReply = "";
+		OutputStream outputStream = proxySocket.getOutputStream();
+		byte[] requestBytes = request.getBytes(TUNNELING_CHARSET);
+		String reply = "";
 
-		rOutputStream.write(aRequestBytes);
-		rOutputStream.flush();
+		outputStream.write(requestBytes);
+		outputStream.flush();
 
-		ByteArrayOutputStream aOutput = new ByteArrayOutputStream();
-		byte[] aReply = null;
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		byte[] replyBytes = null;
 
-		if (StreamUtil.readUntil(rProxySocket.getInputStream(), aOutput,
+		if (StreamUtil.readUntil(proxySocket.getInputStream(), output,
 			"\r\n\r\n".getBytes(TUNNELING_CHARSET), 512)) {
-			aReply = aOutput.toByteArray();
+			replyBytes = output.toByteArray();
 		}
 
-		if (aReply != null) {
-			sReply = new String(aReply, TUNNELING_CHARSET);
+		if (replyBytes != null) {
+			reply = new String(replyBytes, TUNNELING_CHARSET);
 		}
 
-		if (!sReply.startsWith("HTTP/1.0 200")) {
+		if (!reply.startsWith("HTTP/1.0 200")) {
 			throw new IOException(String.format(
-				"Cannot tunnel through %s:%d. " + "Proxy response: %s", sHost,
-				nPort, sReply));
+				"Cannot tunnel through %s:%d. " + "Proxy response: %s", host,
+				port, reply));
 		}
 	}
 
@@ -375,9 +373,9 @@ public class NetUtil {
 	 *
 	 * @see #wakeUp(MACAddress, InetAddress, int)
 	 */
-	public static void wakeUp(MACAddress rMACAddress, InetAddress rBroadcastIP)
+	public static void wakeUp(MACAddress mACAddress, InetAddress broadcastIP)
 		throws IOException {
-		wakeUp(rMACAddress, rBroadcastIP, WAKEONLAN_DEFAULT_PORT);
+		wakeUp(mACAddress, broadcastIP, WAKEONLAN_DEFAULT_PORT);
 	}
 
 	/**
@@ -388,32 +386,31 @@ public class NetUtil {
 	 * This is because that machine is probably inactive and therefore doesn't
 	 * have an IP address until it has been waked up.
 	 *
-	 * @param rMACAddress  The MAC address of the target network adapter
-	 * @param rBroadcastIP The broadcast IP number to send the packet to
-	 * @param nPort        The port to send the broadcast packet to
+	 * @param mACAddress  The MAC address of the target network adapter
+	 * @param broadcastIP The broadcast IP number to send the packet to
+	 * @param port        The port to send the broadcast packet to
 	 * @throws IOException If the network access fails
 	 */
 
-	public static void wakeUp(MACAddress rMACAddress, InetAddress rBroadcastIP,
-		int nPort) throws IOException {
-		DatagramSocket aSocket = new DatagramSocket();
-		byte[] aMACBytes = rMACAddress.getBytes();
-		byte[] aDatagram = new byte[17 * 6];
+	public static void wakeUp(MACAddress mACAddress, InetAddress broadcastIP,
+		int port) throws IOException {
+		DatagramSocket socket = new DatagramSocket();
+		byte[] mACBytes = mACAddress.getBytes();
+		byte[] datagram = new byte[17 * 6];
 
 		for (int i = 0; i < 6; i++) {
-			aDatagram[i] = (byte) 0xff;
+			datagram[i] = (byte) 0xff;
 		}
 
-		for (int i = 6; i < aDatagram.length; i += 6) {
-			System.arraycopy(aMACBytes, 0, aDatagram, i, 6);
+		for (int i = 6; i < datagram.length; i += 6) {
+			System.arraycopy(mACBytes, 0, datagram, i, 6);
 		}
 
-		DatagramPacket aPacket =
-			new DatagramPacket(aDatagram, aDatagram.length, rBroadcastIP,
-				nPort);
+		DatagramPacket packet =
+			new DatagramPacket(datagram, datagram.length, broadcastIP, port);
 
-		aSocket.send(aPacket);
-		aSocket.close();
+		socket.send(packet);
+		socket.close();
 	}
 
 	/**
@@ -427,7 +424,7 @@ public class NetUtil {
 		 * @see X509TrustManager#checkClientTrusted(X509Certificate[], String)
 		 */
 		@Override
-		public void checkClientTrusted(X509Certificate[] rArg0, String rArg1)
+		public void checkClientTrusted(X509Certificate[] arg0, String arg1)
 			throws CertificateException {
 			// perform no checks to accept any certificate
 		}
@@ -436,7 +433,7 @@ public class NetUtil {
 		 * @see X509TrustManager#checkServerTrusted(X509Certificate[], String)
 		 */
 		@Override
-		public void checkServerTrusted(X509Certificate[] rArg0, String rArg1)
+		public void checkServerTrusted(X509Certificate[] arg0, String arg1)
 			throws CertificateException {
 			// perform no checks to accept any certificate
 		}

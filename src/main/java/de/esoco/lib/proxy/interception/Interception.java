@@ -29,13 +29,13 @@ public interface Interception {
 	 * This method must be implemented to provide the actual method
 	 * interception.
 	 *
-	 * @param rProxy          The proxy on which the method has been invoked
-	 * @param rOriginalMethod The original method that has been invoked
-	 * @param rTarget         The object on which the method shall be invoked
-	 * @param rArgs           The original method arguments
+	 * @param proxy          The proxy on which the method has been invoked
+	 * @param originalMethod The original method that has been invoked
+	 * @param target         The object on which the method shall be invoked
+	 * @param args           The original method arguments
 	 * @return The result of the method call or of the interception
 	 * @throws Exception Any kind of exception may be thrown
 	 */
-	Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) throws Exception;
+	Object invoke(Object proxy, Method originalMethod, Object target,
+		Object[] args) throws Exception;
 }

@@ -30,39 +30,38 @@ import java.io.RandomAccessFile;
  */
 public class RandomAccessFileOutputStream extends OutputStream {
 
-	private final RandomAccessFile rRandomAccessFile;
+	private final RandomAccessFile randomAccessFile;
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rFile The wrapped file
+	 * @param file The wrapped file
 	 */
-	public RandomAccessFileOutputStream(RandomAccessFile rFile) {
-		rRandomAccessFile = rFile;
+	public RandomAccessFileOutputStream(RandomAccessFile file) {
+		randomAccessFile = file;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(byte[] rBytes) throws IOException {
-		rRandomAccessFile.write(rBytes);
+	public void write(byte[] bytes) throws IOException {
+		randomAccessFile.write(bytes);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(int nByte) throws IOException {
-		rRandomAccessFile.write(nByte);
+	public void write(int b) throws IOException {
+		randomAccessFile.write(b);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void write(byte[] rBytes, int nOffset, int nLength)
-		throws IOException {
-		rRandomAccessFile.write(rBytes, nOffset, nLength);
+	public void write(byte[] bytes, int offset, int length) throws IOException {
+		randomAccessFile.write(bytes, offset, length);
 	}
 }

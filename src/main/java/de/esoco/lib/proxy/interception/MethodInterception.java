@@ -73,8 +73,8 @@ import java.util.Map;
  */
 public abstract class MethodInterception implements Interception {
 
-	private final Map<Method, Method> aMethodMap =
-		new HashMap<Method, Method>();
+	private final Map<Method, Method> methodMap = new HashMap<Method,
+		Method>();
 
 	/**
 	 * Creates a new instance that intercepts one or more methods. If no
@@ -86,14 +86,14 @@ public abstract class MethodInterception implements Interception {
 	 * <p>An assertion will be thrown at development time if the variable
 	 * parameter list is empty or NULL.</p>
 	 *
-	 * @param rMethods The methods to intercept
+	 * @param methods The methods to intercept
 	 * @throws IllegalArgumentException If no matching method for an argument
 	 *                                  exception exists in this class
 	 */
-	public MethodInterception(Method... rMethods) {
-		assert rMethods != null && rMethods.length > 0;
+	public MethodInterception(Method... methods) {
+		assert methods != null && methods.length > 0;
 
-		addMethods(Arrays.asList(rMethods), true);
+		addMethods(Arrays.asList(methods), true);
 	}
 
 	/**
@@ -102,12 +102,12 @@ public abstract class MethodInterception implements Interception {
 	 * superclass of the argument class. Subclasses can add additional public
 	 * methods from other classes by means of one of the addMethod() methods.
 	 *
-	 * @param rClass The class to intercept the public methods of
+	 * @param type The class to intercept the public methods of
 	 * @throws IllegalArgumentException If for a certain intercepted method no
 	 *                                  matching method exists in this class
 	 */
-	public MethodInterception(Class<?> rClass) {
-		addMethods(Arrays.asList(rClass.getDeclaredMethods()), true);
+	public MethodInterception(Class<?> type) {
+		addMethods(Arrays.asList(type.getDeclaredMethods()), true);
 	}
 
 	/**
@@ -124,21 +124,21 @@ public abstract class MethodInterception implements Interception {
 	 * latter case two additional parameters are expected (for details see the
 	 * {@linkplain MethodInterception class documentation}).</p>
 	 *
-	 * @param rClass   The class to intercept the public methods of
-	 * @param rMethods The names of the intercepted methods
+	 * @param type    The class to intercept the public methods of
+	 * @param methods The names of the intercepted methods
 	 * @throws IllegalArgumentException If for one of the given method names
 	 *                                  either no intercepted method exists in
 	 *                                  the given class or no matching
 	 *                                  method(s)
 	 *                                  exists in this class
 	 */
-	public MethodInterception(Class<?> rClass, String... rMethods) {
+	public MethodInterception(Class<?> type, String... methods) {
 		// assert that with no string params the class param constructor is
 		// invoked
-		assert rMethods.length > 0;
+		assert methods.length > 0;
 
-		for (String sMethod : rMethods) {
-			addMethod(rClass, sMethod);
+		for (String method : methods) {
+			addMethod(type, method);
 		}
 	}
 
@@ -151,22 +151,22 @@ public abstract class MethodInterception implements Interception {
 	 * @see Interception#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public Object invoke(Object rProxy, Method rOriginalMethod, Object rTarget,
-		Object[] rArgs) throws Exception {
-		Method rMethod = aMethodMap.get(rOriginalMethod);
-		Object[] rExtArgs;
+	public Object invoke(Object proxy, Method originalMethod, Object target,
+		Object[] args) throws Exception {
+		Method method = methodMap.get(originalMethod);
+		Object[] extArgs;
 
-		if (rArgs != null) {
-			rExtArgs = new Object[rArgs.length + 2];
-			System.arraycopy(rArgs, 0, rExtArgs, 2, rArgs.length);
+		if (args != null) {
+			extArgs = new Object[args.length + 2];
+			System.arraycopy(args, 0, extArgs, 2, args.length);
 		} else {
-			rExtArgs = new Object[2];
+			extArgs = new Object[2];
 		}
 
-		rExtArgs[0] = rProxy;
-		rExtArgs[1] = rTarget;
+		extArgs[0] = proxy;
+		extArgs[1] = target;
 
-		return ReflectUtil.invoke(this, rMethod, rExtArgs);
+		return ReflectUtil.invoke(this, method, extArgs);
 	}
 
 	/**
@@ -176,7 +176,7 @@ public abstract class MethodInterception implements Interception {
 	 */
 	@Override
 	public String toString() {
-		return "MethodInterception" + aMethodMap.keySet();
+		return "MethodInterception" + methodMap.keySet();
 	}
 
 	/**
@@ -185,19 +185,19 @@ public abstract class MethodInterception implements Interception {
 	 * matches the argument method. The target method must have the same name
 	 * and parameter lisdt.
 	 *
-	 * @param rMethod The name of the public method to add
+	 * @param method The name of the public method to add
 	 * @throws IllegalArgumentException If no target method with the given name
 	 *                                  exists
 	 */
-	protected void addMethod(Method rMethod) {
-		Method rTargetMethod = mapMethod(rMethod);
+	protected void addMethod(Method method) {
+		Method targetMethod = mapMethod(method);
 
-		if (rTargetMethod == null) {
+		if (targetMethod == null) {
 			throw new IllegalArgumentException(
-				"Missing target method: " + rMethod);
+				"Missing target method: " + method);
 		}
 
-		aMethodMap.put(rMethod, rTargetMethod);
+		methodMap.put(method, targetMethod);
 	}
 
 	/**
@@ -206,11 +206,11 @@ public abstract class MethodInterception implements Interception {
 	 * the subclass must implement corresponding methods for each variant. Else
 	 * an IllegalArgumentException will be thrown.
 	 *
-	 * @param rClass  The class to intercept the public methods of
-	 * @param sMethod The name of the intercepted method(s)
+	 * @param type   The class to intercept the public methods of
+	 * @param method The name of the intercepted method(s)
 	 */
-	protected void addMethod(Class<?> rClass, String sMethod) {
-		List<Method> ml = ReflectUtil.getPublicMethods(rClass, sMethod);
+	protected void addMethod(Class<?> type, String method) {
+		List<Method> ml = ReflectUtil.getPublicMethods(type, method);
 
 		addMethods(ml, false);
 	}
@@ -220,23 +220,22 @@ public abstract class MethodInterception implements Interception {
 	 * include methods declared by any superclass of the argument class. These
 	 * classes must be added separately if necessary.
 	 *
-	 * @param rClass The class to add the public methods of
+	 * @param type The class to add the public methods of
 	 */
-	protected void addMethods(Class<?> rClass) {
-		addMethods(Arrays.asList(rClass.getDeclaredMethods()), true);
+	protected void addMethods(Class<?> type) {
+		addMethods(Arrays.asList(type.getDeclaredMethods()), true);
 	}
 
 	/**
 	 * Adds all methods from an array to this interception.
 	 *
-	 * @param rMethods    The array of methods to add
-	 * @param bPublicOnly If TRUE, only public methods will be added; else any
-	 *                    method in the array will be added
+	 * @param methods    The array of methods to add
+	 * @param publicOnly If TRUE, only public methods will be added; else any
+	 *                   method in the array will be added
 	 */
-	protected void addMethods(Collection<Method> rMethods,
-		boolean bPublicOnly) {
-		for (Method m : rMethods) {
-			if (!bPublicOnly || Modifier.isPublic(m.getModifiers())) {
+	protected void addMethods(Collection<Method> methods, boolean publicOnly) {
+		for (Method m : methods) {
+			if (!publicOnly || Modifier.isPublic(m.getModifiers())) {
 				addMethod(m);
 			}
 		}
@@ -248,22 +247,17 @@ public abstract class MethodInterception implements Interception {
 	 * additional first parameters for the proxy and the target object,
 	 * respectively.
 	 *
-	 * @param rMethod The method to convert the argument types of
+	 * @param method The method to convert the argument types of
 	 * @return A class array containing the converted type list
 	 */
-	protected Class<?>[] convertArgTypes(Method rMethod) {
-		Class<?>[] rExtArgTypes;
-		Class<?>[] rArgTypes = rMethod.getParameterTypes();
+	protected Class<?>[] convertArgTypes(Method method) {
+		Class<?>[] argTypes = method.getParameterTypes();
+		Class<?>[] extArgTypes = new Class[argTypes.length + 2];
 
-		if (rArgTypes != null) {
-			rExtArgTypes = new Class[rArgTypes.length + 2];
-			System.arraycopy(rArgTypes, 0, rExtArgTypes, 2, rArgTypes.length);
-		} else {
-			rExtArgTypes = new Class[2];
-		}
-		// leaving position 0 & 1 of rExtArgTypes at null will allow any type
+		// leaving position 0 & 1 of extArgTypes at null will allow any type
+		System.arraycopy(argTypes, 0, extArgTypes, 2, argTypes.length);
 
-		return rExtArgTypes;
+		return extArgTypes;
 	}
 
 	/**
@@ -271,15 +265,15 @@ public abstract class MethodInterception implements Interception {
 	 * additional parameters. May be overridden by subclasses to implement
 	 * different mappings. Invoked from {@link #addMethod(Method)}.
 	 *
-	 * @param rMethod The source method to map
+	 * @param method The source method to map
 	 * @return The mapped target method or NULL if no matching method could be
 	 * found
 	 */
-	protected Method mapMethod(Method rMethod) {
-		Class<?>[] rExtArgTypes = convertArgTypes(rMethod);
+	protected Method mapMethod(Method method) {
+		Class<?>[] extArgTypes = convertArgTypes(method);
 
-		return ReflectUtil.findPublicMethod(getClass(), rMethod.getName(),
-			rExtArgTypes);
+		return ReflectUtil.findPublicMethod(getClass(), method.getName(),
+			extArgTypes);
 	}
 
 	/**
@@ -290,6 +284,6 @@ public abstract class MethodInterception implements Interception {
 	 * @return A collection containing the intercepted methods
 	 */
 	Map<Method, Method> getMethodMap() {
-		return aMethodMap;
+		return methodMap;
 	}
 }

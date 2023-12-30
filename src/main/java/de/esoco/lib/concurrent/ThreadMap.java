@@ -40,22 +40,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ThreadMap<T> extends AbstractMap<Thread, T> {
 
-	private final Map<Thread, T> aThreadMap;
+	private final Map<Thread, T> threadMap;
 
 	/**
 	 * Creates a new empty thread map.
 	 */
 	public ThreadMap() {
-		aThreadMap = new ConcurrentHashMap<Thread, T>();
+		threadMap = new ConcurrentHashMap<Thread, T>();
 	}
 
 	/**
 	 * Creates a new thread map that contains the entries of another map.
 	 *
-	 * @param rMap The map to copy the entries of
+	 * @param map The map to copy the entries of
 	 */
-	public ThreadMap(Map<? extends Thread, ? extends T> rMap) {
-		aThreadMap = new ConcurrentHashMap<Thread, T>(rMap);
+	public ThreadMap(Map<? extends Thread, ? extends T> map) {
+		threadMap = new ConcurrentHashMap<Thread, T>(map);
 	}
 
 	/**
@@ -65,7 +65,7 @@ public class ThreadMap<T> extends AbstractMap<Thread, T> {
 	 */
 	@Override
 	public Set<Entry<Thread, T>> entrySet() {
-		return aThreadMap.entrySet();
+		return threadMap.entrySet();
 	}
 
 	/**
@@ -86,28 +86,28 @@ public class ThreadMap<T> extends AbstractMap<Thread, T> {
 	 * Associates a certain value with the current thread from which the method
 	 * has been invoked.
 	 *
-	 * @param rValue The value to associate with the current thread
+	 * @param value The value to associate with the current thread
 	 * @return The previous value associated with the current thread, or
 	 * NULL if
 	 * there was no previous entry
 	 */
-	public T put(T rValue) {
-		return put(Thread.currentThread(), rValue);
+	public T put(T value) {
+		return put(Thread.currentThread(), value);
 	}
 
 	/**
 	 * Associates a certain value with a particular thread.
 	 *
-	 * @param rThread The thread to associate the value with
-	 * @param rValue  The value to associate with the given thread
+	 * @param thread The thread to associate the value with
+	 * @param value  The value to associate with the given thread
 	 * @return The previous value associated with the thread, or NULL if there
 	 * was no previous entry
 	 */
 	@Override
-	public T put(Thread rThread, T rValue) {
+	public T put(Thread thread, T value) {
 		cleanup();
 
-		return aThreadMap.put(rThread, rValue);
+		return threadMap.put(thread, value);
 	}
 
 	/**
@@ -126,13 +126,13 @@ public class ThreadMap<T> extends AbstractMap<Thread, T> {
 	 * Removes all terminated threads from this map.
 	 */
 	private void cleanup() {
-		Iterator<Thread> rIterator = aThreadMap.keySet().iterator();
+		Iterator<Thread> iterator = threadMap.keySet().iterator();
 
-		while (rIterator.hasNext()) {
-			Thread rThread = rIterator.next();
+		while (iterator.hasNext()) {
+			Thread thread = iterator.next();
 
-			if (!rThread.isAlive()) {
-				rIterator.remove();
+			if (!thread.isAlive()) {
+				iterator.remove();
 			}
 		}
 	}

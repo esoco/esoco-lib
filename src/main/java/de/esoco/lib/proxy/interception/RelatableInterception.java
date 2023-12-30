@@ -46,10 +46,9 @@ class RelatableInterception extends MethodInterception {
 	 * @see MethodInterception#invoke(Object, Method, Object, Object[])
 	 */
 	@Override
-	public Object invoke(Object rInterceptionHandler, Method rOriginalMethod,
-		Object rTarget, Object[] rArgs) throws Exception {
-		return ReflectUtil.invoke(rInterceptionHandler, rOriginalMethod,
-			rArgs);
+	public Object invoke(Object interceptionHandler, Method originalMethod,
+		Object target, Object[] args) throws Exception {
+		return ReflectUtil.invoke(interceptionHandler, originalMethod, args);
 	}
 
 	/**
@@ -60,7 +59,7 @@ class RelatableInterception extends MethodInterception {
 	 * @see MethodInterception#mapMethod(Method)
 	 */
 	@Override
-	protected Method mapMethod(Method rMethod) {
-		return rMethod;
+	protected Method mapMethod(Method method) {
+		return method;
 	}
 }

@@ -41,42 +41,42 @@ import java.util.Set;
  */
 public class Whois {
 
-	private static final Set<String> aRecursiceLookupTlds =
+	private static final Set<String> recursiceLookupTlds =
 		new HashSet<String>(Arrays.asList("com", "net"));
 
-	private static final Map<String, String> aWhoisParamsMap =
+	private static final Map<String, String> whoisParamsMap =
 		new HashMap<String, String>();
 
-	private final Map<String, String> aWhoisServerMap =
+	private final Map<String, String> whoisServerMap =
 		new HashMap<String, String>();
 
 	/**
 	 * Creates a new instance.
 	 *
-	 * @param rWhoisServerListStream An input stream
+	 * @param whoisServerListStream An input stream
 	 * @throws IllegalStateException If reading the configuration file fails
 	 */
-	public Whois(InputStream rWhoisServerListStream) {
+	public Whois(InputStream whoisServerListStream) {
 		try {
-			BufferedReader aServerList = new BufferedReader(
-				new InputStreamReader(rWhoisServerListStream));
-			String sLine;
+			BufferedReader serverList = new BufferedReader(
+				new InputStreamReader(whoisServerListStream));
+			String line;
 
-			while ((sLine = aServerList.readLine()) != null) {
-				if (!sLine.startsWith("#")) {
-					String[] aWhoisServerRecord = sLine.split("\\|");
+			while ((line = serverList.readLine()) != null) {
+				if (!line.startsWith("#")) {
+					String[] whoisServerRecord = line.split("\\|");
 
-					if (aWhoisServerRecord.length > 1) {
-						String sTld = aWhoisServerRecord[0];
-						String sServer = aWhoisServerRecord[1];
+					if (whoisServerRecord.length > 1) {
+						String tld = whoisServerRecord[0];
+						String server = whoisServerRecord[1];
 
-						if (sServer.length() > 0 && !sServer.equals("NONE")) {
-							aWhoisServerMap.put(sTld, sServer);
+						if (server.length() > 0 && !server.equals("NONE")) {
+							whoisServerMap.put(tld, server);
 
-							if (aWhoisServerRecord.length > 2) {
-								String sParams = aWhoisServerRecord[2];
+							if (whoisServerRecord.length > 2) {
+								String params = whoisServerRecord[2];
 
-								aWhoisParamsMap.put(sTld, sParams);
+								whoisParamsMap.put(tld, params);
 							}
 						}
 					}
@@ -93,17 +93,17 @@ public class Whois {
 	/**
 	 * Main method that queries all argument domains.
 	 *
-	 * @param rArgs The list of domains to query
+	 * @param args The list of domains to query
 	 */
-	public static void main(String[] rArgs) {
-		if (rArgs.length > 0) {
+	public static void main(String[] args) {
+		if (args.length > 0) {
 			try {
-				Whois aWhois =
+				Whois whois =
 					new Whois(new FileInputStream("whois-server-list"));
 
-				for (String sDomain : rArgs) {
-					System.out.printf("--- Domain: %s ---\n", sDomain);
-					System.out.printf("%s", aWhois.query(sDomain));
+				for (String domain : args) {
+					System.out.printf("--- Domain: %s ---\n", domain);
+					System.out.printf("%s", whois.query(domain));
 					System.out.print("-----------------------------------\n");
 				}
 			} catch (Exception e) {
@@ -118,89 +118,86 @@ public class Whois {
 	/**
 	 * queries a domain and returns a WHOIS record for it.
 	 *
-	 * @param sDomain The domain to query
+	 * @param domain The domain to query
 	 * @return The WHOIS record or null if none could be found
 	 * @throws IOException If the network connection fails
 	 */
-	public WhoisRecord query(String sDomain) throws IOException {
-		String sTld = sDomain.substring(sDomain.indexOf('.') + 1);
-		String sServer = aWhoisServerMap.get(sTld);
-		String sParams = aWhoisParamsMap.get(sTld);
+	public WhoisRecord query(String domain) throws IOException {
+		String tld = domain.substring(domain.indexOf('.') + 1);
+		String server = whoisServerMap.get(tld);
+		String params = whoisParamsMap.get(tld);
 
-		if (sServer == null) {
-			sServer = "whois.geektools.com";
-		} else if (sParams != null) {
-			sDomain = sParams + " " + sDomain;
+		if (server == null) {
+			server = "whois.geektools.com";
+		} else if (params != null) {
+			domain = params + " " + domain;
 		}
 
-		WhoisRecord aWhoisRecord =
-			new WhoisRecord(queryWhoisServer(sServer, sDomain));
+		WhoisRecord whoisRecord =
+			new WhoisRecord(queryWhoisServer(server, domain));
 
-		if (aRecursiceLookupTlds.contains(sTld)) {
-			sServer = aWhoisRecord.findValue("Whois Server:");
+		if (recursiceLookupTlds.contains(tld)) {
+			server = whoisRecord.findValue("Whois Server:");
 
-			if (sServer == null) {
-				aWhoisRecord.getLines().add(0,
-					"+++++++++++++++++++++++++++++");
-				aWhoisRecord
+			if (server == null) {
+				whoisRecord.getLines().add(0, "+++++++++++++++++++++++++++++");
+				whoisRecord
 					.getLines()
 					.add(1, "ERROR: No Detail WHOIS " + "server");
-				aWhoisRecord
+				whoisRecord
 					.getLines()
 					.add(2, "       found in master " + "record");
-				aWhoisRecord.getLines().add(3,
-					"+++++++++++++++++++++++++++++");
+				whoisRecord.getLines().add(3, "+++++++++++++++++++++++++++++");
 			} else {
-				aWhoisRecord.getLines().add("");
-				aWhoisRecord
+				whoisRecord.getLines().add("");
+				whoisRecord
 					.getLines()
-					.add("---------- Detail WHOIS from " + sServer +
+					.add("---------- Detail WHOIS from " + server +
 						" -----------");
-				aWhoisRecord.getLines().add("");
-				aWhoisRecord
-					.getLines()
-					.addAll(queryWhoisServer(sServer, sDomain));
+				whoisRecord.getLines().add("");
+				whoisRecord.getLines().addAll(queryWhoisServer(server,
+					domain));
 			}
 		}
 
-		return aWhoisRecord;
+		return whoisRecord;
 	}
 
 	/**
 	 * Queries a WHOIS server for the data of a certain domain.
 	 *
-	 * @param sServer The name of the server to query
-	 * @param sDomain The name of the domain to query the data for
+	 * @param server The name of the server to query
+	 * @param domain The name of the domain to query the data for
 	 * @return A list of strings containing the lines returned by the query
 	 * @throws IOException If accessing the server fails
 	 */
-	private List<String> queryWhoisServer(String sServer, String sDomain)
+	private List<String> queryWhoisServer(String server, String domain)
 		throws IOException {
-		Log.info("Using WHOIS server " + sServer);
+		Log.info("Using WHOIS server " + server);
 
-		Socket aSocket = new Socket(sServer, 43);
-		List<String> aResult = new ArrayList<String>();
+		Socket socket = new Socket(server, 43);
+		List<String> result = new ArrayList<String>();
 
 		try {
-			PrintStream aOut = new PrintStream(aSocket.getOutputStream());
+			PrintStream out = new PrintStream(socket.getOutputStream());
 
-			BufferedReader aIn = new BufferedReader(
-				new InputStreamReader(aSocket.getInputStream()));
+			BufferedReader in = new BufferedReader(
+				new InputStreamReader(socket.getInputStream()));
 
-			String sLine;
+			String line;
 
-			aOut.println(sDomain);
+			out.println(domain);
 
-			while ((sLine = aIn.readLine()) != null) {
-				aResult.add(sLine);
+			while ((line = in.readLine()) != null) {
+				result.add(line);
 			}
 
-			aIn.close();
+			in.close();
 		} finally {
-			aSocket.close();
+			socket.close();
 		}
 
-		return aResult;
+		return result;
 	}
 
 	/**
@@ -210,15 +207,15 @@ public class Whois {
 	 */
 	public static class WhoisRecord {
 
-		private final List<String> rLines;
+		private final List<String> lines;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param rLines The text line of the record
+		 * @param lines The text line of the record
 		 */
-		public WhoisRecord(List<String> rLines) {
-			this.rLines = rLines;
+		public WhoisRecord(List<String> lines) {
+			this.lines = lines;
 		}
 
 		/**
@@ -228,24 +225,23 @@ public class Whois {
 		 * contain any characters that separate the key from the value in the
 		 * record (e.g. ':' or '=').
 		 *
-		 * @param sKey The key to search for
+		 * @param key The key to search for
 		 * @return The associated value or NULL if the key doesn't exist in
 		 * this
 		 * record
 		 */
-		public String findValue(String sKey) {
-			String sValue = null;
+		public String findValue(String key) {
+			String value = null;
 
-			for (String sLine : rLines) {
-				int nKeyPosition = sLine.indexOf(sKey);
+			for (String line : lines) {
+				int keyPosition = line.indexOf(key);
 
-				if (nKeyPosition >= 0) {
-					sValue =
-						sLine.substring(nKeyPosition + sKey.length()).trim();
+				if (keyPosition >= 0) {
+					value = line.substring(keyPosition + key.length()).trim();
 				}
 			}
 
-			return sValue;
+			return value;
 		}
 
 		/**
@@ -254,7 +250,7 @@ public class Whois {
 		 * @return A list containing the line strings
 		 */
 		public final List<String> getLines() {
-			return rLines;
+			return lines;
 		}
 
 		/**
@@ -262,14 +258,14 @@ public class Whois {
 		 */
 		@Override
 		public String toString() {
-			StringBuilder aResult = new StringBuilder();
+			StringBuilder result = new StringBuilder();
 
-			for (String sLine : rLines) {
-				aResult.append(sLine);
-				aResult.append('\n');
+			for (String line : lines) {
+				result.append(line);
+				result.append('\n');
 			}
 
-			return aResult.toString();
+			return result.toString();
 		}
 	}
 }

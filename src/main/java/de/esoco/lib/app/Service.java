@@ -185,15 +185,15 @@ public abstract class Service extends Application implements Stoppable {
 		RelationTypes.init(Service.class);
 	}
 
-	private final boolean bIsRestService;
+	private final boolean isRestService;
 
-	private Thread aRestServerThread;
+	private Thread restServerThread;
 
-	private Server aRestServer;
+	private Server restServer;
 
-	private ObjectSpace<Object> aRestServerSpace;
+	private ObjectSpace<Object> restServerSpace;
 
-	private HttpRequestMethodHandler rRequestMethodHandler;
+	private HttpRequestMethodHandler requestMethodHandler;
 
 	/**
 	 * Creates a new instance for a service with a #runApp.
@@ -205,49 +205,50 @@ public abstract class Service extends Application implements Stoppable {
 	/**
 	 * Creates a new instance or a sub-class.
 	 *
-	 * @param bIsRestService TRUE if this instance should be run as a single
-	 *                       REST service implemented by the REST server; FALSE
-	 *                       to have separate service functionality in the main
-	 *                       thread (by implementing {@link #runService()} and
-	 *                       the REST server in a separate thread
+	 * @param isRestService TRUE if this instance should be run as a single
+	 *                         REST
+	 *                      service implemented by the REST server; FALSE to
+	 *                      have separate service functionality in the main
+	 *                      thread (by implementing {@link #runService()} and
+	 *                      the REST server in a separate thread
 	 */
-	protected Service(boolean bIsRestService) {
-		this.bIsRestService = bIsRestService;
+	protected Service(boolean isRestService) {
+		this.isRestService = isRestService;
 	}
 
 	/**
 	 * Builds the object space that provides the REST API of this service.
 	 *
-	 * @param aStatusSpace  The status space to be queried through the API
-	 * @param aControlSpace The control space to be accessed through the API
+	 * @param statusSpace  The status space to be queried through the API
+	 * @param controlSpace The control space to be accessed through the API
 	 * @return The control object space
 	 */
-	protected ObjectSpace<Object> buildApiSpace(
-		ObjectSpace<Object> aStatusSpace, ObjectSpace<Object> aControlSpace) {
-		ObjectSpace<Object> aApiSpace = new RelationSpace<>(true);
+	protected ObjectSpace<Object> buildApiSpace(ObjectSpace<Object> statusSpace,
+		ObjectSpace<Object> controlSpace) {
+		ObjectSpace<Object> apiSpace = new RelationSpace<>(true);
 
-		aApiSpace.set(STATUS, aStatusSpace);
-		aApiSpace.set(CONTROL, aControlSpace);
+		apiSpace.set(STATUS, statusSpace);
+		apiSpace.set(CONTROL, controlSpace);
 
-		return aApiSpace;
+		return apiSpace;
 	}
 
 	/**
 	 * Builds the object space that allows to control this service. The control
 	 *
-	 * @param sServiceName The service name
+	 * @param serviceName The service name
 	 * @return The control object space
 	 */
-	protected ObjectSpace<Object> buildControlSpace(String sServiceName) {
-		ObjectSpace<Object> aControlSpace = new RelationSpace<>(true);
+	protected ObjectSpace<Object> buildControlSpace(String serviceName) {
+		ObjectSpace<Object> controlSpace = new RelationSpace<>(true);
 
-		aControlSpace.set(NAME, sServiceName + " Control");
-		aControlSpace.set(RUN).onChange(bRun -> stopRequest(null));
-		aControlSpace
+		controlSpace.set(NAME, serviceName + " Control");
+		controlSpace.set(RUN).onChange(run -> stopRequest(null));
+		controlSpace
 			.set(LOG_LEVEL, Log.getGlobalMinimumLogLevel().name())
 			.onChange(this::setLogLevel);
 
-		return aControlSpace;
+		return controlSpace;
 	}
 
 	/**
@@ -257,57 +258,57 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The new REST object space
 	 */
 	protected ObjectSpace<Object> buildRestServerSpace() {
-		RelationSpace<Object> aRoot = new RelationSpace<>(true);
-		String sServiceName = getServiceName();
+		RelationSpace<Object> root = new RelationSpace<>(true);
+		String serviceName = getServiceName();
 
-		ObjectSpace<Object> aStatusSpace = buildStatusSpace(sServiceName);
-		ObjectSpace<Object> aControlSpace = buildControlSpace(sServiceName);
-		ObjectSpace<Object> aApiSpace =
-			buildApiSpace(aStatusSpace, aControlSpace);
+		ObjectSpace<Object> statusSpace = buildStatusSpace(serviceName);
+		ObjectSpace<Object> controlSpace = buildControlSpace(serviceName);
+		ObjectSpace<Object> apiSpace = buildApiSpace(statusSpace,
+			controlSpace);
 
 		// synchronize access from multiple server threads
-		aControlSpace = new SynchronizedObjectSpace<>(aControlSpace);
+		controlSpace = new SynchronizedObjectSpace<>(controlSpace);
 
-		aRoot.set(API, new MappedSpace<>(aApiSpace, new ConvertApiValue()));
-		aRoot.set(WEBAPI, buildWebApiSpace(sServiceName, aApiSpace));
-		aRoot.set(PING);
-		aRoot.set(HEALTHCHECK);
+		root.set(API, new MappedSpace<>(apiSpace, new ConvertApiValue()));
+		root.set(WEBAPI, buildWebApiSpace(serviceName, apiSpace));
+		root.set(PING);
+		root.set(HEALTHCHECK);
 
-		if (aStatusSpace != null) {
-			aStatusSpace
+		if (statusSpace != null) {
+			statusSpace
 				.set(START_DATE, new Date())
-				.viewAs(INFO, aRoot, this::getServiceInfo);
+				.viewAs(INFO, root, this::getServiceInfo);
 		}
 
-		return aRoot;
+		return root;
 	}
 
 	/**
 	 * Builds the object space that provides information about the current
 	 * status of this service.
 	 *
-	 * @param sServiceName The service name
+	 * @param serviceName The service name
 	 * @return The status space
 	 */
-	protected ObjectSpace<Object> buildStatusSpace(String sServiceName) {
-		ObjectSpace<Object> aStatusSpace = new RelationSpace<>();
+	protected ObjectSpace<Object> buildStatusSpace(String serviceName) {
+		ObjectSpace<Object> statusSpace = new RelationSpace<>();
 
-		aStatusSpace.set(NAME, sServiceName + " Status");
-		aStatusSpace.init(UPTIME);
+		statusSpace.set(NAME, serviceName + " Status");
+		statusSpace.init(UPTIME);
 
-		return aStatusSpace;
+		return statusSpace;
 	}
 
 	/**
 	 * Builds the object space that provides the web API of this service.
 	 *
-	 * @param sServiceName The service name
-	 * @param aApiSpace    The API object space to map to the web API
+	 * @param serviceName The service name
+	 * @param apiSpace    The API object space to map to the web API
 	 * @return The web API object space
 	 */
-	protected HtmlSpace buildWebApiSpace(String sServiceName,
-		ObjectSpace<Object> aApiSpace) {
-		return new HtmlSpace(aApiSpace, "webapi").with(NAME, sServiceName);
+	protected HtmlSpace buildWebApiSpace(String serviceName,
+		ObjectSpace<Object> apiSpace) {
+		return new HtmlSpace(apiSpace, "webapi").with(NAME, serviceName);
 	}
 
 	/**
@@ -320,14 +321,14 @@ public abstract class Service extends Application implements Stoppable {
 	 * required but implemented by a different class the subclass must override
 	 * this method to set the above relation on the request handler by itself.
 	 *
-	 * @param rContext The service context
+	 * @param context The service context
 	 * @return A new request handler instance
 	 */
-	protected RequestHandler createRequestHandler(Relatable rContext) {
-		HttpRequestHandler aRequestHandler =
-			new HttpRequestHandler(rContext, getRequestMethodHandler());
+	protected RequestHandler createRequestHandler(Relatable context) {
+		HttpRequestHandler requestHandler =
+			new HttpRequestHandler(context, getRequestMethodHandler());
 
-		return aRequestHandler;
+		return requestHandler;
 	}
 
 	/**
@@ -339,7 +340,7 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The new request method handler
 	 */
 	protected HttpRequestMethodHandler createRequestMethodHandler() {
-		return new ObjectSpaceHttpMethodHandler(aRestServerSpace, "info");
+		return new ObjectSpaceHttpMethodHandler(restServerSpace, "info");
 	}
 
 	/**
@@ -349,23 +350,23 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The new server instance, initialized but not started
 	 */
 	protected Server createRestServer() {
-		RequestHandlerFactory rRequestHandlerFactory =
+		RequestHandlerFactory requestHandlerFactory =
 			getRestRequestHandlerFactory();
 
-		Server aServer = new Server(rRequestHandlerFactory)
+		Server server = new Server(requestHandlerFactory)
 			.with(NAME, getServiceName())
 			.with(PORT, getRestServerPort());
 
 		if (!getCommandLine().hasOption(OPTION_NO_ENCRYPTION)) {
-			aServer.set(ENCRYPTION);
+			server.set(ENCRYPTION);
 
 			if (this instanceof AuthenticationService) {
-				aServer.set(AUTHENTICATION_SERVICE,
+				server.set(AUTHENTICATION_SERVICE,
 					(AuthenticationService) this);
 			}
 		}
 
-		return aServer;
+		return server;
 	}
 
 	/**
@@ -380,11 +381,11 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The request method handler
 	 */
 	protected HttpRequestMethodHandler getRequestMethodHandler() {
-		if (rRequestMethodHandler == null) {
-			rRequestMethodHandler = createRequestMethodHandler();
+		if (requestMethodHandler == null) {
+			requestMethodHandler = createRequestMethodHandler();
 		}
 
-		return rRequestMethodHandler;
+		return requestMethodHandler;
 	}
 
 	/**
@@ -396,7 +397,7 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The REST request handler factory
 	 */
 	protected RequestHandlerFactory getRestRequestHandlerFactory() {
-		return rContext -> createRequestHandler(rContext);
+		return context -> createRequestHandler(context);
 	}
 
 	/**
@@ -409,13 +410,13 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The REST server port
 	 */
 	protected int getRestServerPort() {
-		Object rPort = getCommandLine().requireOption("port");
+		Object port = getCommandLine().requireOption("port");
 
-		if (rPort instanceof Number) {
-			return ((Number) rPort).intValue();
+		if (port instanceof Number) {
+			return ((Number) port).intValue();
 		} else {
 			throw new IllegalArgumentException(
-				"Invalid REST server port: " + rPort);
+				"Invalid REST server port: " + port);
 		}
 	}
 
@@ -425,20 +426,20 @@ public abstract class Service extends Application implements Stoppable {
 	 * @return The REST object space
 	 */
 	protected final ObjectSpace<Object> getRestSpace() {
-		return aRestServerSpace;
+		return restServerSpace;
 	}
 
 	/**
 	 * Returns a string that contains information about this service.
 	 *
-	 * @param rStartDate The start date of the service
+	 * @param startDate The start date of the service
 	 * @return The service information string
 	 */
-	protected String getServiceInfo(Date rStartDate) {
+	protected String getServiceInfo(Date startDate) {
 		return String.format(
 			"%1$s service, running since %2$tF %2$tT [Uptime: %3$s]",
-			getServiceName(), rStartDate, TextUtil.formatLongDuration(
-				System.currentTimeMillis() - rStartDate.getTime(), false));
+			getServiceName(), startDate, TextUtil.formatLongDuration(
+				System.currentTimeMillis() - startDate.getTime(), false));
 	}
 
 	/**
@@ -459,8 +460,8 @@ public abstract class Service extends Application implements Stoppable {
 	 */
 	@Override
 	protected void handleApplicationError(Exception e) {
-		if (aRestServer != null) {
-			aRestServer.stop();
+		if (restServer != null) {
+			restServer.stop();
 		}
 
 		super.handleApplicationError(e);
@@ -473,17 +474,17 @@ public abstract class Service extends Application implements Stoppable {
 	 */
 	@Override
 	protected final void runApp() throws Exception {
-		aRestServerSpace = buildRestServerSpace();
-		aRestServer = startRestServer();
+		restServerSpace = buildRestServerSpace();
+		restServer = startRestServer();
 
 		runService();
 
-		if (bIsRestService) {
-			aRestServerThread.join();
+		if (isRestService) {
+			restServerThread.join();
 		} else {
 			// stop the REST server if this is not a REST service (where the
 			// REST server is the actual service)
-			aRestServer.stop();
+			restServer.stop();
 		}
 	}
 
@@ -502,11 +503,11 @@ public abstract class Service extends Application implements Stoppable {
 	 * Sets a status value in the status section of the REST server object
 	 * space.
 	 *
-	 * @param rType  The status relation type
-	 * @param rValue The status value
+	 * @param type  The status relation type
+	 * @param value The status value
 	 */
-	protected <T> void setStatus(RelationType<T> rType, T rValue) {
-		aRestServerSpace.get(STATUS).set(rType, rValue);
+	protected <T> void setStatus(RelationType<T> type, T value) {
+		restServerSpace.get(STATUS).set(type, value);
 	}
 
 	/**
@@ -517,33 +518,32 @@ public abstract class Service extends Application implements Stoppable {
 	 */
 	@SuppressWarnings("boxing")
 	protected Server startRestServer() throws Exception {
-		Server aServer = createRestServer();
+		Server server = createRestServer();
 
 		// this will stop the server on service shutdown
-		manageResource(aServer);
+		manageResource(server);
 
-		aRestServerThread = new Thread(aServer);
-		aRestServerThread.setUncaughtExceptionHandler((t, e) -> stopRequest(e));
-		aRestServerThread.start();
+		restServerThread = new Thread(server);
+		restServerThread.setUncaughtExceptionHandler((t, e) -> stopRequest(e));
+		restServerThread.start();
 
 		Log.infof("%s running, listening on %sport %d", getServiceName(),
-			aServer.get(ENCRYPTION) ? "TLS " : "", getRestServerPort());
+			server.get(ENCRYPTION) ? "TLS " : "", getRestServerPort());
 
-		return aServer;
+		return server;
 	}
 
 	/**
 	 * Service method to set the log level.
 	 *
-	 * @param sLevel The new log level
+	 * @param level The new log level
 	 */
-	private void setLogLevel(String sLevel) {
+	private void setLogLevel(String level) {
 		try {
-			Log.setGlobalMinimumLogLevel(
-				LogLevel.valueOf(sLevel.toUpperCase()));
+			Log.setGlobalMinimumLogLevel(LogLevel.valueOf(level.toUpperCase()));
 		} catch (Exception e) {
 			throw new HttpStatusException(HttpStatusCode.BAD_REQUEST,
-				"Undefined log level: " + sLevel);
+				"Undefined log level: " + level);
 		}
 	}
 
@@ -557,12 +557,12 @@ public abstract class Service extends Application implements Stoppable {
 	private void stopRequest(Throwable e) {
 		if (e != null) {
 			Log.errorf(e, "%s error, shutting down",
-				bIsRestService ? "Server" : "Control server");
+				isRestService ? "Server" : "Control server");
 		} else {
 			Log.infof("Stop requested, shutting down");
 		}
 
-		aRestServer.stop();
+		restServer.stop();
 		stop();
 	}
 
@@ -578,12 +578,12 @@ public abstract class Service extends Application implements Stoppable {
 		 * {@inheritDoc}
 		 */
 		@Override
-		public String evaluate(Object rValue) {
-			if (rValue instanceof ObjectSpace) {
+		public String evaluate(Object value) {
+			if (value instanceof ObjectSpace) {
 				throw new IllegalArgumentException("Not an API endpoint");
 			}
 
-			return super.evaluate(rValue);
+			return super.evaluate(value);
 		}
 	}
 }

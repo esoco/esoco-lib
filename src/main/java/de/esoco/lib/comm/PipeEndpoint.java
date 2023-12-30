@@ -44,25 +44,25 @@ public class PipeEndpoint extends Endpoint {
 	/**
 	 * Factory method that creates a new pipe request for text data request.
 	 *
-	 * @param sDefaultRequest The default request string
+	 * @param defaultRequest The default request string
 	 * @return The new request
 	 */
 	public static PipeRequest<String, String> textRequest(
-		String sDefaultRequest) {
+		String defaultRequest) {
 		return new PipeRequest<String, String>("PipeRequest(%s)",
-			sDefaultRequest, s -> s.getBytes(), d -> new String(d));
+			defaultRequest, s -> s.getBytes(), d -> new String(d));
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void closeConnection(Connection rConnection) throws Exception {
-		RandomAccessFile rPipeFile = rConnection.get(PIPE_FILE);
+	protected void closeConnection(Connection connection) throws Exception {
+		RandomAccessFile pipeFile = connection.get(PIPE_FILE);
 
-		if (rPipeFile != null) {
-			rPipeFile.close();
-			rConnection.set(PIPE_FILE, null);
+		if (pipeFile != null) {
+			pipeFile.close();
+			connection.set(PIPE_FILE, null);
 		}
 	}
 
@@ -70,12 +70,12 @@ public class PipeEndpoint extends Endpoint {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void initConnection(Connection rConnection) throws Exception {
-		String sPipeName = rConnection.getUri().getSchemeSpecificPart();
+	protected void initConnection(Connection connection) throws Exception {
+		String pipeName = connection.getUri().getSchemeSpecificPart();
 
-		RandomAccessFile aPipeFile = new RandomAccessFile(sPipeName, "rw");
+		RandomAccessFile pipeFile = new RandomAccessFile(pipeName, "rw");
 
-		rConnection.set(PIPE_FILE, aPipeFile);
+		connection.set(PIPE_FILE, pipeFile);
 	}
 
 	/**
@@ -91,74 +91,73 @@ public class PipeEndpoint extends Endpoint {
 	 */
 	public static class PipeRequest<I, O> extends CommunicationMethod<I, O> {
 
-		private final Function<I, byte[]> fConvertInput;
+		private final Function<I, byte[]> convertInput;
 
-		private final Function<byte[], O> fProcessResponse;
+		private final Function<byte[], O> processResponse;
 
 		/**
 		 * Creates a new instance.
 		 *
-		 * @param sRequestName     The request name
-		 * @param rDefaultInput    The default input value
-		 * @param fConvertInput    Will be invoked to convert input values to a
-		 *                         byte arrays that will be written to the pipe
-		 * @param fProcessResponse Will be invoked to process the byte data
-		 *                         received from the pipe
+		 * @param requestName     The request name
+		 * @param defaultInput    The default input value
+		 * @param convertInput    Will be invoked to convert input values to a
+		 *                        byte arrays that will be written to the pipe
+		 * @param processResponse Will be invoked to process the byte data
+		 *                        received from the pipe
 		 */
-		public PipeRequest(String sRequestName, I rDefaultInput,
-			Function<I, byte[]> fConvertInput,
-			Function<byte[], O> fProcessResponse) {
-			super(sRequestName, rDefaultInput);
+		public PipeRequest(String requestName, I defaultInput,
+			Function<I, byte[]> convertInput,
+			Function<byte[], O> processResponse) {
+			super(requestName, defaultInput);
 
-			this.fConvertInput = fConvertInput;
-			this.fProcessResponse = fProcessResponse;
+			this.convertInput = convertInput;
+			this.processResponse = processResponse;
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public O doOn(Connection rConnection, I rInput) throws IOException {
-			RandomAccessFile rPipeFile = rConnection.get(PIPE_FILE);
+		public O doOn(Connection connection, I input) throws IOException {
+			RandomAccessFile pipeFile = connection.get(PIPE_FILE);
 
-			try (LimitedOutputStream rOutput = new LimitedOutputStream(
-				new RandomAccessFileOutputStream(rPipeFile),
-				rConnection.get(MAX_REQUEST_SIZE))) {
-				rOutput.write(convertInput(rInput));
+			try (LimitedOutputStream output = new LimitedOutputStream(
+				new RandomAccessFileOutputStream(pipeFile),
+				connection.get(MAX_REQUEST_SIZE))) {
+				output.write(convertInput(input));
 			}
 
-			ByteArray aRawResponse =
-				new ByteArray(rConnection.get(BUFFER_SIZE));
+			ByteArray rawResponse = new ByteArray(connection.get(BUFFER_SIZE));
 
-			int nByte;
+			int b;
 
-			while ((nByte = rPipeFile.read()) != -1 && rPipeFile.length() > 0) {
-				aRawResponse.add((byte) nByte);
+			while ((b = pipeFile.read()) != -1 && pipeFile.length() > 0) {
+				rawResponse.add((byte) b);
 			}
 
-			return processResponse(aRawResponse.toByteArray());
+			return processResponse(rawResponse.toByteArray());
 		}
 
 		/**
 		 * Returns the byte data to be sent for a request. The default
 		 * implementation invokes the input conversion function.
 		 *
-		 * @param rInput The input value
+		 * @param input The input value
 		 * @return The request bytes
 		 */
-		protected byte[] convertInput(I rInput) {
-			return fConvertInput.apply(rInput);
+		protected byte[] convertInput(I input) {
+			return convertInput.apply(input);
 		}
 
 		/**
 		 * Returns the response value for a request. The default implementation
 		 * invokes the response processing function.
 		 *
-		 * @param rRawResponse The raw response as received from the pipe
+		 * @param rawResponse The raw response as received from the pipe
 		 * @return The processed response
 		 */
-		protected O processResponse(byte[] rRawResponse) {
-			return fProcessResponse.apply(rRawResponse);
+		protected O processResponse(byte[] rawResponse) {
+			return processResponse.apply(rawResponse);
 		}
 	}
 }

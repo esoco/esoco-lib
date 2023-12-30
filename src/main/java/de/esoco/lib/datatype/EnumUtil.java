@@ -32,54 +32,54 @@ public class EnumUtil {
 	/**
 	 * Returns the next value from a list of enums.
 	 *
-	 * @param rCurrent The current value to return the next value of
-	 * @param rValues  The list of values
-	 * @param bWrap    TRUE to return the first value if rCurrent is the last
+	 * @param current The current value to return the next value of
+	 * @param values  The list of values
+	 * @param wrap    TRUE to return the first value if current is the last
 	 * @return The next value as defined by the list order
 	 * @throws IllegalArgumentException If the current value cannot be found in
 	 *                                  the list of values
 	 */
-	public static <E extends Enum<E>> E next(E rCurrent, E[] rValues,
-		boolean bWrap) {
-		int nMax = rValues.length - 1;
+	public static <E extends Enum<E>> E next(E current, E[] values,
+		boolean wrap) {
+		int max = values.length - 1;
 
-		for (int i = 0; i <= nMax; i++) {
-			if (rValues[i] == rCurrent) {
-				if (i < nMax) {
-					return rValues[i + 1];
-				} else if (bWrap) {
-					return rValues[0];
+		for (int i = 0; i <= max; i++) {
+			if (values[i] == current) {
+				if (i < max) {
+					return values[i + 1];
+				} else if (wrap) {
+					return values[0];
 				}
 			}
 		}
 
-		throw new IllegalArgumentException("Value not found: " + rCurrent);
+		throw new IllegalArgumentException("Value not found: " + current);
 	}
 
 	/**
 	 * Returns the previous value from a list of enums.
 	 *
-	 * @param rCurrent The current value to return the previous value of
-	 * @param rValues  The list of values
-	 * @param bWrap    TRUE to return the last value if rCurrent is the first
+	 * @param current The current value to return the previous value of
+	 * @param values  The list of values
+	 * @param wrap    TRUE to return the last value if current is the first
 	 * @return The previous value as defined by the list order
 	 * @throws IllegalArgumentException If the current value cannot be found in
 	 *                                  the list of values
 	 */
-	public static <E extends Enum<E>> E previous(E rCurrent, E[] rValues,
-		boolean bWrap) {
-		int nMax = rValues.length - 1;
+	public static <E extends Enum<E>> E previous(E current, E[] values,
+		boolean wrap) {
+		int max = values.length - 1;
 
-		for (int i = nMax; i >= 0; i--) {
-			if (rValues[i] == rCurrent) {
+		for (int i = max; i >= 0; i--) {
+			if (values[i] == current) {
 				if (i > 0) {
-					return rValues[i - 1];
-				} else if (bWrap) {
-					return rValues[nMax];
+					return values[i - 1];
+				} else if (wrap) {
+					return values[max];
 				}
 			}
 		}
 
-		throw new IllegalArgumentException("Value not found: " + rCurrent);
+		throw new IllegalArgumentException("Value not found: " + current);
 	}
 }

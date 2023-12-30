@@ -44,19 +44,19 @@ public class ObservableSet<E>
 	/**
 	 * Creates a new instance that observes a certain set instance for changes.
 	 *
-	 * @param rObservedSet The set to observe for changes
+	 * @param observedSet The set to observe for changes
 	 */
-	public ObservableSet(Set<E> rObservedSet) {
-		super(rObservedSet);
+	public ObservableSet(Set<E> observedSet) {
+		super(observedSet);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected CollectionEvent<E, Set<E>> createEvent(EventType rType,
-		E rElement, E rUpdateValue, int nIndex) {
-		return new CollectionEvent<E, Set<E>>(rType, this, rElement,
-			rUpdateValue);
+	protected CollectionEvent<E, Set<E>> createEvent(EventType type, E element,
+		E updateValue, int index) {
+		return new CollectionEvent<E, Set<E>>(type, this, element,
+			updateValue);
 	}
 }

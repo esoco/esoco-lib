@@ -131,23 +131,22 @@ public class Server extends RelatedObject
 		RelationTypes.init(Server.class);
 	}
 
-	private final Lock aServerLock = new ReentrantLock();
+	private final Lock serverLock = new ReentrantLock();
 
-	private ServerSocket aServerSocket;
+	private ServerSocket serverSocket;
 
-	private boolean bRunning;
+	private boolean running;
 
 	/**
 	 * Creates a new instance with a certain type of request handler. The
 	 * request handler class must a have a no-argument constructor to allow the
 	 * creation of new instances for each request.
 	 *
-	 * @param rRequestHandlerFactory The class of the request handler to use
-	 *                                 for
-	 *                               client requests
+	 * @param requestHandlerFactory The class of the request handler to use for
+	 *                              client requests
 	 */
-	public Server(RequestHandlerFactory rRequestHandlerFactory) {
-		set(REQUEST_HANDLER_FACTORY, rRequestHandlerFactory);
+	public Server(RequestHandlerFactory requestHandlerFactory) {
+		set(REQUEST_HANDLER_FACTORY, requestHandlerFactory);
 		init(REQUEST_HISTORY);
 	}
 
@@ -159,7 +158,7 @@ public class Server extends RelatedObject
 	 */
 	@Override
 	public final boolean isRunning() {
-		return bRunning;
+		return running;
 	}
 
 	/**
@@ -177,7 +176,7 @@ public class Server extends RelatedObject
 	public void run() {
 		ObjectRelations.require(this, PORT);
 
-		if (bRunning) {
+		if (running) {
 			throw new IllegalStateException(
 				getServerName() + " already started");
 		}
@@ -198,8 +197,8 @@ public class Server extends RelatedObject
 	 */
 	@Override
 	public void stop() {
-		if (bRunning) {
-			bRunning = false;
+		if (running) {
+			running = false;
 			Log.infof("%s stopped", getServerName());
 		}
 	}
@@ -212,30 +211,30 @@ public class Server extends RelatedObject
 	 * @return The relatable configuration object
 	 */
 	protected Relatable createRequestContext() {
-		Relatable aRequestConfig = new RelatedObject();
+		Relatable requestConfig = new RelatedObject();
 
-		ObjectRelations.copyRelations(this, aRequestConfig, true);
-		aRequestConfig.set(IMMUTABLE);
+		ObjectRelations.copyRelations(this, requestConfig, true);
+		requestConfig.set(IMMUTABLE);
 
-		return aRequestConfig;
+		return requestConfig;
 	}
 
 	/**
 	 * Creates the server socket to listen on when the server is started.
 	 *
-	 * @param nPort The port to listen on
+	 * @param port The port to listen on
 	 * @return The new server port
 	 * @throws IOException If the socket could not be created
 	 */
-	protected ServerSocket createServerSocket(int nPort) throws IOException {
-		ServerSocketFactory aServerSocketFactory;
+	protected ServerSocket createServerSocket(int port) throws IOException {
+		ServerSocketFactory serverSocketFactory;
 
 		if (hasFlag(ENCRYPTION)) {
-			KeyStore rCertificate = get(CERTIFICATE);
+			KeyStore certificate = get(CERTIFICATE);
 
-			if (rCertificate != null) {
-				aServerSocketFactory = Security
-					.getSslContext(rCertificate,
+			if (certificate != null) {
+				serverSocketFactory = Security
+					.getSslContext(certificate,
 						getOption(KEY_PASSWORD).orUse(""))
 					.getServerSocketFactory();
 			} else {
@@ -243,10 +242,10 @@ public class Server extends RelatedObject
 					" parameter missing to enable SSL");
 			}
 		} else {
-			aServerSocketFactory = ServerSocketFactory.getDefault();
+			serverSocketFactory = ServerSocketFactory.getDefault();
 		}
 
-		return aServerSocketFactory.createServerSocket(nPort);
+		return serverSocketFactory.createServerSocket(port);
 	}
 
 	/**
@@ -254,63 +253,63 @@ public class Server extends RelatedObject
 	 * thread and the given socket is initialized for communication with the
 	 * client.
 	 *
-	 * @param rClientSocket The socket for the communication with the client
-	 * @param rContext      A relatable containing context data for the request
+	 * @param clientSocket The socket for the communication with the client
+	 * @param context      A relatable containing context data for the request
 	 * @throws CommunicationException If a communication error occurs
 	 */
 	@SuppressWarnings("boxing")
-	protected void handleClientRequest(Socket rClientSocket,
-		Relatable rContext) {
-		RequestHandler rRequestHandler =
-			get(REQUEST_HANDLER_FACTORY).getRequestHandler(rContext);
+	protected void handleClientRequest(Socket clientSocket,
+		Relatable context) {
+		RequestHandler requestHandler =
+			get(REQUEST_HANDLER_FACTORY).getRequestHandler(context);
 
-		rRequestHandler.init(TIMER);
+		requestHandler.init(TIMER);
 
 		try {
-			InputStream rClientIn = rClientSocket.getInputStream();
-			OutputStream rClientOut = rClientSocket.getOutputStream();
-			InetAddress rClientAddress = rClientSocket.getInetAddress();
+			InputStream clientIn = clientSocket.getInputStream();
+			OutputStream clientOut = clientSocket.getOutputStream();
+			InetAddress clientAddress = clientSocket.getInetAddress();
 
 			Log.infof("%s: handling request from %s", getServerName(),
-				rClientAddress.getHostAddress());
+				clientAddress.getHostAddress());
 
-			rRequestHandler.set(IP_ADDRESS, rClientAddress);
+			requestHandler.set(IP_ADDRESS, clientAddress);
 
-			InputStream rInput =
-				new LimitedInputStream(rClientIn, get(MAX_REQUEST_SIZE));
-			OutputStream rOutput =
-				new LimitedOutputStream(rClientOut, get(MAX_RESPONSE_SIZE));
+			InputStream input =
+				new LimitedInputStream(clientIn, get(MAX_REQUEST_SIZE));
+			OutputStream output =
+				new LimitedOutputStream(clientOut, get(MAX_RESPONSE_SIZE));
 
-			String sRequest = rRequestHandler.handleRequest(rInput, rOutput);
+			String request = requestHandler.handleRequest(input, output);
 
-			sRequest = sRequest.replaceAll("(\r\n|\r|\n)", "¶");
+			request = request.replaceAll("(\r\n|\r|\n)", "¶");
 
 			if (Log.isLevelEnabled(LogLevel.DEBUG)) {
-				Log.debugf("Request: %s", sRequest);
+				Log.debugf("Request: %s", request);
 			}
 
-			aServerLock.lock();
+			serverLock.lock();
 
 			try {
-				set(LAST_REQUEST, sRequest);
+				set(LAST_REQUEST, request);
 				set(REQUEST_HANDLING_TIME,
-					rRequestHandler.get(TIMER).intValue());
+					requestHandler.get(TIMER).intValue());
 
-				if (!bRunning) {
-					aServerSocket.close();
+				if (!running) {
+					serverSocket.close();
 				}
 			} finally {
-				aServerLock.unlock();
+				serverLock.unlock();
 			}
 		} catch (Exception e) {
 			Log.error("Client request handling failed", e);
 		} finally {
-			if (rRequestHandler instanceof Releasable) {
-				((Releasable) rRequestHandler).release();
+			if (requestHandler instanceof Releasable) {
+				((Releasable) requestHandler).release();
 			}
 
 			try {
-				rClientSocket.close();
+				clientSocket.close();
 			} catch (IOException e) {
 				Log.error("Socket close failed", e);
 			}
@@ -325,52 +324,52 @@ public class Server extends RelatedObject
 	 */
 	@SuppressWarnings("boxing")
 	protected void runServerLoop() throws IOException {
-		Relatable aRequestContext = createRequestContext();
+		Relatable requestContext = createRequestContext();
 
-		int nMaxConnections = getOption(MAX_CONNECTIONS).orUse(
+		int maxConnections = getOption(MAX_CONNECTIONS).orUse(
 			Math.max(4, ForkJoinPool.commonPool().getParallelism()));
 
-		Queue<CompletableFuture<Void>> aRequestHandlers =
-			new ArrayDeque<>(nMaxConnections);
+		Queue<CompletableFuture<Void>> requestHandlers =
+			new ArrayDeque<>(maxConnections);
 
-		aServerSocket = createServerSocket(get(PORT));
-		bRunning = true;
+		serverSocket = createServerSocket(get(PORT));
+		running = true;
 
-		while (bRunning) {
+		while (running) {
 			try {
-				Socket rClientSocket = aServerSocket.accept();
+				Socket clientSocket = serverSocket.accept();
 
-				Iterator<CompletableFuture<Void>> rHandlers =
-					aRequestHandlers.iterator();
+				Iterator<CompletableFuture<Void>> handlers =
+					requestHandlers.iterator();
 
 				// remove finished request handlers
-				while (rHandlers.hasNext()) {
-					if (rHandlers.next().isDone()) {
-						rHandlers.remove();
+				while (handlers.hasNext()) {
+					if (handlers.next().isDone()) {
+						handlers.remove();
 					}
 				}
 
-				if (aRequestHandlers.size() < nMaxConnections) {
-					CompletableFuture<Void> aRequestHandler =
+				if (requestHandlers.size() < maxConnections) {
+					CompletableFuture<Void> requestHandler =
 						CompletableFuture.runAsync(
-							() -> handleClientRequest(rClientSocket,
-								aRequestContext));
+							() -> handleClientRequest(clientSocket,
+								requestContext));
 
-					aRequestHandlers.add(aRequestHandler);
+					requestHandlers.add(requestHandler);
 				} else {
 					Log.warn(
 						"Maximum connections reached, rejecting connection " +
-							"from " + rClientSocket.getInetAddress());
+							"from " + clientSocket.getInetAddress());
 
 					try {
-						rClientSocket.close();
+						clientSocket.close();
 					} catch (IOException e) {
 						Log.error(
 							"Closing rejected connection failed, continuing");
 					}
 				}
 			} catch (SocketException e) {
-				if (bRunning) {
+				if (running) {
 					// only throw if still running; if server has been
 					// terminated due to a client request the "socket closed"
 					// exception can be ignored
@@ -386,13 +385,13 @@ public class Server extends RelatedObject
 	 * @return The server name
 	 */
 	private String getServerName() {
-		String sName = get(NAME);
+		String name = get(NAME);
 
-		if (sName == null) {
-			sName = getClass().getSimpleName();
+		if (name == null) {
+			name = getClass().getSimpleName();
 		}
 
-		return sName;
+		return name;
 	}
 
 	/**
@@ -423,14 +422,14 @@ public class Server extends RelatedObject
 		 * the
 		 * server implementation.</p>
 		 *
-		 * @param rRequest  The request input stream
-		 * @param rResponse The response output stream
+		 * @param request  The request input stream
+		 * @param response The response output stream
 		 * @return A string description of the handled request (used for
 		 * statistical purposes)
 		 * @throws Exception Can throw any exception if handling the request
 		 *                   fails
 		 */
-		String handleRequest(InputStream rRequest, OutputStream rResponse)
+		String handleRequest(InputStream request, OutputStream response)
 			throws Exception;
 	}
 
@@ -456,11 +455,10 @@ public class Server extends RelatedObject
 		 * implementations should return a new request handler instance from
 		 * this method.
 		 *
-		 * @param rContext A relatable context containing configuration data
-		 *                      for
-		 *                 the request handler
+		 * @param context A relatable context containing configuration data for
+		 *                the request handler
 		 * @return The request handler for the given configuration
 		 */
-		RequestHandler getRequestHandler(Relatable rContext);
+		RequestHandler getRequestHandler(Relatable context);
 	}
 }
