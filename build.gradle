@@ -4,25 +4,23 @@ plugins {
     id "com.vanniktech.maven.publish" version "$mavenPublishVersion"
 }
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 scmVersion { tag { prefix.set("") } }
 
 project.version = scmVersion.version
-project.group = 'org.obrel'
-project.description = 'Functor and monad implementations'
+project.group = 'de.esoco'
+project.description = 'General development support functions'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
-repositories
-{
-	mavenLocal()
-    jcenter()
-}
-
-dependencies
-{
-	api 'org.obrel:objectrelations:1.5.+'
+dependencies {
+    api 'org.obrel:objectrelations:1.5.+'
 
     implementation "jakarta.validation:jakarta.validation-api:$jakartaValidationVersion"
 
@@ -34,12 +32,14 @@ test {
     useJUnitPlatform()
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+tasks.register('sourcesJar', Jar) {
+    dependsOn classes
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+tasks.register('javadocJar', Jar) {
+    dependsOn javadoc
     archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
