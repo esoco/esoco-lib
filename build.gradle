@@ -20,7 +20,7 @@ java {
 }
 
 dependencies {
-    api 'org.obrel:objectrelations:1.5.+'
+    api 'org.obrel:objectrelations:1.5.2'
 
     implementation "jakarta.validation:jakarta.validation-api:$jakartaValidationVersion"
 
