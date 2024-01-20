@@ -32,7 +32,7 @@ public class MACAddress extends RelatedObject implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	// allowed MAC string patterns: xx-xx-xx-xx-xx-xx or xx:xx:xx:xx:xx:xx
-	private static final Pattern mACPattern =
+	private static final Pattern aCPattern =
 		Pattern.compile("(\\p{XDigit}{2}[:-]){5}" + "\\p{XDigit}{2}");
 
 	private byte[] bytes;
@@ -40,12 +40,12 @@ public class MACAddress extends RelatedObject implements Serializable {
 	/**
 	 * Creates a new instance from a string representation of the MAC address.
 	 *
-	 * @param mAC A string containing the MAC address
+	 * @param aC A string containing the MAC address
 	 * @throws IllegalArgumentException If the format of the argument string is
 	 *                                  invalid
 	 */
-	public MACAddress(String mAC) {
-		bytes = parseBytes(mAC);
+	public MACAddress(String aC) {
+		bytes = parseBytes(aC);
 	}
 
 	/**
@@ -89,19 +89,18 @@ public class MACAddress extends RelatedObject implements Serializable {
 	 * Parses the bytes of a MAC address string and returns a new array
 	 * containing the bytes in transmission order.
 	 *
-	 * @param mAC The MAC address string to parse
+	 * @param aC The MAC address string to parse
 	 * @return A new array containing the MAC address bytes
 	 * @throws IllegalArgumentException If the argument string is NULL or
 	 * has an
 	 *                                  invalid format
 	 */
-	public static byte[] parseBytes(String mAC)
-		throws IllegalArgumentException {
-		if (mAC == null || !mACPattern.matcher(mAC).matches()) {
-			throw new IllegalArgumentException("Invalid MAC string: " + mAC);
+	public static byte[] parseBytes(String aC) throws IllegalArgumentException {
+		if (aC == null || !aCPattern.matcher(aC).matches()) {
+			throw new IllegalArgumentException("Invalid MAC string: " + aC);
 		}
 
-		String[] byteTokens = mAC.split("[:-]");
+		String[] byteTokens = aC.split("[:-]");
 		byte[] bytes = new byte[6];
 
 		// should be covered by the pattern, but to be sure...

@@ -189,7 +189,7 @@ public class SocketEndpoint extends Endpoint {
 		 * Creates a new instance.
 		 *
 		 * @param methodName     The name of this method
-		 * @param defaultRequest rDefaultCommand The default command string to
+		 * @param defaultRequest defaultCommand The default command string to
 		 *                       send
 		 */
 		protected SocketRequest(String methodName, I defaultRequest) {

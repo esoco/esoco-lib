@@ -171,7 +171,7 @@ public class ModificationSyncEndpoint extends HttpEndpoint {
 		 * Creates a new instance.
 		 *
 		 * @param method     The request method
-		 * @param requestUrl sMethodName The name of the request method
+		 * @param requestUrl methodName The name of the request method
 		 */
 		SyncRequest(HttpRequestMethod method, String requestUrl) {
 			super(requestUrl, null, method, "/api/sync/" + requestUrl,

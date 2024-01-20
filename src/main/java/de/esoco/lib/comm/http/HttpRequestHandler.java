@@ -253,7 +253,7 @@ public class HttpRequestHandler extends RelatedObject
 	/**
 	 * Creates the HTTP response for a certain HTTP request. The default
 	 * implementation invokes the method
-	 * {@link HttpRequestMethodHandler#handleMethod(HttpRequest)} of the 
+	 * {@link HttpRequestMethodHandler#handleMethod(HttpRequest)} of the
 	 * request
 	 * method handler.
 	 *
@@ -333,14 +333,14 @@ public class HttpRequestHandler extends RelatedObject
 	}
 
 	/**
-	 * An interface for the handling of the distinct HTTP request methods. 
+	 * An interface for the handling of the distinct HTTP request methods.
 	 * It is
 	 * a functional interface so only the method {@link #doGet(HttpRequest)}
 	 * needs to be implemented for basic GET request functionality. But
 	 * implementors can also implement support for other requests methods like
 	 * POST, PUT, and DELETE if necessary. The default implementations for this
 	 * methods always throw an {@link UnsupportedOperationException}. If other
-	 * request methods need to be supported the implementation may also 
+	 * request methods need to be supported the implementation may also
 	 * override
 	 * the method {@link #handleMethod(HttpRequest)} which switches over the
 	 * {@link HttpRequestMethod} and throws a HTTP status code exception on
@@ -348,10 +348,10 @@ public class HttpRequestHandler extends RelatedObject
 	 *
 	 * <p>The handling of request methods is intended to be stateless so that a
 	 * single instance should be able to handle multiple requests. The state
-	 * that is associated with the handling of a particular request is 
+	 * that is associated with the handling of a particular request is
 	 * stored in
 	 * the associated {@link RequestHandler} instance and will be handed to the
-	 * request method handler in the {@link HttpRequest} argument of the 
+	 * request method handler in the {@link HttpRequest} argument of the
 	 * methods
 	 * below.</p>
 	 *
@@ -420,8 +420,9 @@ public class HttpRequestHandler extends RelatedObject
 		 * Creates the response for the current request and returns a
 		 * {@link Reader} that provides the data of the response body.
 		 *
-		 * @param request rRequest requestMethod The request method to create
-		 *                the response for
+		 * @param request request requestMethod The request method to create
+		 *                     the
+		 *                response for
 		 * @return A {@link HttpResponse} object containing relations with the
 		 * response data
 		 * @throws IOException If reading or writing data fails

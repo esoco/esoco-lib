@@ -28,11 +28,11 @@ import java.util.Stack;
  */
 public class XmlWriter {
 
+	private final String indentation = "\t";
+
 	private Writer writer;
 
 	private String namespace = "";
-
-	private final String indentation = "\t";
 
 	private Stack<String> elementStack = new Stack<String>();
 
@@ -278,12 +278,12 @@ public class XmlWriter {
 	 *                     element is currently open
 	 */
 	public XmlWriter writeCharacterData(String data) throws IOException {
-		int cDataTerminator = data.indexOf("]]>");
+		int dataTerminator = data.indexOf("]]>");
 
-		if (cDataTerminator >= 0) {
-			cDataTerminator += 2;
-			writeCharacterData(data.substring(0, cDataTerminator));
-			writeCharacterData(data.substring(cDataTerminator));
+		if (dataTerminator >= 0) {
+			dataTerminator += 2;
+			writeCharacterData(data.substring(0, dataTerminator));
+			writeCharacterData(data.substring(dataTerminator));
 		} else {
 			writeContent("<![CDATA[" + data + "]]>", true);
 		}

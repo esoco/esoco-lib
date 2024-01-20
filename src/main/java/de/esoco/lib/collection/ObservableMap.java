@@ -166,7 +166,7 @@ public class ObservableMap<K, V> extends AbstractMap<K, V>
 		/**
 		 * Creates a new instance with a certain key and value
 		 *
-		 * @param observedEntry rKey The key
+		 * @param observedEntry key The key
 		 */
 		public ObservableEntry(Entry<K, V> observedEntry) {
 			this.observedEntry = observedEntry;

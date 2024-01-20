@@ -459,7 +459,7 @@ public abstract class Application extends RelatedObject {
 	 * {@link #addManagedResource(Object)} without performing the regular
 	 * resource cleanup that is done by the {@link #cleanup()} method.
 	 *
-	 * @param resource rOld The resource object to be remove
+	 * @param resource old The resource object to be remove
 	 */
 	protected void removeManagedResource(Object resource) {
 		if (cleanupResources != null) {

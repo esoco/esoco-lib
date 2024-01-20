@@ -171,7 +171,7 @@ public class HttpRequest extends RelatedObject {
 	 * Returns the value of a header field in this request. Invokes the method
 	 * {@link #getHeaderField(String)} with the field name.
 	 *
-	 * @param field sName The header field
+	 * @param field name The header field
 	 * @return The header field value or NULL if the header is not set
 	 */
 	public final List<String> getHeaderField(HttpHeaderField field) {

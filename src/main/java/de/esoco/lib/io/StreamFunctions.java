@@ -98,7 +98,7 @@ public class StreamFunctions {
 	 * returns either the string found or NULL if the given token didn't occur
 	 * in the data that has been read up to the maximum..
 	 *
-	 * @param defaultToken sToken The token to search
+	 * @param defaultToken token The token to search
 	 * @param max          The maximum number of characters to read
 	 * @param ignoreCase   TRUE if the case of the token should be ignored
 	 * @return A new binary function instance

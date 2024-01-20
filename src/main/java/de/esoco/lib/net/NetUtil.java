@@ -96,7 +96,7 @@ public class NetUtil {
 	 * Appends a path element to an URL string and adds a separating '/' if
 	 * necessary.
 	 *
-	 * @param baseUrl rUrlBuilder The string build containing the base URL
+	 * @param baseUrl urlBuilder The string build containing the base URL
 	 * @param path    The URL path to append
 	 * @return The resulting URL string
 	 */
@@ -142,17 +142,16 @@ public class NetUtil {
 	 */
 	public static Socket createSocket(String host, int port,
 		SocketType socketType) throws IOException {
-		boolean sSL = (socketType != SocketType.PLAIN);
+		boolean sL = (socketType != SocketType.PLAIN);
 		String proxyHost =
-			System.getProperty(sSL ? "https.proxyHost" : "http.proxyHost");
+			System.getProperty(sL ? "https.proxyHost" : "http.proxyHost");
 
 		Socket socket;
 		int proxyPort = 0;
 
 		if (proxyHost != null) {
 			proxyPort = Integer.parseInt(
-				System.getProperty(sSL ? "https.proxyPort" : "http.proxyPort"
-				));
+				System.getProperty(sL ? "https.proxyPort" : "http.proxyPort"));
 
 			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
 
@@ -167,7 +166,7 @@ public class NetUtil {
 			}
 		}
 
-		if (sSL) {
+		if (sL) {
 			SSLSocketFactory factory;
 
 			if (socketType == SocketType.SSL) {
@@ -248,7 +247,7 @@ public class NetUtil {
 	 * applying the method {@link URLEncoder#encode(String, String)} with the
 	 * recommended default encoding UTF-8.
 	 *
-	 * @param element sName The name of the URL parameter
+	 * @param element name The name of the URL parameter
 	 * @return A string containing the encoded parameter assignment
 	 */
 	public static String encodeUrlElement(String element) {
@@ -373,9 +372,9 @@ public class NetUtil {
 	 *
 	 * @see #wakeUp(MACAddress, InetAddress, int)
 	 */
-	public static void wakeUp(MACAddress mACAddress, InetAddress broadcastIP)
+	public static void wakeUp(MACAddress aCAddress, InetAddress broadcastIP)
 		throws IOException {
-		wakeUp(mACAddress, broadcastIP, WAKEONLAN_DEFAULT_PORT);
+		wakeUp(aCAddress, broadcastIP, WAKEONLAN_DEFAULT_PORT);
 	}
 
 	/**
@@ -386,16 +385,16 @@ public class NetUtil {
 	 * This is because that machine is probably inactive and therefore doesn't
 	 * have an IP address until it has been waked up.
 	 *
-	 * @param mACAddress  The MAC address of the target network adapter
+	 * @param aCAddress   The MAC address of the target network adapter
 	 * @param broadcastIP The broadcast IP number to send the packet to
 	 * @param port        The port to send the broadcast packet to
 	 * @throws IOException If the network access fails
 	 */
 
-	public static void wakeUp(MACAddress mACAddress, InetAddress broadcastIP,
+	public static void wakeUp(MACAddress aCAddress, InetAddress broadcastIP,
 		int port) throws IOException {
 		DatagramSocket socket = new DatagramSocket();
-		byte[] mACBytes = mACAddress.getBytes();
+		byte[] aCBytes = aCAddress.getBytes();
 		byte[] datagram = new byte[17 * 6];
 
 		for (int i = 0; i < 6; i++) {
@@ -403,7 +402,7 @@ public class NetUtil {
 		}
 
 		for (int i = 6; i < datagram.length; i += 6) {
-			System.arraycopy(mACBytes, 0, datagram, i, 6);
+			System.arraycopy(aCBytes, 0, datagram, i, 6);
 		}
 
 		DatagramPacket packet =

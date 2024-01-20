@@ -110,8 +110,8 @@ public class MethodMappingHandler {
 			args = mapArguments(originalMethod, target, method, args);
 			Object value = invokeMethod(target, method, args);
 			return mapReturnValue(originalMethod, target, method, value);
-		} catch (InvocationTargetException iTE) {
-			Throwable t = iTE.getTargetException();
+		} catch (InvocationTargetException tE) {
+			Throwable t = tE.getTargetException();
 
 			if (t instanceof Exception) {
 				throw (Exception) t;

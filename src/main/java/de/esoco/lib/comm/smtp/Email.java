@@ -92,7 +92,7 @@ public class Email extends RelatedObject implements FluentRelatable<Email> {
 	/**
 	 * Sets the email's message text.
 	 *
-	 * @param message sSubject The message text
+	 * @param message subject The message text
 	 * @return This instance for fluent invocation
 	 */
 	public Email message(String message) {

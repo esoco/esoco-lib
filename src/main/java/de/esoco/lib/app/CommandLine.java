@@ -73,7 +73,7 @@ public class CommandLine {
 	 * format. Boolean values will be converted to {@link Boolean} objects, all
 	 * other argument values will be stored as strings.
 	 *
-	 * @param argsStream sFileName The file name (including path) of the
+	 * @param argsStream fileName The file name (including path) of the
 	 *                   properties file
 	 * @throws IllegalArgumentException If accessing the stream fails
 	 */

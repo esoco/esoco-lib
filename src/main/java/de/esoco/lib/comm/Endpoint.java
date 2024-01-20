@@ -271,7 +271,7 @@ public abstract class Endpoint extends RelatedObject
 	 * Returns a field from the user info part of a URI.
 	 *
 	 * @param uri       The URI
-	 * @param infoField bPassword TRUE to return the password field, FALSE to
+	 * @param infoField password TRUE to return the password field, FALSE to
 	 *                  return the username field
 	 * @return The user info field (NULL for none)
 	 */
